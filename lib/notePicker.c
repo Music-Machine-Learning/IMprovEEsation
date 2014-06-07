@@ -31,7 +31,7 @@ void insertRange(noterange_t **list, uint8_t note, uint8_t range){
 
 uint8_t pickSingleNote(uint8_t *probabilities, uint8_t randomV){
 	noterange_t *range = NULL;
-	noterange_t *gauss[12];
+	noterange_t **gauss;
 	int rangeSize = 0, i, dir = DIR_BOTTOM;
 	
 	
@@ -42,6 +42,8 @@ uint8_t pickSingleNote(uint8_t *probabilities, uint8_t randomV){
 			rangeSize++;
 		}
 	}
+	
+	gauss = malloc(rangeSize * sizeof(noterange_t*));
 	
 	// prepare gaussian distributed array
 	for(i = 0; i < rangeSize; i++, dir = 1-dir, range = range->next){
