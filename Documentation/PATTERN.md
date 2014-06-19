@@ -1,6 +1,6 @@
 #Pattern Definition
 
-###TODO: everything's changed after the insertion of a relational database. Write down about it. Do not consider (or do it partially the following statements).
+###TODO: everything's changed after the insertion of a relational database. Write down about it. Do not consider (or do it partially) the following statements.
 
 A "pattern" is defined as a collection of measures.
  * instruments: the instruments that can play the measure (ex. bass, guitar)
