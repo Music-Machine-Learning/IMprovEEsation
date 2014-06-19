@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `semiquaver` (
   `velocity_max` int(11) NOT NULL,
   `pC` float NOT NULL DEFAULT '0' COMMENT 'Probability to change note',
   `pC3qrt` float NOT NULL DEFAULT '0' COMMENT 'Probability for the beginning of a quarter triplet',
-  `pC3qvr` float NOT NULL DEFAULT '0' COMMENT ' Probability for the beginning of a quiver triplet',
+  `pC3qvr` float NOT NULL DEFAULT '0' COMMENT ' Probability for the beginning of a quaver triplet',
   `pC3smq` float NOT NULL DEFAULT '0' COMMENT 'Probability for the beginning of a semiquaver triplet',
   `pg1` float NOT NULL DEFAULT '0',
   `pg2` float NOT NULL DEFAULT '0',
