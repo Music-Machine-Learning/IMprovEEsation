@@ -20,4 +20,40 @@ An example could be:
 
 According to these parameters the musician can take his behavior decisions. Basically he looks for patterns in a global database. These patterns are data collections that express how the single notes can be played within a certain probability.
 
+The following pseudocode explains the life cycle of a musician.
+
 ## Musician Main Loop
+```c
+  lookup_thread(){
+    lookup_id = 0;
+    semiquavers = [];
+    while(1){
+      data = get_director_data(lookup_id); //blocking call
+      note = find_good_semiquaver(DB, data); //could return NO_CHANGE constant
+      
+      semiquavers.append(note, lookup_id, data.bpm);
+      
+      if (lookup_id == 0)
+        playing_thread.start();
+      
+      lookup_id++;
+    }
+  }
+  
+  
+  playing_thread(){
+    playing_id = 0;
+    last_bpm = 0;
+    while(1){
+      
+      sq = semiquavers.remove(playing_id);
+      
+      sync(sq.bpm); //sync with the other musicians
+      
+      if (sq.note != NO_CHANGE)
+        play(sq.note);
+      
+      playing_id++;
+  }
+  
+```
