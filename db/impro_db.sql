@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `quarter` (
   `tag_mood` varchar(255) NOT NULL,
   `tag_genre` varchar(255) NOT NULL,
   PRIMARY KEY (`ID`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 COMMENT='This table contains a quarter, which is storing 4 semiquivers.' AUTO_INCREMENT=10 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 COMMENT='This table contains a quarter, which is storing 4 semiquavers.' AUTO_INCREMENT=10 ;
 
 --
 -- Dumping data for table `quarter`
@@ -56,10 +56,10 @@ INSERT INTO `quarter` (`ID`, `pos`, `instrument`, `mode`, `chord_grade`, `chord_
 -- --------------------------------------------------------
 
 --
--- Table structure for table `semiquiver`
+-- Table structure for table `semiquaver`
 --
 
-CREATE TABLE IF NOT EXISTS `semiquiver` (
+CREATE TABLE IF NOT EXISTS `semiquaver` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
   `pos` int(11) NOT NULL COMMENT 'Goes from 1 to 4 (position in the quarter''s subdivision)',
   `quarter` int(11) NOT NULL COMMENT 'Reference to the quarter',
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS `semiquiver` (
   `pC` float NOT NULL DEFAULT '0' COMMENT 'Probability to change note',
   `pC3qrt` float NOT NULL DEFAULT '0' COMMENT 'Probability for the beginning of a quarter triplet',
   `pC3qvr` float NOT NULL DEFAULT '0' COMMENT ' Probability for the beginning of a quiver triplet',
-  `pC3smq` float NOT NULL DEFAULT '0' COMMENT 'Probability for the beginning of a semiquiver triplet',
+  `pC3smq` float NOT NULL DEFAULT '0' COMMENT 'Probability for the beginning of a semiquaver triplet',
   `pg1` float NOT NULL DEFAULT '0',
   `pg2` float NOT NULL DEFAULT '0',
   `pg3` float NOT NULL DEFAULT '0',
@@ -84,13 +84,13 @@ CREATE TABLE IF NOT EXISTS `semiquiver` (
   `pg13` float NOT NULL DEFAULT '0',
   PRIMARY KEY (`ID`),
   KEY `quarter` (`quarter`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 COMMENT='A semiquiver is the atom we use. Every 4/4 measure is composed by 16 semiquivers' AUTO_INCREMENT=35 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 COMMENT='A semiquaver is the atom we use. Every 4/4 measure is composed by 16 semiquavers' AUTO_INCREMENT=35 ;
 
 --
--- Dumping data for table `semiquiver`
+-- Dumping data for table `semiquaver`
 --
 
-INSERT INTO `semiquiver` (`ID`, `pos`, `quarter`, `velocity_min`, `velocity_max`, `pC`, `pC3qrt`, `pC3qvr`, `pC3smq`, `pg1`, `pg2`, `pg3`, `pg4`, `pg5`, `pg6`, `pg7`, `pg8`, `pg9`, `pg10`, `pg11`, `pg12`, `pg13`) VALUES
+INSERT INTO `semiquaver` (`ID`, `pos`, `quarter`, `velocity_min`, `velocity_max`, `pC`, `pC3qrt`, `pC3qvr`, `pC3smq`, `pg1`, `pg2`, `pg3`, `pg4`, `pg5`, `pg6`, `pg7`, `pg8`, `pg9`, `pg10`, `pg11`, `pg12`, `pg13`) VALUES
 (1, 1, 1, 100, 200, 0.5, 0, 0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0.25, 0, 0, 0, 0, 0.25),
 (2, 2, 1, 100, 200, 0.5, 0, 0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0.25, 0, 0, 0, 0, 0.25),
 (3, 3, 1, 100, 200, 0.5, 0, 0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0.25, 0, 0, 0, 0, 0.25),
@@ -129,10 +129,10 @@ INSERT INTO `semiquiver` (`ID`, `pos`, `quarter`, `velocity_min`, `velocity_max`
 --
 
 --
--- Constraints for table `semiquiver`
+-- Constraints for table `semiquaver`
 --
-ALTER TABLE `semiquiver`
-  ADD CONSTRAINT `semiquiver_ibfk_1` FOREIGN KEY (`quarter`) REFERENCES `quarter` (`ID`);
+ALTER TABLE `semiquaver`
+  ADD CONSTRAINT `semiquaver_ibfk_1` FOREIGN KEY (`quarter`) REFERENCES `quarter` (`ID`);
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
