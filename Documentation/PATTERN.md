@@ -1,6 +1,8 @@
 #Pattern Definition
 
-A "pattern" is defined as a collection of measures. In particular is a file that simply lists the related measure files. A measure is defined by a json file with the following fields:
+###TODO: everything's changed after the insertion of a relational database. Write down about it. Do not consider (or do it partially the following statements).
+
+A "pattern" is defined as a collection of measures.
  * instruments: the instruments that can play the measure (ex. bass, guitar)
  * tags: the set of words that characterize the dynamic of the measure (ex. blues, groove, fill)
  * time: the time signature (ex. 4/4, 3/4, 6/8)
