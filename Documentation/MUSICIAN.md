@@ -24,34 +24,31 @@ The following pseudocode explains the life cycle of a musician.
 
 ## Musician Main Loop
 ```c
-  lookup_thread(){
+  musician_process(){
     lookup_id = 0;
     semiquavers = [];
     while(1){
       data = get_director_data(lookup_id); //blocking call
-      note = find_good_semiquaver(DB, data); //could return NO_CHANGE constant
       
-      semiquavers.append(note, lookup_id, data.bpm);
+      note = find_good_semiquaver(DB, data, semiquavers); //could return NO_CHANGE constant
       
-      if (lookup_id == 0)
-        playing_thread.start();
+      semiquavers.append(note)
+      
+      send(playing_process, note, lookup_id, data.bpm);
       
       lookup_id++;
     }
   }
   
   
-  playing_thread(){
+  playing_process(){
     playing_id = 0;
     last_bpm = 0;
     while(1){
       
-      sq = semiquavers.remove(playing_id);
-      
-      sync(sq.bpm); //sync with the other musicians
-      
-      if (sq.note != NO_CHANGE)
-        play(sq.note);
+      notes = recvfromall(playing_id); //sync with the all musicians
+     
+      play(notes);
       
       playing_id++;
   }
