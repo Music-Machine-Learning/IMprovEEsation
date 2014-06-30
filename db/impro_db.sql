@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `quarter` (
   `ID` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique ID',
   `pos` int(11) NOT NULL COMMENT 'Position inside the measure (1:first, 2:middle, 3:last)',
   `instrument` varchar(255) NOT NULL,
-  `mode` enum('mj','min') NOT NULL COMMENT 'The mode of the scale used (mj or min)',
+  `mode` binary(12) NOT NULL COMMENT 'The mode of the scale used (mj = 0xAB5, min = 0xAAD)',
   `chord_grade` int(11) NOT NULL COMMENT 'Goes from 1 to 12 (1: tonal, 5: modal, 8: dominant)',
   `chord_mode` binary(12) NOT NULL COMMENT 'Mode of the chord (mj = 0x91, min = 0x89, min7 = 0x489, mj7 = 0x491)',
   `tag_dyna` varchar(255) NOT NULL,
@@ -44,14 +44,14 @@ CREATE TABLE IF NOT EXISTS `quarter` (
 --
 
 INSERT INTO `quarter` (`ID`, `pos`, `instrument`, `mode`, `chord_grade`, `chord_mode`, `tag_dyna`, `tag_mood`, `tag_genre`) VALUES
-(1, 1, 'prova', 'mj', 1, 0x91, 'groove', 'slow', 'blues'),
-(2, 2, 'prova', 'mj', 1, 0x91, 'groove', 'slow', 'blues'),
-(3, 2, 'prova', 'mj', 10, 0x89, 'groove', 'slow', 'blues'),
-(4, 3, 'prova', 'mj', 10, 0x89, 'groove', 'slow', 'blues'),
-(5, 1, 'prova', 'mj', 3, 0x89, 'groove', 'slow', 'blues'),
-(6, 2, 'prova', 'mj', 3, 0x89, 'groove', 'slow', 'blues'),
-(7, 2, 'prova', 'mj', 8, 0x491, 'groove', 'slow', 'blues'),
-(8, 3, 'prova', 'mj', 8, 0x491, 'groove', 'slow', 'blues');
+(1, 1, 'prova', 0xAB5, 1, 0x91, 'groove', 'slow', 'blues'),
+(2, 2, 'prova', 0xAB5, 1, 0x91, 'groove', 'slow', 'blues'),
+(3, 2, 'prova', 0xAB5, 10, 0x89, 'groove', 'slow', 'blues'),
+(4, 3, 'prova', 0xAB5, 10, 0x89, 'groove', 'slow', 'blues'),
+(5, 1, 'prova', 0xAB5, 3, 0x89, 'groove', 'slow', 'blues'),
+(6, 2, 'prova', 0xAB5, 3, 0x89, 'groove', 'slow', 'blues'),
+(7, 2, 'prova', 0xAB5, 8, 0x491, 'groove', 'slow', 'blues'),
+(8, 3, 'prova', 0xAB5, 8, 0x491, 'groove', 'slow', 'blues');
 
 -- --------------------------------------------------------
 
