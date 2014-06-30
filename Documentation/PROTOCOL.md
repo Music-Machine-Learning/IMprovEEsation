@@ -1,5 +1,9 @@
-## Director Data
+## Director to others communication
 
+# Musician Registration
+TODO
+
+# Director data
 The director send at each measure a struct to all the musicians
 ```c
   {
@@ -33,7 +37,6 @@ The director send at each measure a struct to all the musicians
       
   }
 ```
- * Tags { dynamic[], genre[], mood[] }
  
 An example could be:
  * 120 //bpm
@@ -42,3 +45,7 @@ An example could be:
  * [{A, 101010101101}, {A, 101010101101}, {A, 101010101101}, {A, 101010101101}] A minor scale for the whole measure
  * [{3, 000010010001}, {3, 000010010001}, {1, 000010001001}, {1, 000010001001}] (C Major, C Major, A minor, A minor)
  * "groove;blues;intro"
+
+
+## Musicians - Player communication
+TODO
