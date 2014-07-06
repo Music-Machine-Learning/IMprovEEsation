@@ -15,6 +15,8 @@ Each musician that want to take part to the session must send its subscription t
 
 The coupling field is used to make two or more instruments play on the same midi channel (e.g. emulating a piano for wich left hand plays accompainment and right hand plays lead solos)
 
+Coupling -1 value is reserved for the Midi Player, 0 means there is no coupling, different values will join the instruments that share the same coupling.
+
 # Director data
 The director has to respond to each subscription with the actual id of the musician:
 ```c
@@ -83,4 +85,51 @@ At each measure musicians tell the player what they intend to play:
       uint_8 triplets;  //boolean: is this note a part of a triplet?
     }[ ] measure;
   }
+```
+
+
+# Network Library
+The network library should offer the next funcions.
+
+Musician:
+```c
+  // send_subscriptions is a syncronous call, waits for director response and returns the actual musician ID (and the midi player's address) or throws an exception if something bad happens
+  uint_32 send_subscription(uint_32 director, subscription *proposal);
+  uint_32 send_subscription(uint_32 director, uint_32 coupling, uint_8 instrument_class, uint_8 soloer);
+  
+  // sync receive
+  void get_measure(measure *newMeasure);
+  
+  // async send
+  void sent_to_play(uint_32 player, uint_32 director, play_measure *measure);
+```
+
+Midi Player:
+```c
+  // sync receive
+  uint_32 get_num_of_musicians();
+  
+  // sync receive
+  void get_to_play(play_measure **note_list, uint_32 musicians_count);
+```
+
+Director:
+```c
+  // sync receive
+  uint_32 get_player();
+  
+  // sync receive
+  void get_subscription(subscription *new_musician);
+  
+  // async send
+  void send_player_num(uint_32 player_addr, uint_32 musicians_count);
+  
+  // async send: 0-> success, -1-> error
+  int send_id(void *musician_conn, uint_32 id);
+  
+  // async send
+  void broadcast_measure(measure *next_measure, list *dests);
+  
+  // sync receive
+  void sync_all(list *dests);
 ```
