@@ -1,6 +1,6 @@
-## Director to others communication
+# Director to others communication
 
-# Musician Subscription
+## Musician Subscription
 Each musician that want to take part to the session must send its subscription to the director:
 ```c
   struct subscription
@@ -17,7 +17,7 @@ The coupling field is used to make two or more instruments play on the same midi
 
 Coupling -1 value is reserved for the Midi Player, 0 means there is no coupling, different values will join the instruments that share the same coupling.
 
-# Director data
+## Director data
 The director has to respond to each subscription with the actual id of the musician:
 ```c
   struct subscription_response
@@ -71,7 +71,7 @@ An example could be:
  * "groove;blues;intro"
 
 
-## Musicians - Player communication
+# Musicians - Player communication
 At each measure musicians tell the player what they intend to play:
 ```c
   struct play_measure
@@ -101,7 +101,7 @@ Musician:
   void get_measure(measure *newMeasure);
   
   // async send
-  void sent_to_play(uint_32 player, uint_32 director, play_measure *measure);
+  void send_to_play(uint_32 player, uint_32 director, play_measure *measure);
 ```
 
 Midi Player:
@@ -133,3 +133,6 @@ Director:
   // sync receive
   void sync_all(list *dests);
 ```
+
+#Components organization and communication algorithm
+TODO:
