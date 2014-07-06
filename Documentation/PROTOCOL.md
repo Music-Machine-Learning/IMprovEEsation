@@ -98,7 +98,7 @@ Musician:
   uint_32 send_subscription(uint_32 director, uint_32 coupling, uint_8 instrument_class, uint_8 soloer);
   
   // sync receive
-  void get_measure(measure *newMeasure);
+  void recv_measure(measure *newMeasure);
   
   // async send
   void send_to_play(uint_32 player, uint_32 director, play_measure *measure);
@@ -107,19 +107,16 @@ Musician:
 Midi Player:
 ```c
   // sync receive
-  uint_32 get_num_of_musicians();
-  
-  // sync receive
-  void get_to_play(play_measure **note_list, uint_32 musicians_count);
+  void recv_to_play(play_measure **note_list, uint_32 musicians_count);
 ```
 
 Director:
 ```c
   // sync receive
-  uint_32 get_player();
+  uint_32 recv_player();
   
   // sync receive
-  void get_subscription(subscription *new_musician);
+  void recv_subscription(subscription *new_musician);
   
   // async send
   void send_player_num(uint_32 player_addr, uint_32 musicians_count);
@@ -134,5 +131,5 @@ Director:
   void sync_all(list *dests);
 ```
 
-#Components organization and communication algorithm
-TODO:
+#Communication sequence diagram
+![alt text](https://www.lucidchart.com/publicSegments/view/53b98170-1b98-4bc3-9961-6ef90a0048a9/image.png "Sequence diagram")
