@@ -120,7 +120,8 @@ struct notes {
 struct play_measure
 {
 	uint32_t id;
-	struct notes measure[4];
+	uint32_t size;
+	struct notes *measure;
 };
 
 

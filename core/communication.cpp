@@ -205,19 +205,19 @@ void send_to_play(int player, int director,
 {
 	int j;
 	uint8_t sack = SYNC_ACK;
-	struct iovec iov[4 * 4 + 1];
+	struct iovec iov[measure->size * 4 + 1];
 
 	/* player send */
 	LOAD_IOVEC(iov, 0, measure->id);
 
-	for (j = 0; j < 4; j++) {
+	for (j = 0; j < measure->size; j++) {
 		LOAD_IOVEC(iov, j * 4 + 1, measure->measure[j].note);
 		LOAD_IOVEC(iov, j * 4 + 2, measure->measure[j].tempo);
 		LOAD_IOVEC(iov, j * 4 + 3, measure->measure[j].id);
 		LOAD_IOVEC(iov, j * 4 + 4, measure->measure[j].triplets);
 	}
 
-	if (writev(player, iov, 4 * 4 + 1) <= 0) {
+	if (writev(player, iov, measure->size * 4 + 1) < 0) {
 		perror("writev");
 		throw net_ex;
 		return;
@@ -291,28 +291,49 @@ void get_to_play(struct play_measure *note_list, struct list_head *musicians)
 
 		for(i = 0; i < cprocessed; i++) {
 			int j;
-			struct iovec iov[4 * 4 + 1];
+			struct iovec safe_iov[2], *iov;
 			if (!epevs[i].events & EPOLLIN) {
 				throw net_ex;
 				return;
 			}
 
 			/* player send */
-			LOAD_IOVEC(iov, 0, note_list[pm_count].id);
+			LOAD_IOVEC(safe_iov, 0, note_list[pm_count].id);
+			LOAD_IOVEC(safe_iov, 1, note_list[pm_count].size);
 
-			for (j = 0; j < 4; j++) {
-				LOAD_IOVEC(iov, j * 4 + 1, note_list[pm_count].measure[j].note);
-				LOAD_IOVEC(iov, j * 4 + 2, note_list[pm_count].measure[j].tempo);
-				LOAD_IOVEC(iov, j * 4 + 3, note_list[pm_count].measure[j].id);
-				LOAD_IOVEC(iov, j * 4 + 4, note_list[pm_count].measure[j].triplets);
-			}
-
-			retval = readv(epevs[i].data.fd, iov, 4 * 4 + 1);
+			retval = readv(epevs[i].data.fd, safe_iov, 2);
 			if (retval < 0) {
 				perror("readv");
 				throw net_ex;
 				return;
 			} else if (retval == 0) {
+				throw eoi_ex;
+				return;
+			}
+
+			iov = new struct iovec[note_list[pm_count].size];
+			for (j = 0; j < note_list[pm_count].size; j++) {
+				LOAD_IOVEC(iov, j * 4,
+					  note_list[pm_count].measure[j].note);
+				LOAD_IOVEC(iov, j * 4 + 1,
+					 note_list[pm_count].measure[j].tempo);
+				LOAD_IOVEC(iov, j * 4 + 2,
+					   note_list[pm_count].measure[j].id);
+				LOAD_IOVEC(iov, j * 4 + 3,
+				      note_list[pm_count].measure[j].triplets);
+			}
+
+			retval = readv(epevs[i].data.fd, iov,
+				       note_list[pm_count].size);
+
+			delete [] iov;
+
+			if (retval < 0) {
+				perror("readv");
+				throw net_ex;
+				return;
+			} else if (retval == 0 &&
+				   note_list[pm_count].size != 0) {
 				throw eoi_ex;
 				return;
 			}
