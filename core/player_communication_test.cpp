@@ -44,7 +44,7 @@ LIST_HEAD(musicians);
 
 void cleanup(void)
 {
-	struct subscription *curr_musician, *tmp_musician;
+	struct subscription_s *curr_musician, *tmp_musician;
 	/* Cleanup and exit */
 	list_for_each_entry_safe(curr_musician, tmp_musician,
 				 &musicians, list) {
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
 {
 	struct sockaddr_in sout;
 	int i = 0;
-	struct play_measure *note_list = NULL;
+	struct play_measure_s *note_list = NULL;
 
 	srand(time(NULL));
 
@@ -152,15 +152,15 @@ int main(int argc, char **argv)
 
 	send_subscription(director_socket, PLAYER_ID, 0, 0);
 	printf("connected to director\n");
-	uint32_t musicians_num = get_num_of_musicians(director_socket);
+	uint32_t musicians_num = recv_num_of_musicians(director_socket);
 	printf("initializing a %d components improvisation.\n", musicians_num);
 
-	note_list = (struct play_measure *) calloc(musicians_num, sizeof(struct play_measure));
+	note_list = (struct play_measure_s *) calloc(musicians_num, sizeof(struct play_measure_s));
 
 	for (i = 0; i < musicians_num; i++) {
-		struct subscription *new_musician = (struct subscription *) malloc(sizeof(struct subscription));
+		struct subscription_s *new_musician = (struct subscription_s *) malloc(sizeof(struct subscription_s));
 		printf("waiting for a musician\n");
-		get_subscription(net_handler, new_musician);
+		recv_subscription(net_handler, new_musician);
 		
 		printf("player: got a new musician\n\tcoupling: %d\n\tinstrument_class: %d\n\tsoloer: %d\n\tconnection :%d\n",
 		       new_musician->coupling, new_musician->instrument_class,
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
 	printf("main loop\n");
 	for (i = 0;; i++) {
 		try {
-			get_to_play(note_list, &musicians);
+			recv_to_play(note_list, &musicians);
 		} catch (end_of_improvisation_exception e) {
 			break;
 		}

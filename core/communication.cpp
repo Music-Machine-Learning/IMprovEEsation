@@ -76,9 +76,9 @@ uint32_t send_subscription(int director, uint32_t coupling,
 }
 
 #ifdef __cplusplus
-uint32_t send_subscription(int director, struct subscription *s)
+uint32_t send_subscription(int director, struct subscription_s *s)
 #else /* C retrocompatibilty */
-uint32_t send_subscription_struct(int director, struct subscription *s)
+uint32_t send_subscription_struct(int director, struct subscription_s *s)
 #endif
 {
 	return send_subscription(director, s->coupling, s->instrument_class,
@@ -89,10 +89,10 @@ uint32_t send_subscription_struct(int director, struct subscription *s)
 	({iov[i].iov_base = &field;\
 	iov[i].iov_len = sizeof(field);})
 
-void get_measure(int director, struct measure *new_measure)
+void recv_measure(int director, struct measure_s *new_measure)
 {
 	int i, retval;
-	struct subscription *cmusician;
+	struct subscription_s *cmusician;
 
 	struct iovec safe_to_read[4], *tmp_iov;
 
@@ -113,7 +113,7 @@ void get_measure(int director, struct measure *new_measure)
 		return;
 	}
 
-	new_measure->tonal_zones = (struct tonal_zone_t *) realloc(
+	new_measure->tonal_zones = (struct tonal_zone_s *) realloc(
 					   new_measure->tonal_zones,
 					   sizeof(new_measure->tonal_zones) *
 					   new_measure->tempo.upper);
@@ -145,9 +145,9 @@ void get_measure(int director, struct measure *new_measure)
 		return;
 	}
 
-	new_measure->chords = (struct chord_t *) realloc(new_measure->chords,
+	new_measure->chords = (struct chord_s *) realloc(new_measure->chords,
 			      	     new_measure->tempo.upper *
-			      	     sizeof(struct chord_t));
+			      	     sizeof(struct chord_s));
 
 	for (i = 0; i < new_measure->tempo.upper; i++) {
 		LOAD_IOVEC(tmp_iov, i * 2, new_measure->chords[i].note);
@@ -201,7 +201,7 @@ void get_measure(int director, struct measure *new_measure)
 }
 
 void send_to_play(int player, int director,
-		  struct play_measure *measure)
+		  struct play_measure_s *measure)
 {
 	int j;
 	uint8_t sack = SYNC_ACK;
@@ -233,7 +233,7 @@ void send_to_play(int player, int director,
 
 /* Midi player */
 
-uint32_t get_num_of_musicians(int net_handler)
+uint32_t recv_num_of_musicians(int net_handler)
 {
 	uint32_t retval = 0;
 	if (read(net_handler, &retval, sizeof(retval)) < 0) {
@@ -244,9 +244,9 @@ uint32_t get_num_of_musicians(int net_handler)
 	return retval;
 }
 
-void get_to_play(struct play_measure *note_list, struct list_head *musicians)
+void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 {
-	struct subscription *cmusician;
+	struct subscription_s *cmusician;
 
 	struct epoll_event *epevs;
 	int	size = 0,
@@ -360,7 +360,7 @@ void get_to_play(struct play_measure *note_list, struct list_head *musicians)
 
 /* Director */
 
-void get_subscription(int conn_socket, struct subscription *new_musician)
+void recv_subscription(int conn_socket, struct subscription_s *new_musician)
 {
 	struct iovec iov[3];
 	int retval;
@@ -390,10 +390,10 @@ void get_subscription(int conn_socket, struct subscription *new_musician)
 	}
 }
 
-uint32_t get_player(int conn_socket)
+uint32_t recv_player(int conn_socket)
 {
 	int retval = -1;
-	struct subscription *tmp_pl = new struct subscription;
+	struct subscription_s *tmp_pl = new struct subscription_s;
 
 	if (!tmp_pl) {
 		perror("malloc");
@@ -401,7 +401,7 @@ uint32_t get_player(int conn_socket)
 		return -1;
 	}
 	
-	get_subscription(conn_socket, tmp_pl);
+	recv_subscription(conn_socket, tmp_pl);
 
 	if (tmp_pl->coupling == PLAYER_ID) {
 		retval = tmp_pl->connection;
@@ -436,11 +436,9 @@ void send_ack(int musician_conn)
 	send_id(musician_conn, ACK);
 }
 
-
-// DONE calloc -> new
-void broadcast_measure(struct measure *next_measure, struct list_head *dests)
+void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 {
-	struct subscription *cmusician;
+	struct subscription_s *cmusician;
 	struct iovec safe_iov[4], *tmp_iov;
 	int retval;
 
@@ -514,7 +512,7 @@ void broadcast_measure(struct measure *next_measure, struct list_head *dests)
 
 void sync_all(struct list_head *musicians)
 {
-	struct subscription *cmusician;
+	struct subscription_s *cmusician;
 
 	int size = 0,
 	    psize = 0,

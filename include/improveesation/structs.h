@@ -34,7 +34,7 @@ enum {
 	SOLO
 };
 
-struct subscription
+struct subscription_s
 {
 	uint32_t coupling;
 	uint8_t instrument_class;
@@ -46,14 +46,14 @@ struct subscription
 };
 
 /* measure substructs */
-struct tempo_t {
+struct tempo_s {
 	uint8_t upper;
 	uint8_t lower;
 };
 /**
  * The successions of tonal zones in a measure
  * The mode bitmap (11th...0th) identifies the scale */
-struct tonal_zone_t {
+struct tonal_zone_s {
 	uint16_t note;
 	uint16_t scale;
 };
@@ -61,7 +61,7 @@ struct tonal_zone_t {
 /**
  * The successions of chords in a measure.
  * The mode bitmap (11th...0th) identifies the chord mode */
-struct chord_t{
+struct chord_s {
 	uint16_t note; 
 	uint16_t mode;
 };
@@ -69,13 +69,12 @@ struct chord_t{
 /**
  * A string of 3 tags parted by a ; char
  * (one field per each tag level dynamin, genre, mood). */
-struct tags_t {
+struct tags_s {
 	unsigned int size;  /* string size */
 	char *payload; /* "genre;dynamics;mood\0" */
 };
 
-struct measure
-{
+struct measure_s {
 	uint8_t bpm;
 	uint32_t soloist_id;
 
@@ -83,27 +82,27 @@ struct measure
 	 * The succession of chords in a measure.
 	 * The bitmap goes from the 11th to 0th bit,
 	 * where each bit defines the chord grade */
-	struct tempo_t tempo;
+	struct tempo_s tempo;
 
 	/**
 	 * The successions of tonal zones in a measure.
 	 * The mode bitmap (11th...0th) identifies the scale */
-	struct tonal_zone_t  *tonal_zones;
+	struct tonal_zone_s  *tonal_zones;
 	/* size of the current time signature upper value */
 
 	/**
 	 * The successions of chords in a measure.
 	 * The mode bitmap (11th...0th) identifies the chord mode */
-	struct chord_t *chords;
+	struct chord_s *chords;
 	/*size of the current time signature upper value */
 
 	/**
 	 * A string of 3 tags parted by a ; char
 	 * (one field per each tag level dynamin, genre, mood). */
-	struct tags_t tags;
+	struct tags_s tags;
 };
 
-struct notes {
+struct notes_s {
 	/* the actual note height expressed in midi format */
 	uint8_t note;
 	/* the duration of the note */
@@ -117,11 +116,11 @@ struct notes {
 	uint8_t triplets;
 };
 
-struct play_measure
+struct play_measure_s
 {
 	uint32_t id;
 	uint32_t size;
-	struct notes *measure;
+	struct notes_s *measure;
 };
 
 

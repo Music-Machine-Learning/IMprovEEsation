@@ -47,7 +47,7 @@ LIST_HEAD(musicians);
 
 void cleanup(void)
 {
-	struct subscription *curr_musician, *tmp_musician;
+	struct subscription_s *curr_musician, *tmp_musician;
 	/* Cleanup and exit */
 	list_for_each_entry_safe(curr_musician, tmp_musician,
 				 &musicians, list) {
@@ -103,16 +103,16 @@ int main(int argc, char **argv)
 
 	net_handler = net_init(50000, "127.0.0.1");
 
-	player = get_player(net_handler);
+	player = recv_player(net_handler);
 
 	printf("got midi player (%d)\n", player);
 	send_num_of_musicians(player, musicians_num);
 
 	/* Build musicians list */
 	for (i = 0; i < musicians_num; i++) {
-		struct subscription *new_musician = (struct subscription *) malloc(sizeof(struct subscription));
+		struct subscription_s *new_musician = (struct subscription_s *) malloc(sizeof(struct subscription_s));
 		printf("waiting for a musician\n");
-		get_subscription(net_handler, new_musician);
+		recv_subscription(net_handler, new_musician);
 
 		printf("director: got a new musician\n\tcoupling: %d\n\tinstrument_class: %d\n\tsoloer: %d\n\tconnection :%d\n",
 		       new_musician->coupling, new_musician->instrument_class,
@@ -130,9 +130,9 @@ int main(int argc, char **argv)
 	printf("main loop\n");
 	/* For now do it for 5 times */
 	for (i = 0; i < 5; i++) {
-		struct measure nm;
+		struct measure_s nm;
 
-		memset(&nm, 0, sizeof(struct measure));
+		memset(&nm, 0, sizeof(struct measure_s));
 		
 		nm.bpm = 200;
 		nm.soloist_id = 2;

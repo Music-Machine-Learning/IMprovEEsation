@@ -95,15 +95,15 @@ int main(int argc, char **argv)
 	/* main loop */
 	for (i = 0; ;i++) {
 		/* TODO load the struct */
-		struct measure nm;
+		struct measure_s nm;
 		/* TODO load the struct */
-		struct play_measure pm;
+		struct play_measure_s pm;
 
-		memset(&nm, 0, sizeof(struct measure));
-		memset(&pm, 0, sizeof(struct play_measure));
+		memset(&nm, 0, sizeof(struct measure_s));
+		memset(&pm, 0, sizeof(struct play_measure_s));
 
 		try {
-			get_measure(director_socket, &nm);
+			recv_measure(director_socket, &nm);
 
 			printf("new measure got,\
 			       playing the random note:\n\tid: %d (%s)\n", i, nm.tags.payload);

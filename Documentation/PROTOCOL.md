@@ -10,7 +10,7 @@ Each musician that want to take part to the session must send its subscription t
     uint8_t class;   //as in General Midi specifications
 
     uint8_t soloer;  //boolean, this instrument is a soloer or an accompanist
-  }
+  };
 ```
 
 The coupling field is used to make two or more instruments play on the same midi channel (e.g. emulating a piano for wich left hand plays accompainment and right hand plays lead solos)
@@ -55,7 +55,7 @@ The director send at each measure a struct to all the musicians:
       char payload[]; //"genre;dynamics;mood\0"
     } tags;
 
-  }
+  };
 ```
  
 An example could be:
@@ -81,53 +81,68 @@ At each measure musicians tell the player what they intend to play:
       uint8_t id;    //incremental number of notes inside the measure (used to create chords: some notes with the same id start at the same time)
       uint8_t triplets;  //boolean: is this note a part of a triplet?
     } measure[];
-  }
+  };
 ```
 
 
 # Network Library
 The network library should offer the next funcions.
+(Please reference to the header file in include/improveesation/communication.h)
 
 All the functions will throw a "network_exception" if some operations go wrong and a "end_of_imrpovisation_exception" when the improvisation is over (tecnically when the director close the associated connection socket).
+```c
+	/* network exception (i.e. connection error) */
+	class network_exception: public std::exception
+
+	/* End of communication exception, the improvisation ended. */
+	class end_of_improvisation_exception: public network_exception
+```
 
 Musician:
 ```c
   // send_subscriptions is a syncronous call, waits for director response and returns the actual musician ID (and the midi player's address) or throws an exception if something bad happens
-  uint32_t send_subscription(uint32_t director, subscription *proposal);
-  uint32_t send_subscription(uint32_t director, uint32_t coupling, uint8_t instrument_class, uint8_t soloer);
+  uint32_t send_subscription(int director, struct subscription_s *proposal);
+  uint32_t send_subscription(int director, uint32_t coupling, uint8_t instrument_class, uint8_t soloer);
 
   // sync receive
-  void recv_measure(measure *newMeasure);
+  uint32_t recv_player(int conn_socket);
+
+  // sync receive
+  void recv_measure(int director, struct measure_s *newMeasure);
 
   // async send
-  void send_to_play(uint32_t player, uint32_t director, play_measure *measure);
+  void send_to_play(int player, int director, struct play_measure_s *measure);
 ```
 
 Midi Player:
 ```c
+  uint32_t recv_num_of_musicians(int director);
+
   // sync receive
-  void recv_to_play(play_measure **note_list, uint32_t musicians_count);
+  void recv_to_play(struct play_measure_s **note_list, struct list_head musicians_list);
+
+  void send_ack(int director);
 ```
 
 Director:
 ```c
   // sync receive
-  uint32_t recv_player();
+  uint32_t recv_player(int director);
 
   // sync receive
-  void recv_subscription(subscription *new_musician);
+  void recv_subscription(int conn_socket, struct subscription_s *new_musician);
 
   // async send
-  void send_player_num(uint32_t player_addr, uint32_t musicians_count);
+  void send_num_of_musicians(int player_addr, uint32_t musicians_count);
 
   // async send: 0-> success, -1-> error
-  int send_id(void *musician_conn, uint32_t id);
+  int send_id(int musician_conn, uint32_t id);
 
   // async send
-  void broadcast_measure(measure *next_measure, list *dests);
+  void broadcast_measure(struct measure_s *next_measure, struct list_head *dests);
 
   // sync receive
-  void sync_all(list *dests);
+  void sync_all(struct list_head *dests);
 ```
 
 #Communication sequence diagram

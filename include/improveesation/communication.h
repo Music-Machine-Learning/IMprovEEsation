@@ -34,7 +34,7 @@
 #define PLAYER_ID -1
 
 /* Musician */
-uint32_t send_subscription(int director, struct subscription *proposal);
+uint32_t send_subscription(int director, struct subscription_s *proposal);
 
 #ifdef __cplusplus /* polymorphism */
 uint32_t send_subscription(int director, uint32_t coupling,
@@ -44,22 +44,22 @@ uint32_t send_subscription_fields(int director, uint32_t coupling,
 			   uint8_t instrument_class, uint8_t soloer);
 #endif
 
-void get_measure(int director, struct measure *newMeasure);
+void recv_measure(int director, struct measure_s *newMeasure);
 
 void send_to_play(int player, int director,
-		  struct play_measure *measure);
+		  struct play_measure_s *measure);
 
 /* Midi player */
-uint32_t get_num_of_musicians(int net_handler);
-void get_to_play(struct play_measure *note_list, struct list_head *sources);
+uint32_t recv_num_of_musicians(int net_handler);
+void recv_to_play(struct play_measure_s *note_list, struct list_head *sources);
 void send_ack(int conn_socket);
 
 /* Director */
-uint32_t get_player(int conn_socket);
-void get_subscription(int conn_socket, struct subscription *new_musician);
+uint32_t recv_player(int conn_socket);
+void recv_subscription(int conn_socket, struct subscription_s *new_musician);
 void send_num_of_musicians(int player_addr, uint32_t musicians_count);
 void send_id(int musician_conn, uint32_t id);
-void broadcast_measure(struct measure *next_measure, struct list_head *dests);
+void broadcast_measure(struct measure_s *next_measure, struct list_head *dests);
 void sync_all(struct list_head *dests);
 
 /* Exceptions */
