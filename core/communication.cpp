@@ -456,9 +456,7 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 			return;
 		}
 
-		tmp_iov = (struct iovec *) calloc(next_measure->tempo.upper,
-						  sizeof(struct iovec));
-		tmp_iov = new struct iovec [next_measure->tempo.upper];
+        tmp_iov = new struct iovec [next_measure->tempo.upper * 2 + 2];
 
 		for (i = 0; i < next_measure->tempo.upper; i++) {
 			LOAD_IOVEC(tmp_iov, i * 2,
@@ -468,7 +466,7 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 		}
 
 		retval = writev(cmusician->connection, tmp_iov,
-				next_measure->tempo.upper * 2);
+                next_measure->tempo.upper * 2 + 1);
 		if (retval < 0) {
 			perror("writev");
 			throw net_ex;
@@ -482,7 +480,7 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 		}
 
 		retval = writev(cmusician->connection, tmp_iov,
-				next_measure->tempo.upper * 2);
+                next_measure->tempo.upper * 2 + 1);
 		if (retval < 0) {
 			perror("writev");
 			throw net_ex;

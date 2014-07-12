@@ -36,6 +36,8 @@
 #include <improveesation/structs.h>
 #include <improveesation/communication.h>
 
+#include <improveesation/director_core.h>
+
 #include <linux/list.h>
 
 #include <time.h>
@@ -89,10 +91,16 @@ int net_init(int port, const char *addr)
 	return gsocket;
 }
 
+/* TODO real call */
+uint32_t calculateID(subscription_s *entry)
+{
+    return entry->coupling + 1;
+}
+
 int main(int argc, char **argv)
 {
 	uint32_t musicians_num;
-	int i;
+    int i, j, current_measure_num = 0, measures_per_section;
 
 	if (argc < 2) {
 		fprintf(stderr, "%s <number of musicians>\n", argv[0]);
@@ -106,7 +114,6 @@ int main(int argc, char **argv)
 	player = recv_player(net_handler);
 
 	printf("got midi player (%d)\n", player);
-	send_num_of_musicians(player, musicians_num);
 
 	/* Build musicians list */
 	for (i = 0; i < musicians_num; i++) {
@@ -120,11 +127,14 @@ int main(int argc, char **argv)
 
 		list_add_tail(&new_musician->list, &musicians);
 
-		/* TODO real call */
-		send_id(new_musician->connection, new_musician->coupling + 1);
+        send_id(new_musician->connection, calculateID(new_musician));
 	}
 
-	atexit(cleanup);
+    send_num_of_musicians(player, musicians_num);
+
+    atexit(cleanup);
+
+    init_director_core("blues", "standard");
 
 	/* main loop */
 	printf("main loop\n");
@@ -134,16 +144,19 @@ int main(int argc, char **argv)
 
 		memset(&nm, 0, sizeof(struct measure_s));
 		
-		nm.bpm = 200;
-		nm.soloist_id = 2;
+        measures_per_section = decide_next_measure(&nm, current_measure_num);
 
-		nm.tags.payload = (char *) calloc(100, sizeof(char));
-		strcpy(nm.tags.payload, "blues;ciao;test");
-		nm.tags.size = strlen(nm.tags.payload);
-		printf("picking measure\n");
+        if(current_measure_num < measures_per_section)
+            current_measure_num = (current_measure_num+1) % measures_per_section;
+        else
+            current_measure_num = 0;
+
+        nm.soloist_id = 2;
+
+
 
 		try {
-			broadcast_measure(&nm, &musicians);
+            broadcast_measure(&nm, &musicians);
 			sync_all(&musicians);
 		} catch (end_of_improvisation_exception e) {
 			break;

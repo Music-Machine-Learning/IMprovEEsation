@@ -20,13 +20,13 @@
 #  USA.                                                                       #
 ###############################################################################
 CXX_LIB_FLAGS:=-shared
-CXXFLAGS:= -I include
+CXXFLAGS:= -I include -g
 BUILD_DIR:=build
 CORE_DIR:=core
 
 OUT_LIB_DIR:=$(BUILD_DIR)/lib
 
-EXE_CXXFLAGS:= -I include -L $(OUT_LIB_DIR) -limpro_communication
+EXE_CXXFLAGS:= -I include -g -L $(OUT_LIB_DIR) -limpro_communication
 
 all: prepare library binary
 
@@ -35,7 +35,7 @@ prepare:
 
 library: libimpro_communication.so
 
-binary: $(BUILD_DIR)/musician_communication_test $(BUILD_DIR)/player_communication_test $(BUILD_DIR)/director_communication_test
+binary: $(BUILD_DIR)/musician $(BUILD_DIR)/player $(BUILD_DIR)/director
 
 libimpro_communication.so : $(CORE_DIR)/communication.cpp
 	$(CXX) -fPIC $(CXXFLAGS) -c $< -o $(BUILD_DIR)/libimpro_communication.o
@@ -43,8 +43,8 @@ libimpro_communication.so : $(CORE_DIR)/communication.cpp
 	rm $(BUILD_DIR)/libimpro_communication.o
 
 
-$(BUILD_DIR)/%: $(CORE_DIR)/%.cpp
-	$(CXX) $(EXE_CXXFLAGS) $< -o $@
+$(BUILD_DIR)/%: $(CORE_DIR)/%*.cpp
+	$(CXX) $(EXE_CXXFLAGS) $^ -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)
