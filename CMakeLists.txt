@@ -36,14 +36,15 @@ add_library(improveesation_communication SHARED
 
 set(EXTRA_LIBRARIES improveesation_communication)
 
-add_executable(director_communication_test
-	"${CORE_SOURCE_PROJECT_DIR}/director_communication_test.cpp")
+file(GLOB DirectorSources "${CORE_SOURCE_PROJECT_DIR}/director_*.cpp")
+file(GLOB PlayerSources "${CORE_SOURCE_PROJECT_DIR}/player_*.cpp")
+file(GLOB MusicianSources "${CORE_SOURCE_PROJECT_DIR}/musician_*.cpp")
+
+add_executable(director_communication_test ${DirectorSources})
 target_link_libraries(director_communication_test ${EXTRA_LIBRARIES})
 
-add_executable(player_communication_test
-	"${CORE_SOURCE_PROJECT_DIR}/player_communication_test.cpp")
+add_executable(player_communication_test ${PlayerSources})
 target_link_libraries(player_communication_test ${EXTRA_LIBRARIES})
 
-add_executable(musician_communication_test
-	"${CORE_SOURCE_PROJECT_DIR}/musician_communication_test.cpp")
+add_executable(musician_communication_test ${MusicianSources})
 target_link_libraries(musician_communication_test ${EXTRA_LIBRARIES})
