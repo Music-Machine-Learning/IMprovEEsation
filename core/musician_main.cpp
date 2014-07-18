@@ -25,7 +25,7 @@
  * parameters from the cli */
 #include <stdio.h>
 #include <improveesation/communication.h>
-#include <improveesation/structs.h>
+#include <improveesation/musician_core.h>
 
 #include <unistd.h>
 #include <stdlib.h>
