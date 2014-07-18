@@ -1,5 +1,5 @@
 /*****************************************************************************/
-/* Director's core facilities                                                */
+/* Musician's core facilities                                                */
 /* This header is a part of the IMprovEEsation suite.                        */
 /*                                                                           */
 /* Copyright (C) 2014                                                        */

@@ -1,5 +1,5 @@
 /*****************************************************************************/
-/* Test Musician program.                                                    */
+/* Main Musician program.                                                    */
 /* This program is a part of the IMprovEEsation suite.                       */
 /*                                                                           */
 /* Copyright (C) 2014                                                        */

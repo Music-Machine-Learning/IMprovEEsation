@@ -1,5 +1,5 @@
 /*****************************************************************************/
-/* Director's core facilities declarations                                   */
+/* Musician's core facilities declarations                                   */
 /* This header is a part of the IMprovEEsation suite.                        */
 /*                                                                           */
 /* Copyright (C) 2014                                                        */
