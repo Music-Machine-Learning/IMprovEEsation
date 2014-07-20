@@ -19,17 +19,24 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, #
 #  USA.                                                                       #
 ###############################################################################
-# TODO a lot of dependencies checks here!
 
 cmake_minimum_required(VERSION 2.6)
 project(IMprovEEsation)
 
-set (IMprovEEsation_VERSION_MAJOR 0)
-set (IMprovEEsation_VERSION_MINOR 1)
+set(IMprovEEsation_VERSION_MAJOR 0)
+set(IMprovEEsation_VERSION_MINOR 1)
 
-set (CORE_SOURCE_PROJECT_DIR "${PROJECT_SOURCE_DIR}/core")
+set(CORE_SOURCE_PROJECT_DIR "${PROJECT_SOURCE_DIR}/core")
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
+
+include(CheckFunctionExists)
+
+check_function_exists(readv HAVE_READV_FUNCTION)
+
+if(NOT HAVE_READV_FUNCTION)
+	    message(FATAL_ERROR "ERROR: required iovec support not found")
+endif(NOT HAVE_READV_FUNCTION)
 
 add_library(improveesation_communication SHARED
 	"${CORE_SOURCE_PROJECT_DIR}/communication.cpp")
