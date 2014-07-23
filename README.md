@@ -1,6 +1,6 @@
 #IMprovEEsation
 
-Intelligent Music Electronical Entertainment
+Intelligent Music Electronical Entertainment 
 
 ## IMprovEEsation patterns 
 
