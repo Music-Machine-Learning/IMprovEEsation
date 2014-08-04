@@ -40,12 +40,15 @@
 
 int director_socket;
 int net_handler;
+struct play_measure_s *note_list = NULL;
+uint32_t musicians_num = 0;
 LIST_HEAD(musicians);
 
 void cleanup(void)
 {
 	struct subscription_s *curr_musician, *tmp_musician;
 	/* Cleanup and exit */
+	free_play_measure(note_list, musicians_num);
 	list_for_each_entry_safe(curr_musician, tmp_musician,
 				 &musicians, list) {
 		list_del(&curr_musician->list);
@@ -132,7 +135,6 @@ int main(int argc, char **argv)
 {
 	struct sockaddr_in sout;
 	int i = 0, j, k;
-	struct play_measure_s *note_list = NULL;
 
 	srand(time(NULL));
 
@@ -152,7 +154,7 @@ int main(int argc, char **argv)
 
 	send_subscription(director_socket, PLAYER_ID, 0, 0);
 	printf("connected to director\n");
-	uint32_t musicians_num = recv_num_of_musicians(director_socket);
+	musicians_num = recv_num_of_musicians(director_socket);
 	printf("initializing a %d components improvisation.\n", musicians_num);
 
 	note_list = (struct play_measure_s *) calloc(musicians_num, sizeof(struct play_measure_s));
@@ -190,7 +192,7 @@ int main(int argc, char **argv)
 			for (k = 0; k < note_list[j].size; k++){
 				nt = &(note_list[j].measure[k]);
 				printf("\t%d\t%d\t%d\t%d\n",
-					nt->id, nt->tempo, nt->id, nt->triplets);
+					nt->id, nt->tempo, nt->note, nt->triplets);
 			}
 			
 		}

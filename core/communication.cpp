@@ -209,15 +209,16 @@ void send_to_play(int player, int director,
 
 	/* player send */
 	LOAD_IOVEC(iov, 0, measure->id);
+	LOAD_IOVEC(iov, 1, measure->size);
 
 	for (j = 0; j < measure->size; j++) {
-		LOAD_IOVEC(iov, j * 4 + 1, measure->measure[j].note);
-		LOAD_IOVEC(iov, j * 4 + 2, measure->measure[j].tempo);
-		LOAD_IOVEC(iov, j * 4 + 3, measure->measure[j].id);
-		LOAD_IOVEC(iov, j * 4 + 4, measure->measure[j].triplets);
+		LOAD_IOVEC(iov, j * 4 + 2, measure->measure[j].note);
+		LOAD_IOVEC(iov, j * 4 + 3, measure->measure[j].tempo);
+		LOAD_IOVEC(iov, j * 4 + 4, measure->measure[j].id);
+		LOAD_IOVEC(iov, j * 4 + 5, measure->measure[j].triplets);
 	}
 
-	if (writev(player, iov, measure->size * 4 + 1) < 0) {
+	if (writev(player, iov, measure->size * 4 + 2) < 0) {
 		perror("writev");
 		throw net_ex;
 		return;
@@ -289,7 +290,7 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 		}
 		for(i = 0; i < cprocessed; i++) {
 			int j;
-			struct iovec safe_iov[2], *iov;
+			struct iovec safe_iov[2], *iov = NULL;
 			if (!epevs[i].events & EPOLLIN) {
 				throw net_ex;
 				return;
@@ -310,7 +311,18 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 				return;
 			}
 
-			iov = new struct iovec[note_list[pm_count].size];
+			note_list[pm_count].measure = (struct notes_s*) realloc(
+				note_list[pm_count].measure,
+				sizeof(struct notes_s) *
+				note_list[pm_count].size);
+
+			if (!note_list[pm_count].measure) {
+				perror("realloc");
+				throw net_ex;
+				return;
+			}
+
+			iov = new struct iovec[note_list[pm_count].size * 4];
 			for (j = 0; j < note_list[pm_count].size; j++) {
 				LOAD_IOVEC(iov, j * 4,
 					  note_list[pm_count].measure[j].note);
@@ -323,9 +335,9 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 			}
 
 			retval = readv(epevs[i].data.fd, iov,
-				       note_list[pm_count].size);
+				       note_list[pm_count].size * 4);
 
-			delete [] iov;
+			delete[] iov;
 
 			if (retval < 0) {
 				perror("readv");
@@ -355,6 +367,18 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 	}
 	delete [] epevs;
 	close(efd);
+}
+
+void free_play_measure(struct play_measure_s *nl, int size)
+{
+	int i;
+	if (nl) {
+		for (i = 0; i < size; i++){
+			if (nl[i].measure)
+				free(nl[i].measure);
+		}
+		free (nl);
+	}
 }
 
 /* Director */
