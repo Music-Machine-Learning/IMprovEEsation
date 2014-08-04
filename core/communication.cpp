@@ -247,7 +247,6 @@ uint32_t recv_num_of_musicians(int net_handler)
 void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 {
 	struct subscription_s *cmusician;
-
 	struct epoll_event *epevs;
 	int	size = 0,
 		psize = 0,
@@ -288,7 +287,6 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 			throw net_ex;
 			return;
 		}
-
 		for(i = 0; i < cprocessed; i++) {
 			int j;
 			struct iovec safe_iov[2], *iov;
@@ -302,6 +300,7 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 			LOAD_IOVEC(safe_iov, 1, note_list[pm_count].size);
 
 			retval = readv(epevs[i].data.fd, safe_iov, 2);
+			printf("DEBUG size: %d\n", note_list[pm_count].size);
 			if (retval < 0) {
 				perror("readv");
 				throw net_ex;

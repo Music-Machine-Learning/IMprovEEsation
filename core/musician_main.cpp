@@ -49,9 +49,10 @@ void cleanup(void)
 
 int main(int argc, char **argv)
 {
-	int i;
+	int i, j;
 	struct sockaddr_in sout_director, sout_player;
-
+	struct notes_s *nt;
+	
 	srand(time(NULL));
 
 	sout_director.sin_family = AF_INET;
@@ -78,17 +79,19 @@ int main(int argc, char **argv)
 		perror("connect player");
 		return 1;
 	}
-
+	
+	/* XXX build it with an appropiate method */
 	uint32_t myid = send_subscription(director_socket,
-					  rand()%10,
-					  /* XXX build it with an appropiate method */
+					  rand()%10, 
 					  GUITAR, SOLO);
+
 	printf("connected to director (%d)\n", myid);
 
 	send_subscription(player_socket, myid, GUITAR, SOLO);
 
 	/* set the socket to non blocking */
-	fcntl(player_socket, F_SETFL, fcntl(player_socket, F_GETFL, 0) | O_NONBLOCK);
+	fcntl(player_socket, F_SETFL, 
+			fcntl(player_socket, F_GETFL, 0) | O_NONBLOCK);
 
 	printf("connected to player\n");
 
@@ -98,7 +101,8 @@ int main(int argc, char **argv)
 		struct measure_s nm;
 		/* TODO load the struct */
 		struct play_measure_s pm;
-
+		
+		
 		memset(&nm, 0, sizeof(struct measure_s));
 		memset(&pm, 0, sizeof(struct play_measure_s));
 
@@ -106,11 +110,26 @@ int main(int argc, char **argv)
 			recv_measure(director_socket, &nm);
 
 			printf("new measure got,\
-			       playing the random note:\n\tid: %d (%s)\n", i, nm.tags.payload);
-
+			       playing the random note:\n\tid: %d (%s)\n", i, 
+			       nm.tags.payload);
+			
+			compose_measure(&pm, &nm);
 			pm.id = i;
+			printf("Measure: id: %d, size: %d\n", pm.id, pm.size);
+			
+			printf("Note\tidx\tlength\tmidi\ttriplets\n");
+			for (j = 0; j < pm.size; j++){
+				nt = &(pm.measure[j]);
+				printf("\t%d\t%d\t%d\t%d\n",
+					nt->id, 
+					nt->tempo, 
+					nt->note, 
+					nt->triplets);
+			}
+			
 			send_to_play(player_socket, director_socket, &pm);
 		} catch (end_of_improvisation_exception e) {
+			fprintf(stderr, "EOI exception catched: exiting\n");
 			break;
 		}
 	}

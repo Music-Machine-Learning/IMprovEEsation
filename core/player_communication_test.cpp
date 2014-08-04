@@ -131,7 +131,7 @@ void easter_egg_print(void)
 int main(int argc, char **argv)
 {
 	struct sockaddr_in sout;
-	int i = 0;
+	int i = 0, j, k;
 	struct play_measure_s *note_list = NULL;
 
 	srand(time(NULL));
@@ -180,10 +180,26 @@ int main(int argc, char **argv)
 			break;
 		}
 
-		printf("%d ", i);
-		easter_egg_print();
+		/* Print the received measure */
+		printf("--- Measure %d\n"
+			"Note\tidx\tlength\tmidi\ttriplets\n", i);
+		
+		struct notes_s *nt;
+		for(j = 0; j < musicians_num; j++){
+			printf("musician: %d %d\n", j, note_list[j].size);
+			for (k = 0; k < note_list[j].size; k++){
+				nt = &(note_list[j].measure[k]);
+				printf("\t%d\t%d\t%d\t%d\n",
+					nt->id, nt->tempo, nt->id, nt->triplets);
+			}
+			
+		}
+		printf("---end Measure %d\n\n", i);
+	
+		//easter_egg_print(); //Drunk Dave!
 	}
 
 	
 	return 0;
+
 }

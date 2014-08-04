@@ -22,9 +22,14 @@
 /*****************************************************************************/
 
 #include <improveesation/musician_core.h>
+#include <improveesation/communication.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
+
+class end_of_improvisation_exception eoi_ex;
 
 /* Assign the composed note into the given structure
    and return its length as the number of semiquivers */
@@ -46,22 +51,37 @@ int count_semiquivers(struct tempo_s time_signature)
 
 int compose_measure(struct play_measure_s *pm, struct measure_s *minfo)
 {
-	int i, sqcount, mlength;
+	uint8_t i, sqcount, max_sqcount, ntcount;
 	
-	sqcount = count_semiquivers(minfo->tempo);
+	max_sqcount = sqcount = count_semiquivers(minfo->tempo);
+		
+	/* Allocates the array of notes with the max count of notes as size.
+	 * It will be truncated later if the notes are lesser than the max. */
+	pm->measure = (struct notes_s *)calloc((size_t)max_sqcount,
+			sizeof(struct notes_s));
 
+	struct notes_s new_note;
 	for (i = 0; sqcount > 0; i++) {
-		struct notes_s new_note;
+	    	memset(&new_note, 0, sizeof(new_note));
 		compose_note(&new_note, i);
-		sqcount -= new_note.tempo; /* TODO: what if it goes under 0? */
-		/* TODO: where do I store the new note? */
+		sqcount -= new_note.tempo;
+		pm->measure[i] = new_note;
+		/* TODO: what if it goes under 0? and what about triplets?*/
 	}
 
-	/* Allocates the array of notes now, cause we didn't know the size before */
-	pm->measure = (struct notes_s *)calloc((size_t)i, sizeof(struct notes_s));
+	ntcount = i;
 
-	/* TODO: Push the notes in the array, maybe it's better to alloc first
-	 a big array and then realloc */
+	/* Re-alloc the array of notes according to the notes count */
+	if (ntcount < max_sqcount){
+		pm->measure = (struct notes_s *)realloc((void *)pm->measure, 
+				sizeof(struct notes_s) * (size_t)ntcount);
+		if (pm->measure == NULL){
+			fprintf(stderr, "Realloc error: %s\n", strerror(errno));
 		
+			throw eoi_ex;
+		}
+		pm->size = ntcount;
+	}
+
 	return 0;
 }
