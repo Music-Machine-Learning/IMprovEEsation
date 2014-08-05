@@ -31,11 +31,13 @@
 #define GENRE_CHANGE_THRESHOLD			0
 #define GENRE_CHANGE_ON_ONE_THRESHOLD	35
 
-#define MOOD_CHANGE_THRESHOLD			100  //testing purpose only, needs to be dropped to at most 1
+#define MOOD_CHANGE_THRESHOLD			30  //testing purpose only, needs to be dropped to at most 1
 #define MOOD_CHANGE_ON_ONE_THRESHOLD	10
 
 #define CHORD_CHANGE_THRESHOLD			5
 #define CHORD_CHANGE_ON_ONE_THRESHOLD	0
+
+#define RANDOM_MULTI_CHORD_THRESHOLD    40  //FIXME: probably tends to lead to ugly results...
 
 #define CHORD_MINOR						0b000010001001
 #define CHORD_MAJOR						0b000010010001
@@ -45,10 +47,10 @@
 // chord change thresholds should be genre-dependant
 #define CHORD_CHANGE_TRITONE			30
 #define CHORD_CHANGE_CADENZA			60
-#define CHORD_CHANGE_TONAL_ZONE			85
+#define CHORD_CHANGE_TONAL_ZONE			80
 
 // initialize director core with given genre and subgenre
-void init_director_core(char* gen, char* sub);
+void init_director_core(char* gen, char* sub, uint32_t soloers_count, uint32_t *soloers_list);
 
 /* update measure contents with next measure's decisions
  * current_measure_id is the measure number inside a section

@@ -20,10 +20,6 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,*/
 /* USA.                                                                      */
 /*****************************************************************************/
-/** TODO:
- *	real improveesation implementation (main loop)
- *	parameters from the cli
- */	
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -46,6 +42,9 @@
 int net_handler;
 int player;
 LIST_HEAD(musicians);
+uint32_t *soloers;
+
+class end_of_improvisation_exception eoi_ex;
 
 void cleanup(void)
 {
@@ -91,7 +90,7 @@ int net_init(int port, const char *addr)
 	return gsocket;
 }
 
-/* TODO real call */
+/* TODO: the real call */
 uint32_t calculateID(subscription_s *entry)
 {
     return entry->coupling + 1;
@@ -99,15 +98,22 @@ uint32_t calculateID(subscription_s *entry)
 
 int main(int argc, char **argv)
 {
-	uint32_t musicians_num;
-    int i, j, current_measure_num = 0, measures_per_section;
+    /* For now do a full round of blues by default (12 measures)*/
+    int measures_count = 12;
+    uint32_t musicians_num, soloers_num = 0;
+    int i, current_measure_num = 0, measures_per_section;
 
 	if (argc < 2) {
-		fprintf(stderr, "%s <number of musicians>\n", argv[0]);
+        fprintf(stderr, "%s <number of musicians> [number of measures]\n", argv[0]);
 		return 1;
 	}
 
 	musicians_num = atoi(argv[1]);
+
+    soloers = new u_int32_t[musicians_num];
+
+    if (argc > 2)
+        measures_count = atoi(argv[2]);
 
 	net_handler = net_init(50000, "127.0.0.1");
 
@@ -125,25 +131,33 @@ int main(int argc, char **argv)
 		       new_musician->coupling, new_musician->instrument_class,
 		       new_musician->soloer, new_musician->connection);
 
-		list_add_tail(&new_musician->list, &musicians);
+        uint32_t newId = calculateID(new_musician);
 
-        send_id(new_musician->connection, calculateID(new_musician));
+        list_add_tail(&new_musician->list, &musicians);
+        if(new_musician->soloer == SOLO){
+            soloers[soloers_num] = newId;
+            soloers_num ++;
+        }
+
+        send_id(new_musician->connection, newId);
 	}
+    printf("registered %d musicians, of wich %d are soloers\n", musicians_num, soloers_num);
 
     send_num_of_musicians(player, musicians_num);
 
     atexit(cleanup);
 
-    init_director_core("blues", "standard");
+    init_director_core("blues", "standard", soloers_num, soloers);
 
 	/* main loop */
 	printf("main loop\n");
-	/* For now do it for 5 times */
-	for (i = 0; i < 5; i++) {
+
+    for (i = 0; i < measures_count; i++) {
 		struct measure_s nm;
 
 		memset(&nm, 0, sizeof(struct measure_s));
 		
+        printf("decide next measure:\n");
         measures_per_section = decide_next_measure(&nm, current_measure_num);
 
         if(current_measure_num < measures_per_section)
@@ -151,10 +165,7 @@ int main(int argc, char **argv)
         else
             current_measure_num = 0;
 
-        nm.soloist_id = 2;
-
-
-
+        printf("broadcasting measure...\n");
 		try {
             broadcast_measure(&nm, &musicians);
 			sync_all(&musicians);
@@ -166,6 +177,13 @@ int main(int argc, char **argv)
 		/* sleep to see if things block properly */
 		sleep(1);
 	}
+
+    //FIXME: ugly solution
+    try{
+        throw eoi_ex;
+    } catch (end_of_improvisation_exception e){
+        printf("we have come to an end\n");
+    }
 
 	return 0;
 }

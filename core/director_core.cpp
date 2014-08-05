@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdio.h>
 
 static char* genre; /* genre is fixed from the beginning... */
 
@@ -38,6 +39,8 @@ static uint16_t* modes;
 static tempo_s tempo;
 static tonal_zone_s tonality;
 static uint8_t bpm;
+static uint32_t *soloers;
+static uint32_t soloers_num;
 
 static int impro_end;
 
@@ -99,6 +102,7 @@ void init_score_defs(){
 chord_s *getTritone(int current_measure_id){
     int i;
     chord_s *chords = (chord_s*) calloc(tempo.upper, sizeof(chord_s));
+    printf("tritone:\n");
 
     for(i = 0; i < tempo.upper; i++) {
         chords[i].note = (steps[current_measure_id]+6)%12;
@@ -110,6 +114,8 @@ chord_s *getTritone(int current_measure_id){
 chord_s *getCadenza(int current_measure_id){
     int i;
     chord_s *chords = (chord_s*) calloc(tempo.upper,sizeof(chord_s));
+    printf("cadenza:\n");
+
 	/*
 	 * [II m7, V 7]
 	 * relatives to original chord
@@ -128,6 +134,8 @@ chord_s *getCadenza(int current_measure_id){
 chord_s *getTonalZoneChord(int current_measure_id){
     int i;
     chord_s *chords = (chord_s*) calloc(tempo.upper,sizeof(chord_s));
+    printf("tonal zone changes:\n");
+
 	if(rand() % 1){
         for(i = 0; i < tempo.upper; i++){
             chords[i].note = (steps[current_measure_id]+9)%12;
@@ -136,7 +144,7 @@ chord_s *getTonalZoneChord(int current_measure_id){
 	} else {
         for(i = 0; i < tempo.upper; i++){
             chords[i].note = (steps[current_measure_id]+4)%12;
-            chords[i].mode = CHORD_MINOR; //should be diminished
+            chords[i].mode = CHORD_MINOR; //NOTE: should be diminished
         }
 	}
     return chords;
@@ -146,6 +154,11 @@ chord_s *getRandomChord(){
     int i;
     uint16_t note, mode;
     chord_s *chords;
+    i = 0;
+    chords = (chord_s*) calloc(tempo.upper, sizeof(chord_s));
+    printf("random pick:\n");
+
+RANDOM_CHORD_IS_RANDOM:
     note = rand() % 12;
 	switch(rand() % 6){
 		case 0:
@@ -161,10 +174,14 @@ chord_s *getRandomChord(){
 		case 5:
             mode = CHORD_MINOR | CHORD_DELTA; break;
 	}
-    chords = (chord_s*) calloc(tempo.upper, sizeof(chord_s));
-    for(i = 0; i < tempo.upper; i++){
+
+    for(; i < tempo.upper; i++){
         chords[i].note = note;
         chords[i].mode = mode;
+        if(rand() % 100 < RANDOM_MULTI_CHORD_THRESHOLD){
+            i++;
+            goto RANDOM_CHORD_IS_RANDOM;
+        }
     }
     return chords;
 }
@@ -172,8 +189,10 @@ chord_s *getRandomChord(){
 void setupTags(measure_s *measure, int current_measure_id){
     char *mood, *dyn;
     int genLen, moodLen, dynLen, i;
-    if(rand() % 100 < (current_measure_id == 0 ? MOOD_CHANGE_ON_ONE_THRESHOLD : MOOD_CHANGE_THRESHOLD))
+    if(rand() % 100 < (current_measure_id == 0 ? MOOD_CHANGE_ON_ONE_THRESHOLD : MOOD_CHANGE_THRESHOLD)){
+        printf("\tchange mood\n");
         prev_mood = rand() % moods_num;
+    }
     mood = moods[prev_mood];
     dyn = dynamics[current_measure_id];
 
@@ -196,12 +215,14 @@ void setupTags(measure_s *measure, int current_measure_id){
         measure->tags.payload[i] = mood[i-genLen-dynLen-2];
     }
     measure->tags.payload[i] = '\0';
-    //strcpy(measure->tags.payload, "blues;ciao;test");
 }
 
-void init_director_core(char* gen, char *sub){
+void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *sololist){
     genre = gen;
     impro_end = 0;
+
+    soloers = sololist;
+    soloers_num = solocount;
 
     srand(time(NULL));
 
@@ -214,26 +235,29 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
     int trand, i;
 	
 	if(rand() % 100 < (current_measure_id == 0 ? GENRE_CHANGE_ON_ONE_THRESHOLD : GENRE_CHANGE_THRESHOLD)){
+        printf("\tchange");
 		if(rand() % 100 < CHANGE_TO_SUBGENRE){
 			/*
 			 * pick a valid subgenre
 			 */
 			 // genre = subgen;
+            printf("subgenre\n");
 		} else {
 			/*
 			 * pick a random genre
 			 */
 			 // genre = gen; 
+            printf("genre\n");
 		}
 		//if(new_genre != genre)
 			//load_genre_info();
 	}
-	
-    //FIXME: more than one chord per measure
-	if(rand() % 100 < (current_measure_id == 0 ? CHORD_CHANGE_ON_ONE_THRESHOLD : CHORD_CHANGE_THRESHOLD))
+
+    if(rand() % 100 < (current_measure_id == 0 ? CHORD_CHANGE_ON_ONE_THRESHOLD : CHORD_CHANGE_THRESHOLD))
 	{	// go to an unexpected chord 
+        printf("\tgo to unexpected chord, use ");
 		trand = rand() % 100;
-		if(trand < CHORD_CHANGE_TRITONE){
+        if(trand < CHORD_CHANGE_TRITONE){
             measure->chords = getTritone(current_measure_id);
 		} else if (trand < CHORD_CHANGE_CADENZA){
             measure->chords = getCadenza(current_measure_id);
@@ -243,28 +267,42 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
             measure->chords = getRandomChord();
 		}
 	} else {
+        printf("\tmeasure chords: (standard)\n");
         measure->chords = (chord_s*) calloc(tempo.upper, sizeof(chord_s));
         for(i = 0; i < tempo.upper; i++){
             measure->chords[i].note = steps[current_measure_id];
             measure->chords[i].mode = modes[current_measure_id];
         }
 	}
+
+    for(i = 0; i < tempo.upper; i++){   //NOTE: useless debug
+        printf("\t\tN: %d\tM: %d\n", measure->chords[i].note, measure->chords[i].mode);
+    }
 	
     measure->bpm = bpm;
+    printf("\ttime: %dbpm\n", bpm);
 
-    //if we want to have variable tempo do it here
+    //NOTE: if we want to have variable tempo do it here
     measure->tempo.upper = tempo.upper;
     measure->tempo.lower = tempo.lower;
+    printf("\ttempo: %d/%d\n", tempo.upper, tempo.lower);
 
-    //if we want to have variable tonal zones do it here
+    //NOTE: if we want to have variable tonal zones do it here
+    printf("\ttonal zones:\n");
     measure->tonal_zones = (tonal_zone_s*) calloc(tempo.upper, sizeof(tonal_zone_s));
     for(i = 0; i < tempo.upper; i++){
         measure->tonal_zones[i].note = tonality.note;
         measure->tonal_zones[i].scale = tonality.scale;
+        printf("\t\tN: %d\tS: %d\n", tonality.note, tonality.scale);
     }
 
     setupTags(measure, current_measure_id);
+    printf("\ttags: %s\n", measure->tags.payload);
 	
+    //FIXME: this should follow some policy
+    measure->soloist_id = soloers[rand() % soloers_num];
+    printf("\tsoloer: %d\n", measure->soloist_id);
+
     if(0 && current_measure_id == (measures_per_section-1))	// if it is last measure and it's already time to stop, put an end to the improvisation
         impro_end = 1;
 
