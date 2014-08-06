@@ -60,8 +60,12 @@ int main(int argc, char **argv)
 	printf("base blues pattern:\n");
 	printpattern(p);
 
+	free_pattern(p);
+
 	get_pattern("bebop", &p);
 	printf("bebop blues pattern:\n");
 	printpattern(p);
+
+	free_pattern(p);
 	return 0;
 }

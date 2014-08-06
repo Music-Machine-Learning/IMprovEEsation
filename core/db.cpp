@@ -129,5 +129,31 @@ void get_pattern(char *patternName, struct pattern_s **pp)
 
 void free_pattern(struct pattern_s *p)
 {
+	int i;
+	if (!p)
+		return;
 
+	if (p->moods) {
+		for (i = 0; p->moods[i]; i++)
+			free (p->moods[i]);
+		free (p->moods);
+	}
+	for (i = 0; i < p->variants_size; i++) {
+		int j;
+		for (j = 0; p->variants[i].variants[j]; j++)
+			free(p->variants[i].variants[j]);
+		free(p->variants[i].variants);
+	}
+	free(p->variants);
+
+	for (i = 0; i < p->measures_count; i++) {
+		int j;
+		for (j = 0; j < p->measures[i].stepnumber; j++)
+			free(p->measures[i].modes[j]);
+		free(p->measures[i].modes);
+		free(p->measures[i].steps);
+		free(p->measures[i].dynamics);
+	}
+
+	free(p);
 }
