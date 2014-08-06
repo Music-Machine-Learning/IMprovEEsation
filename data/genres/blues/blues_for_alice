@@ -1,0 +1,10 @@
+{
+	"measures_count": 12,
+	"measures_steps": [0, [11, 4], [9, 2], [7, 0], 5, [5, 10], [4, 9], [3, 8], 2, 7, [4, 9], [2, 7]],
+	"measures_modes": ["7+", ["m7", "7"], ["m7", "7"],["m7","7"],"7",["m7","7"],["m7","7"],["m7","7"],"m7","7",["m7","m7"],["m7","7"]],
+	"measures_dynamics": ["groove", "groove", "groove", "groove", "groove", "groove", "groove", "groove", 
+"groove", "groove", "groove", "fill"],
+	"moods": ["pushed", "slow"]
+	 "variable_measures" : []
+        "impro_variants": []
+}

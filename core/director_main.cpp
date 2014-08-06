@@ -93,7 +93,7 @@ int net_init(int port, const char *addr)
 /* TODO: the real call */
 uint32_t calculateID(subscription_s *entry)
 {
-    return entry->coupling + 1;
+    return entry->coupling + entry->instrument_class;
 }
 
 int main(int argc, char **argv)

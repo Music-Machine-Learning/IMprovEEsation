@@ -1,0 +1,10 @@
+{
+	"measures_count": 12,
+	"measures_steps": [0, 5, 0, 0, 5, 5, 0, 0, 7, 5, 0, 7],
+	"measures_modes": ["7","7","7","7","7","7","7","7","7","7","7","7"],
+	"measures_dynamics": ["groove", "groove", "groove", "groove", "groove", "groove", "groove", "groove", 
+"groove", "groove", "groove", "fill"],
+	"moods": ["pushed", "slow"]
+	"variable_measures" : [[0,4]]
+        "impro_variants": [["bebop", "coltrane", "blues_for_alice", "charlie_parker", "bertocchi"]]
+}
