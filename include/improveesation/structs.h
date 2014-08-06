@@ -125,11 +125,11 @@ struct play_measure_s {
 };
 
 struct measure_pattern_s {
-	int *steps; /* NULL-Terminated */
-	char *modes[CHORD_MODE_MAXSIZE]; /* NULL-Terminated */
+	int stepnumber;
+	int *steps;
+	char **modes; /* NULL-Terminated */
 	char *dynamics;
 };
-
 
 struct impro_variant_s {
 	int first;
@@ -141,7 +141,8 @@ struct pattern_s {
 	int measures_count;
 	char **moods; /* NULL-terminated */
 	struct measure_pattern_s *measures;
-	struct impro_variants_s *variants; /* NULL-terminated */
+	int variants_size;
+	struct impro_variant_s *variants;
 };
 
 

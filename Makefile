@@ -35,12 +35,17 @@ prepare:
 
 library: libimpro_communication.so
 
-binary: $(BUILD_DIR)/musician $(BUILD_DIR)/player $(BUILD_DIR)/director
+binary: $(BUILD_DIR)/musician $(BUILD_DIR)/player $(BUILD_DIR)/director $(BUILD_DIR)/db
 
 libimpro_communication.so : $(CORE_DIR)/communication.cpp
 	$(CXX) -fPIC $(CXXFLAGS) -c $< -o $(BUILD_DIR)/libimpro_communication.o
 	$(CXX) $(CXX_LIB_FLAGS) -o $(OUT_LIB_DIR)/$@ $(BUILD_DIR)/libimpro_communication.o
 	rm $(BUILD_DIR)/libimpro_communication.o
+
+libimpro_db.so : $(CORE_DIR)/db.cpp
+	$(CXX) -fPIC $(CXXFLAGS) -c $< -o $(BUILD_DIR)/libimpro_db.o
+	$(CXX) $(CXX_LIB_FLAGS) -o $(OUT_LIB_DIR)/$@ $(BUILD_DIR)/libimpro_db.o
+	rm $(BUILD_DIR)/libimpro_db.o
 
 
 $(BUILD_DIR)/%: $(CORE_DIR)/%*.cpp

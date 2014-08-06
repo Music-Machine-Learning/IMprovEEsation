@@ -1,6 +1,5 @@
 /*****************************************************************************/
-/* Database library for the improveesation components                        */
-/* header file.                                                              */
+/* Database test for the improveesation components                           */
 /* This library is a part of the IMprovEEsation suite.                       */
 /*                                                                           */
 /* Copyright (C) 2014                                                        */
@@ -21,12 +20,48 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,*/
 /* USA.                                                                      */
 /*****************************************************************************/
-#ifndef IMPROVEESATION_DB_H
-#define IMPROVEESATION_DB_H
+#include <improveesation/db.h>
+#include <stdio.h>
+void printpattern(struct pattern_s *p)
+{
+	int i;
+	printf("measures_count: %d\n", p->measures_count);
+	for (i = 0; p->moods[i]; i++)
+		printf("mood %d: %s\n", i, p->moods[i]);
 
-#include <improveesation/structs.h>
+	for (i = 0; i < p->variants_size; i++) {
+		int j;
+		printf("vairants %d\n\trange: %d %d\n", i,
+		       p->variants[i].first, p->variants[i].last);
+		for (j = 0; p->variants[i].variants[j]; j++)
+			printf("\tname %d: %s \n", j,
+				p->variants[i].variants[j]);
+	}
 
-void get_pattern(char *patternName, struct pattern_s **p);
-void free_pattern(struct pattern_s *p);
+	for (i = 0; i < p->measures_count; i++) {
+		int j;
+		printf("measure %d\n", i,
+			p->measures[i].stepnumber);
+		printf("\t%s\n", p->measures[i].dynamics);
+		printf("\t[");
+		for (j = 0; j < p->measures[i].stepnumber; j++) {
+			printf(" %d c:%s ", p->measures[i].steps[j],
+				p->measures[i].modes[j]);
+		}
+		printf("]\n");
+	}
+}
 
-#endif /* improveesation/db.h */
+int main(int argc, char **argv)
+{
+	struct pattern_s *p;
+	int i;
+	get_pattern("base", &p);
+	printf("base blues pattern:\n");
+	printpattern(p);
+
+	get_pattern("bebop", &p);
+	printf("bebop blues pattern:\n");
+	printpattern(p);
+	return 0;
+}
