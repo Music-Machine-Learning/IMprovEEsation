@@ -26,6 +26,8 @@
 #include <linux/list.h>
 #include <stdint.h>
 
+#define CHORD_MODE_MAXSIZE 10
+
 /* XXX Remove that and include midi headers! (ALSA?) */
 #define GUITAR 1
 
@@ -116,11 +118,30 @@ struct notes_s {
 	uint8_t triplets;
 };
 
-struct play_measure_s
-{
+struct play_measure_s {
 	uint32_t id;
 	uint32_t size;
 	struct notes_s *measure;
+};
+
+struct measure_pattern_s {
+	int *steps; /* NULL-Terminated */
+	char *modes[CHORD_MODE_MAXSIZE]; /* NULL-Terminated */
+	char *dynamics;
+};
+
+
+struct impro_variant_s {
+	int first;
+	int last;
+	char **variants; /* NULL Terminated */
+};
+
+struct pattern_s {
+	int measures_count;
+	char **moods; /* NULL-terminated */
+	struct measure_pattern_s *measures;
+	struct impro_variants_s *variants; /* NULL-terminated */
 };
 
 
