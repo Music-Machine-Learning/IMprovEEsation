@@ -55,17 +55,24 @@ void printpattern(struct pattern_s *p)
 int main(int argc, char **argv)
 {
 	struct pattern_s *p;
-	int i;
-	get_pattern("base", &p);
-	printf("base blues pattern:\n");
-	printpattern(p);
+	int i, genn, subgenn;
+	char **genres;
+	char **subgenres;
 
-	free_pattern(p);
+	genn = get_genres(&genres);
+	for (i = 0; i < genn; i++) {
+		int j;
+		subgenn = get_subgenres(genres[i], &subgenres);
+		for (j = 0; j < subgenn; j++) {
+			printf("%s %s pattern:\n", genres[i], subgenres[j]);
 
-	get_pattern("bebop", &p);
-	printf("bebop blues pattern:\n");
-	printpattern(p);
+			get_pattern(genres[i], subgenres[j], &p);
+			printpattern(p);
 
-	free_pattern(p);
+			free_pattern(p);
+		}
+		free_genres(subgenres);
+	}
+	free_genres(genres);
 	return 0;
 }

@@ -26,7 +26,10 @@
 
 #include <improveesation/structs.h>
 
-void get_pattern(char *patternName, struct pattern_s **p);
+int get_genres(char ***genres);
+int get_subgenres(char *genre, char ***subgenres);
+void free_genres(char **genre);
+void get_pattern(char *genre, char *patternName, struct pattern_s **p);
 void free_pattern(struct pattern_s *p);
 
 #endif /* improveesation/db.h */
