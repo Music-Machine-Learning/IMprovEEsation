@@ -47,12 +47,29 @@ void cleanup(void)
 	close(player_socket);
 }
 
+void exit_usage(char *usage)
+{
+	fprintf(stderr, usage);
+	exit(EXIT_FAILURE);
+}
+
 int main(int argc, char **argv)
 {
-	int i, j;
+	int i, j, coupling, midi_class, soloer;
 	struct sockaddr_in sout_director, sout_player;
 	struct notes_s *nt;
+
+	char *usage; 
+	asprintf(&usage, "%s <coupling> <midi-class> <soloer>\n", argv[0]);
 	
+	if (argc < 4){
+		exit_usage(usage);
+	} else {
+		coupling = atoi(argv[1]);
+		midi_class = atoi(argv[2]);
+		soloer = atoi(argv[3]);
+	}
+
 	srand(time(NULL));
 
 	sout_director.sin_family = AF_INET;
@@ -82,12 +99,11 @@ int main(int argc, char **argv)
 	
 	/* XXX build it with an appropiate method */
 	uint32_t myid = send_subscription(director_socket,
-					  rand()%10, 
-					  GUITAR, SOLO);
+				coupling, midi_class, soloer);
 
 	printf("connected to director (%d)\n", myid);
 
-	send_subscription(player_socket, myid, GUITAR, SOLO);
+	send_subscription(player_socket, myid, midi_class, soloer);
 
 	/* set the socket to non blocking */
 	fcntl(player_socket, F_SETFL, 
