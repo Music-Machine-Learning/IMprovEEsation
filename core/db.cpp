@@ -26,7 +26,71 @@
 #include <string.h>
 #include <stdlib.h>
 
-void get_pattern(char *patternName, struct pattern_s **pp)
+int get_genres(char ***genres)
+{
+#if 1
+	*genres = (char **) calloc(2, sizeof(char *));
+
+	if (!*genres) {
+		perror("malloc");
+		return -1;
+	}
+
+	(*genres)[0] = (char *) calloc(strlen("blues")+1, sizeof(char));
+	strcpy((*genres)[0], "blues");
+
+	(*genres)[1] = NULL;
+
+	return 1;
+#endif
+}
+
+int get_subgenres(char *genre, char ***subgenres)
+{
+#if 1
+	*subgenres = (char **) calloc(3, sizeof(char *));
+
+	if (!*subgenres) {
+		perror("malloc");
+		return -1;
+	}
+
+	(*subgenres)[0] = (char *) calloc(strlen("bebop")+1, sizeof(char));
+	if (!(*subgenres[0])) {
+		perror("malloc");
+		return -1;
+	}
+
+	strcpy((*subgenres)[0], "bebop");
+
+	(*subgenres)[1] = (char *) calloc(strlen("base")+1, sizeof(char));
+	if (!(*subgenres[1])) {
+		perror("malloc");
+		return -1;
+	}
+
+	strcpy((*subgenres)[1], "base");
+
+	(*subgenres)[2] = NULL;
+
+	return 2;
+#endif
+}
+
+void free_genres(char **genre)
+{
+	int i;
+	if (!genre) {
+		return;
+	}
+	for (i = 0; genre[i]; i++) {
+		free(genre[i]);
+	}
+
+	free(genre);
+}
+
+void get_pattern(char *genre, char *patternName, struct pattern_s **pp)
 {
 #if 1
 	/* XXX this is only a test library */
@@ -58,6 +122,11 @@ void get_pattern(char *patternName, struct pattern_s **pp)
 		p->measures[i].dynamics = (char *) calloc(10, sizeof(char));\
 		strcpy(p->measures[i].dynamics, dyn);\
 	})
+
+	if (strcmp(genre, "blues")){
+		fprintf(stderr, "genre %s not found\n", genre);
+		return;
+	}
 
 	struct pattern_s *p;
 	int i;
