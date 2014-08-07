@@ -22,6 +22,7 @@
 /*****************************************************************************/
 
 #include <improveesation/director_core.h>
+#include <imporveesation/db.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -44,7 +45,7 @@ static uint32_t soloers_num;
 
 static int impro_end;
 
-void load_genre_info(){
+void load_genre_info(char* gen, char* sub){
 	/*
 	 * initialize:
 	 * 	measures_per_section
@@ -93,7 +94,7 @@ void init_score_defs(){
 	 * */
     //test stubs
     tonality.note = 0;
-    tonality.scale = 0b010011101001; //blues scale
+    //tonality.scale = 0b010011101001; //blues scale
     tempo.upper = 4;
     tempo.lower = 4;
     bpm = 60;
@@ -105,7 +106,7 @@ chord_s *getTritone(int current_measure_id){
     printf("tritone:\n");
 
     for(i = 0; i < tempo.upper; i++) {
-        chords[i].note = (steps[current_measure_id]+6)%12;
+        chords[i].note = tonality.note + (steps[current_measure_id]+6)%12;
         chords[i].mode = CHORD_MAJOR | CHORD_SEVENTH;
     }
     return chords;
@@ -121,11 +122,11 @@ chord_s *getCadenza(int current_measure_id){
 	 * relatives to original chord
 	 * */
     for(i = 0; i < (tempo.upper >> 1); i++){
-        chords[i].note = (steps[current_measure_id]+2)%12;
+        chords[i].note = tonality.note + (steps[current_measure_id]+2)%12;
         chords[i].mode = CHORD_MINOR | CHORD_SEVENTH;
     }
     for(; i < tempo.upper; i++){
-        chords[i].note = (steps[current_measure_id]+7)%12;
+        chords[i].note = tonality.note + (steps[current_measure_id]+7)%12;
         chords[i].mode = CHORD_MAJOR | CHORD_SEVENTH;
     }
     return chords;
@@ -138,12 +139,12 @@ chord_s *getTonalZoneChord(int current_measure_id){
 
 	if(rand() % 1){
         for(i = 0; i < tempo.upper; i++){
-            chords[i].note = (steps[current_measure_id]+9)%12;
+            chords[i].note = tonality.note + (steps[current_measure_id]+9)%12;
             chords[i].mode = CHORD_MINOR | CHORD_SEVENTH;
         }
 	} else {
         for(i = 0; i < tempo.upper; i++){
-            chords[i].note = (steps[current_measure_id]+4)%12;
+            chords[i].note = tonality.note + (steps[current_measure_id]+4)%12;
             chords[i].mode = CHORD_MINOR; //NOTE: should be diminished
         }
 	}
@@ -217,6 +218,31 @@ void setupTags(measure_s *measure, int current_measure_id){
     measure->tags.payload[i] = '\0';
 }
 
+void decideImproScale(measure_s *measure, int current_measure_id){
+    uint16_t note, scale;
+    int i, range, tmp;
+    uint *count = (uint*) calloc (12, sizeof(uint));
+    uint *tzones = (uint*) calloc (12, sizeof(uint));
+
+    for(range = measures_per_section; range > 0; range--){
+        for(i = 0; i < range; i++){         //count each note occurrence in range
+            tmp = current_measure_id - (range >> 1) + i;
+            count[steps[(tmp >= 0 ? tmp : measures_per_section + tmp)]] ++;
+        }
+        for(i = 0, tmp = 0; i < 12; i++){   //get the maximum for this range
+            if(count[i] > tmp)
+                tmp = count[i];
+        }
+    }
+
+    measure->tonal_zones = (tonal_zone_s*) calloc(tempo.upper, sizeof(tonal_zone_s));
+    for(i = 0; i < tempo.upper; i++){
+        measure->tonal_zones[i].note = note;
+        measure->tonal_zones[i].scale = scale;
+        printf("\t\tN: %d\tS: %d\n", note, scale);
+    }
+}
+
 void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *sololist){
     genre = gen;
     impro_end = 0;
@@ -226,7 +252,7 @@ void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solo
 
     srand(time(NULL));
 
-    load_genre_info();
+    load_genre_info(genre, sub);
 
     init_score_defs();
 }
@@ -287,14 +313,8 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
     measure->tempo.lower = tempo.lower;
     printf("\ttempo: %d/%d\n", tempo.upper, tempo.lower);
 
-    //NOTE: if we want to have variable tonal zones do it here
     printf("\ttonal zones:\n");
-    measure->tonal_zones = (tonal_zone_s*) calloc(tempo.upper, sizeof(tonal_zone_s));
-    for(i = 0; i < tempo.upper; i++){
-        measure->tonal_zones[i].note = tonality.note;
-        measure->tonal_zones[i].scale = tonality.scale;
-        printf("\t\tN: %d\tS: %d\n", tonality.note, tonality.scale);
-    }
+    decideImproScale(measure, current_measure_id);
 
     setupTags(measure, current_measure_id);
     printf("\ttags: %s\n", measure->tags.payload);
