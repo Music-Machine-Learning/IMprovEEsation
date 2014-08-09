@@ -121,6 +121,7 @@ struct notes_s {
 struct play_measure_s {
 	uint32_t id;
 	uint32_t size;
+	uint32_t musician_id;
 	struct notes_s *measure;
 };
 

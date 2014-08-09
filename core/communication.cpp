@@ -290,7 +290,7 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 		}
 		for(i = 0; i < cprocessed; i++) {
 			int j;
-			struct iovec safe_iov[2], *iov = NULL;
+			struct iovec safe_iov[3], *iov = NULL;
 			if (!epevs[i].events & EPOLLIN) {
 				throw net_ex;
 				return;
@@ -299,9 +299,12 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 			/* player send */
 			LOAD_IOVEC(safe_iov, 0, note_list[pm_count].id);
 			LOAD_IOVEC(safe_iov, 1, note_list[pm_count].size);
-
-			retval = readv(epevs[i].data.fd, safe_iov, 2);
-			printf("DEBUG size: %d\n", note_list[pm_count].size);
+			LOAD_IOVEC(safe_iov, 2, note_list[pm_count].musician_id);
+			
+			retval = readv(epevs[i].data.fd, safe_iov, 3);
+			printf("DEBUG size: %d, musician_id %d\n", 
+					note_list[pm_count].size,
+					note_list[pm_count].musician_id);
 			if (retval < 0) {
 				perror("readv");
 				throw net_ex;

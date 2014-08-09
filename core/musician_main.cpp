@@ -131,7 +131,9 @@ int main(int argc, char **argv)
 			
 			compose_measure(&pm, &nm);
 			pm.id = i;
-			printf("Measure: id: %d, size: %d\n", pm.id, pm.size);
+			pm.musician_id = myid;
+			printf("Measure: id: %d, size: %d, musid %d\n", 
+					pm.id, pm.size, pm.musician_id);
 			
 			printf("Note\tidx\tlength\tmidi\ttriplets\n");
 			for (j = 0; j < pm.size; j++){

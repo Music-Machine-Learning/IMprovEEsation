@@ -22,7 +22,7 @@
 /*****************************************************************************/
 
 #include <improveesation/director_core.h>
-#include <imporveesation/db.h>
+#include <improveesation/db.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
