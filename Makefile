@@ -19,6 +19,8 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, #
 #  USA.                                                                       #
 ###############################################################################
+# TODO separate communication and dbs for the player
+
 CXX_LIB_FLAGS:=-shared
 CXXFLAGS:= -I include -g
 BUILD_DIR:=build
@@ -26,14 +28,15 @@ CORE_DIR:=core
 
 OUT_LIB_DIR:=$(BUILD_DIR)/lib
 
-EXE_CXXFLAGS:= -I include -g -L $(OUT_LIB_DIR) -limpro_communication
+EXE_CXXFLAGS:= -I include -I $(shell pg_config --includedir) -g -L $(OUT_LIB_DIR)
+LINK_CXX_ENDFLAGS := -limpro_communication -limpro_db -lpq
 
 all: prepare library binary
 
 prepare:
 	mkdir -p $(OUT_LIB_DIR)
 
-library: libimpro_communication.so
+library: libimpro_communication.so libimpro_db.so
 
 binary: $(BUILD_DIR)/musician $(BUILD_DIR)/player $(BUILD_DIR)/director $(BUILD_DIR)/db
 
@@ -43,13 +46,13 @@ libimpro_communication.so : $(CORE_DIR)/communication.cpp
 	rm $(BUILD_DIR)/libimpro_communication.o
 
 libimpro_db.so : $(CORE_DIR)/db.cpp
-	$(CXX) -fPIC $(CXXFLAGS) -c $< -o $(BUILD_DIR)/libimpro_db.o
+	$(CXX) -fPIC $(CXXFLAGS) -I $(shell pg_config --includedir) -L $(shell pg_config --libdir) -c $< -o $(BUILD_DIR)/libimpro_db.o -lpq
 	$(CXX) $(CXX_LIB_FLAGS) -o $(OUT_LIB_DIR)/$@ $(BUILD_DIR)/libimpro_db.o
 	rm $(BUILD_DIR)/libimpro_db.o
 
 
 $(BUILD_DIR)/%: $(CORE_DIR)/%*.cpp
-	$(CXX) $(EXE_CXXFLAGS) $^ -o $@
+	$(CXX) $(EXE_CXXFLAGS) $^ -o $@ $(LINK_CXX_ENDFLAGS)
 
 clean:
 	rm -rf $(BUILD_DIR)

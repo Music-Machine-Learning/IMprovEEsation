@@ -29,6 +29,8 @@ void printpattern(struct pattern_s *p)
 	for (i = 0; p->moods[i]; i++)
 		printf("mood %d: %s\n", i, p->moods[i]);
 
+	printf("variants_size: %d\n", p->variants_size);
+
 	for (i = 0; i < p->variants_size; i++) {
 		int j;
 		printf("vairants %d\n\trange: %d %d\n", i,
@@ -37,10 +39,9 @@ void printpattern(struct pattern_s *p)
 			printf("\tname %d: %s \n", j,
 				p->variants[i].variants[j]);
 	}
-
 	for (i = 0; i < p->measures_count; i++) {
 		int j;
-		printf("measure %d\n", i,
+		printf("measure %d, (%d)\n", i,
 			p->measures[i].stepnumber);
 		printf("\t%s\n", p->measures[i].dynamics);
 		printf("\t[");
@@ -58,15 +59,22 @@ int main(int argc, char **argv)
 	int i, genn, subgenn;
 	char **genres;
 	char **subgenres;
+	PGconn *dbh = NULL;
 
-	genn = get_genres(&genres);
+	dbh = db_connect("griffin.dberardi.eu",
+			"improveesation_experimental_testes",
+			"read_only",
+			"testiamo123");
+
+	genn = get_genres(dbh, &genres);
 	for (i = 0; i < genn; i++) {
+		printf("%s\n", genres[i]);
 		int j;
-		subgenn = get_subgenres(genres[i], &subgenres);
+		subgenn = get_subgenres(dbh, genres[i], &subgenres);
 		for (j = 0; j < subgenn; j++) {
 			printf("%s %s pattern:\n", genres[i], subgenres[j]);
 
-			get_pattern(genres[i], subgenres[j], &p);
+			get_pattern(dbh, genres[i], subgenres[j], &p);
 			printpattern(p);
 
 			free_pattern(p);
@@ -74,5 +82,7 @@ int main(int argc, char **argv)
 		free_genres(subgenres);
 	}
 	free_genres(genres);
+
+	db_close(dbh);
 	return 0;
 }

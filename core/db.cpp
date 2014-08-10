@@ -21,60 +21,224 @@
 /* USA.                                                                      */
 /*****************************************************************************/
 
-#include <improveesation/structs.h>
+/* TODO non-hardcoded table and column names */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-int get_genres(char ***genres)
+#include <libpq-fe.h>
+
+#include <improveesation/structs.h>
+#include <improveesation/db.h>
+
+
+void *sql_array_unload(const char *instr, const char *del, int outtype)
 {
-#if 1
-	*genres = (char **) calloc(2, sizeof(char *));
+	char *s = NULL, *s1, *s2;
+	int i = 0;
+	void *out = NULL;
+	int size;
+
+	asprintf(&s, "%s", instr + 1);
+	s[strlen(s) - 1] = '\0';
+
+	if (outtype == CHAR_TYPE)
+		size = sizeof(char *);
+	else if (outtype == INT_TYPE)
+		size = sizeof(int);
+
+	do {
+		s1 = strtok_r(i ? NULL : s, del, &s2);
+		out = realloc(out, (i + 1) * size);
+
+		if (s1) {
+			if (outtype == CHAR_TYPE) {
+				((char **)out)[i] = (char *) calloc(strlen(s1) + 1,
+							 sizeof(char));
+
+				if (!((char **)out)[i]) {
+					perror("malloc");
+					return NULL;
+				}
+
+				strcpy(((char **)out)[i], s1);
+			} else if (outtype == INT_TYPE) {
+				((int *)out)[i] = atoi(s1);
+			}
+
+		} else {
+			if (outtype == CHAR_TYPE)
+				((char **)out)[i] = NULL;
+			else if (outtype == INT_TYPE)
+				((int *)out)[i] = -1;
+		}
+		i++;
+	} while (s1);
+
+	return out;
+}
+
+/* XXX work only with matrix (bi-dimesional arrays) */
+void **sql_array_unload_2(const char *instr, const char startdel,
+			       const char enddel, const char *del, int outtype)
+{
+	void **out = NULL;
+	char cp[strlen(instr)];
+
+	strcpy(cp, instr + 1);
+	cp[strlen(instr)] = '\0';
+
+	int start, end, i, current = 0, level = 0;
+	start = 0;
+
+	for (i = 0; cp[i] != '\0'; i++) {
+
+		if (cp[i] == startdel) {
+			level++;
+			/* XXX multilevel */
+			start = i;
+		}
+		if (cp[i] == enddel) {
+			end = i;
+
+			if (level == 1) {
+				char t[end - start + 1];
+
+				out = (void **) realloc(out,
+					      (current + 1) * sizeof(void *));
+
+				if (!out) {
+					perror("malloc");
+					return NULL;
+				}
+				strncpy(t, cp + start, end - start + 2);
+				t[end - start + 1] = '\0';
+
+				((void **)out)[current++] = sql_array_unload(t,
+								del, outtype);
+			}
+
+			level--;
+		}
+	}
+
+	out[current] = NULL;
+	return out;
+}
+
+PGconn *db_connect(const char *host, const char *dbname,
+		  const char *user, const char *passwd)
+{
+	/* Warning! this function will transmit plaintext password! */
+	/* DO NOT use it with rw privileged accounts. */
+	char *connstring;
+	asprintf(&connstring,
+			      "host=%s dbname=%s user=%s password=%s",
+			      host, dbname, user, passwd);
+
+	PGconn *ret = PQconnectdb(connstring);
+
+	if (PQstatus(ret) != CONNECTION_OK) {
+		fprintf(stderr, "connection to db failed: %s\n",
+			PQerrorMessage(ret));
+		return NULL;
+	}
+	
+	return ret;
+}
+
+void db_close(PGconn *c)
+{
+	PQfinish(c);
+}
+int get_genres(PGconn *dbh, char ***genres)
+{
+	int genre_num;
+	int i;
+	int size = 0;
+	PGresult *res;
+	
+	res = PQexec(dbh, "SELECT DISTINCT genre FROM genres");
+
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "genre SELECT failed %s",
+			PQerrorMessage(dbh));
+		return -1;
+	}
+	size = PQntuples(res);
+	genre_num = PQfnumber(res, "genre");
+
+	*genres = (char **) calloc(size + 1, sizeof(char *));
 
 	if (!*genres) {
 		perror("malloc");
 		return -1;
 	}
 
-	(*genres)[0] = (char *) calloc(strlen("blues")+1, sizeof(char));
-	strcpy((*genres)[0], "blues");
+	for (i = 0; i < PQntuples(res); i++) {
+		char *cvalue = PQgetvalue(res, i, genre_num);
+		(*genres)[i] = (char *)calloc(strlen(cvalue) + 1,
+					      sizeof(char));
 
-	(*genres)[1] = NULL;
+		if (!(*genres)[i]) {
+			perror("malloc");
+			return -1;
+		}
 
-	return 1;
-#endif
+		strcpy((*genres)[i], cvalue);
+	}
+
+	(*genres)[size] = NULL;
+
+	PQclear(res);
+
+	return size;
 }
 
-int get_subgenres(char *genre, char ***subgenres)
+int get_subgenres(PGconn *dbh, char *genre, char ***subgenres)
 {
-#if 1
-	*subgenres = (char **) calloc(3, sizeof(char *));
+	int subgenre_num;
+	int i;
+	int size = 0;
+	PGresult *res;
+	
+	res = PQexecParams(dbh, "SELECT subgenre FROM genres "
+				"WHERE genre = $1",
+				1, NULL, &genre, NULL, NULL, 0);
+
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "subgenre SELECT failed %s",
+			PQerrorMessage(dbh));
+		return -1;
+	}
+	size = PQntuples(res);
+	subgenre_num = PQfnumber(res, "subgenre");
+
+	*subgenres = (char **) calloc(size + 1, sizeof(char *));
 
 	if (!*subgenres) {
 		perror("malloc");
 		return -1;
 	}
 
-	(*subgenres)[0] = (char *) calloc(strlen("bebop")+1, sizeof(char));
-	if (!(*subgenres[0])) {
-		perror("malloc");
-		return -1;
+	for (i = 0; i < PQntuples(res); i++) {
+		char *cvalue = PQgetvalue(res, i, subgenre_num);
+		(*subgenres)[i] = (char *)calloc(strlen(cvalue) + 1,
+					      sizeof(char));
+
+		if (!(*subgenres)[i]) {
+			perror("malloc");
+			return -1;
+		}
+
+		strcpy((*subgenres)[i], cvalue);
 	}
 
-	strcpy((*subgenres)[0], "bebop");
+	(*subgenres)[size] = NULL;
 
-	(*subgenres)[1] = (char *) calloc(strlen("base")+1, sizeof(char));
-	if (!(*subgenres[1])) {
-		perror("malloc");
-		return -1;
-	}
+	PQclear(res);
 
-	strcpy((*subgenres)[1], "base");
-
-	(*subgenres)[2] = NULL;
-
-	return 2;
-#endif
+	return size;
 }
 
 void free_genres(char **genre)
@@ -90,110 +254,207 @@ void free_genres(char **genre)
 	free(genre);
 }
 
-void get_pattern(char *genre, char *patternName, struct pattern_s **pp)
+int null_array_size(void *a, int type)
 {
-#if 1
-	/* XXX this is only a test library */
-	/* WARNING WARNING WARNING those are not memory safe. */
-	/* NEED A HUGE REFACTOR WITH _A_LOT_ of memory checks and controls */
-	#define LOAD_MEASURE_SINGLE(p,i,s,m,dyn) ({\
-		p->measures[i].stepnumber = 1;\
-		p->measures[i].steps =  (int *)calloc(1, sizeof(int));\
-		p->measures[i].steps[0] = s;\
-		p->measures[i].modes = (char **) calloc(2, sizeof(char *));\
-		p->measures[i].modes[0] = (char *) calloc(3, sizeof(char));\
-		strcpy(p->measures[i].modes[0], m);\
-		p->measures[i].modes[1] = NULL;\
-		p->measures[i].dynamics = (char *) calloc(10, sizeof(char));\
-		strcpy(p->measures[i].dynamics, dyn);\
-	})
+	int i;
 
-	#define LOAD_MEASURE_DOUBLE(p,i,s1, s2,m1, m2,dyn) ({\
-		p->measures[i].stepnumber = 2;\
-		p->measures[i].steps = (int *) calloc(2, sizeof(int));\
-		p->measures[i].steps[0] = s1;\
-		p->measures[i].steps[1] = s1;\
-		p->measures[i].modes = (char **) calloc(3, sizeof(char *));\
-		p->measures[i].modes[0] = (char *) calloc(3, sizeof(char));\
-		p->measures[i].modes[1] = (char *) calloc(3, sizeof(char));\
-		strcpy(p->measures[i].modes[0], m1);\
-		strcpy(p->measures[i].modes[1], m2);\
-		p->measures[i].modes[2] = NULL;\
-		p->measures[i].dynamics = (char *) calloc(10, sizeof(char));\
-		strcpy(p->measures[i].dynamics, dyn);\
-	})
+	if (!a)
+		return 0;
 
-	if (strcmp(genre, "blues")){
-		fprintf(stderr, "genre %s not found\n", genre);
+	if (type == INT_TYPE) {
+		for (i = 0; ((int*)a)[i] != -1; i++)
+			;
+	}
+	if (type == CHAR_TYPE) {
+		for (i = 0; ((char*)a)[i]; i++)
+			;
+	}
+	return i;
+}
+
+int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas)
+{
+	int i;
+	int start_meas_fn, end_meas_fn, variants_fn;
+	char *variants;
+	int *var_ids;
+	PGresult *res;
+
+	var_ids = (int *) sql_array_unload_def(var_meas, INT_TYPE);
+	if (!var_ids) {
+		fprintf(stderr,
+		       "Error in the parsing of the variable measures");
+		return -1;
+	}
+
+	p->variants = NULL;
+
+	/* TODO: it's possible to make a single query for all the
+	 * variations. */
+	for (i = 0; var_ids[i] != -1; i++) {
+		char *char_id;
+
+		p->variants_size++;
+		p->variants = (struct impro_variant_s *) realloc(
+					p->variants,
+					(p->variants_size + 1) *
+					sizeof(struct impro_variant_s));
+
+		if (!p->variants) {
+			perror("malloc");
+			return -1;
+		}
+
+		asprintf(&char_id, "%d", var_ids[i]);
+
+		res = PQexecParams(dbh, "SELECT * "
+			     "FROM var_measure "
+			     "WHERE id = $1",
+			     1, NULL, &char_id, NULL, NULL, 0);
+
+		if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+			fprintf(stderr, "variants SELECT failed %s\n",
+				PQerrorMessage(dbh));
+			return -1;
+		}
+
+		start_meas_fn = PQfnumber(res, "start_meas");
+		end_meas_fn = PQfnumber(res, "end_meas");
+		variants_fn = PQfnumber(res, "variants");
+
+		p->variants[i].first = atoi(PQgetvalue(res, 0,
+					    start_meas_fn));
+		p->variants[i].last = atoi(PQgetvalue(res, 0,
+					    end_meas_fn));
+
+		variants = PQgetvalue(res, 0, variants_fn);
+		p->variants[i].variants = (char **) sql_array_unload_def(
+							variants, CHAR_TYPE);
+
+		if (!p->variants[i].variants) {
+			perror("malloc");
+			return -1;
+		}
+	}
+
+	return i;
+}
+
+
+void get_pattern(PGconn *dbh, char *genre, char *patternName,
+		 struct pattern_s **pp)
+{
+	int i;
+	struct pattern_s *p;
+	PGresult *res;
+
+	/* Field Position */
+	int measure_count_fn, moods_fn, steps_fn,
+	    modes_fn, dynamics_fn, var_meas_fn;
+
+	/* Raw parameters */
+	char *measure_count, *moods, *steps,
+	     *modes, *dynamics, *var_meas;
+
+	char **tmp_dynamics;
+	char ***tmp_modes;
+	int **tmp_steps;
+
+	char *loadv[2];
+
+	loadv[0] = genre;
+	loadv[1] = patternName;
+
+	res = PQexecParams(dbh,
+			   "SELECT measure_count, moods, steps, modes, "
+			   "dynamics, variable_measure "
+			   "FROM measures AS m, patterns AS p WHERE p.id = "
+			   "(SELECT id FROM genres WHERE genre = $1 "
+			   "AND subgenre = $2)"
+			   "AND m.id = p.measure",
+			   2, NULL, loadv, NULL, NULL, 0);
+
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "measure SELECT failed %s\n",
+			PQerrorMessage(dbh));
 		return;
 	}
 
-	struct pattern_s *p;
-	int i;
-	/* STUB, bebop blues and base blues implemented (hardcoded) */
+	if (PQntuples(res) < 1) {
+		fprintf(stderr,
+			"Warn: no results\n");
+		return;
+	}
+
+	if (PQntuples(res) > 1) {
+		fprintf(stderr,
+			"Warn: more than one result, parsing value 0 only\n");
+	}
+
+	moods_fn = PQfnumber(res, "moods");
+	steps_fn = PQfnumber(res, "steps");
+	modes_fn = PQfnumber(res, "modes");
+	dynamics_fn = PQfnumber(res, "dynamics");
+	var_meas_fn = PQfnumber(res, "variable_measure");
+	measure_count_fn = PQfnumber(res, "measure_count");
+
+	moods = PQgetvalue(res, 0, moods_fn);
+	steps = PQgetvalue(res, 0, steps_fn);
+	modes = PQgetvalue(res, 0, modes_fn);
+	dynamics = PQgetvalue(res, 0, dynamics_fn);
+	var_meas = PQgetvalue(res, 0, var_meas_fn);
+	measure_count = PQgetvalue(res, 0, measure_count_fn);
+
+	/* Consinstency check */
+	if (!moods || !steps || !modes || !dynamics || !measure_count) {
+		fprintf(stderr,
+			"Warn: one of the requested fields where NULL\n");
+		return;
+	}
+
 	p = (struct pattern_s *) malloc(sizeof(struct pattern_s));
 	if (!p) {
 		perror("malloc");
 		return;
 	}
-	/* common fields */
-	p->measures_count = 12;
-	p->moods = (char **) calloc(3, sizeof(char *));
-	p->moods[0] = (char *) calloc(strlen("pushed")+1, sizeof(char));
-	p->moods[1] = (char *) calloc(strlen("slow")+1, sizeof(char));
-	strcpy(p->moods[0], "pushed");
-	strcpy(p->moods[1], "slow");
-	p->moods[2] = NULL;
+
+	/* array parsing */
+	p->measures_count = atoi(measure_count);
+	p->moods = (char **) sql_array_unload_def(moods, CHAR_TYPE);
+
+	tmp_dynamics = (char **) sql_array_unload_def(dynamics, CHAR_TYPE);
+	tmp_steps = (int **) sql_array_unload_2_def(steps, INT_TYPE);
+	tmp_modes = (char ***) sql_array_unload_2_def(modes, CHAR_TYPE);
+
+	p->variants_size = 0;
+
+	if (!p->moods || !tmp_steps || !tmp_modes
+	    || !tmp_dynamics || !p->measures_count) {
+		fprintf(stderr,
+			"Warn: one of the parsed field where NULL\n");
+		return;
+	}
 
 	p->measures = (struct measure_pattern_s *) calloc(p->measures_count,
 			     sizeof(struct measure_pattern_s));
 
-	if (!strcmp("base", patternName)) {
-		/* variants selection */
-		p->variants_size = 1;
-		p->variants = (struct impro_variant_s *) calloc(1,
-						sizeof(struct impro_variant_s));
-
-		p->variants[0].first = 0;
-		p->variants[0].last = 4;
-		p->variants[0].variants = (char **) calloc(2,
-						   sizeof(char *));
-		p->variants[0].variants[0] = (char *) calloc(strlen("bebop")+1,
-						   sizeof(char));
-		strcpy(p->variants[0].variants[0], "bebop");
-
-		p->variants[0].variants[1] = NULL;
-
-		/* measures loading */
-		for (i = 0; i < p->measures_count; i++)
-			LOAD_MEASURE_SINGLE(p,i,0,"7", "groove");
-
-		p->measures[4].steps[0] = p->measures[5].steps[0] = 5;
-		p->measures[8].steps[0] = p->measures[9].steps[0] = 7;
-
-		strcpy(p->measures[11].dynamics, "fill");
-	} else if (!strcmp("bebop", patternName)) {
-		p->variants_size = 0;
-
-		LOAD_MEASURE_SINGLE(p, 0, 0, "7", "groove");
-		LOAD_MEASURE_SINGLE(p, 1, 5, "7", "groove");
-		LOAD_MEASURE_SINGLE(p, 2, 0, "7", "groove");
-		LOAD_MEASURE_DOUBLE(p, 3, 7, 0, "m7", "7", "groove");
-		LOAD_MEASURE_SINGLE(p, 4, 5, "7", "groove");
-		LOAD_MEASURE_SINGLE(p, 5, 6, "m7", "groove");
-		LOAD_MEASURE_SINGLE(p, 6, 0, "7", "groove");
-		LOAD_MEASURE_DOUBLE(p, 7, 4, 9, "m7", "7", "groove");
-		LOAD_MEASURE_SINGLE(p, 8, 2, "m7", "groove");
-		LOAD_MEASURE_SINGLE(p, 9, 7, "7", "groove");
-		LOAD_MEASURE_DOUBLE(p, 10, 4, 9, "m7", "7", "groove");
-		LOAD_MEASURE_DOUBLE(p, 11, 2, 7, "m7", "7", "fill");
-
-	} else {
-		fprintf(stderr, "warning, pattern not found\n");
+	for (i = 0; i < p->measures_count; i++) {
+		int j;
+		p->measures[i].steps = tmp_steps[i];
+		p->measures[i].modes = tmp_modes[i];
+		p->measures[i].dynamics = tmp_dynamics[i];
+		p->measures[i].stepnumber = null_array_size(p->measures[i].steps,
+							    INT_TYPE);
 	}
+
+	if (var_meas) {
+		p->variants_size = get_var_meas(dbh, p, var_meas);
+	}
+
+	PQclear(res);
+
 	*pp = p;
 	return;
-#endif
 }
 
 void free_pattern(struct pattern_s *p)

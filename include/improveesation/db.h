@@ -1,6 +1,5 @@
 /*****************************************************************************/
-/* Database library for the improveesation components                        */
-/* header file.                                                              */
+/* Database library for the improveesation components header file            */
 /* This library is a part of the IMprovEEsation suite.                       */
 /*                                                                           */
 /* Copyright (C) 2014                                                        */
@@ -21,15 +20,42 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,*/
 /* USA.                                                                      */
 /*****************************************************************************/
+
 #ifndef IMPROVEESATION_DB_H
 #define IMPROVEESATION_DB_H
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include <libpq-fe.h>
+
 #include <improveesation/structs.h>
 
-int get_genres(char ***genres);
-int get_subgenres(char *genre, char ***subgenres);
+/* SQL array parsers */
+enum {
+	CHAR_TYPE,
+	INT_TYPE,
+	VAR_MEAS_TYPE
+};
+
+void *sql_array_unload(const char *instr, const char *del, int outtype);
+
+void **sql_array_unload_2(const char *instr, const char startdel,
+			  const char enddel, const char *del, int outtype);
+
+#define sql_array_unload_def(i,o) sql_array_unload(i, ",", o)
+#define sql_array_unload_2_def(i,o) sql_array_unload_2(i, '{', '}', ",", o)
+
+PGconn *db_connect(const char *host, const char *dbname,
+		  const char *user, const char *passwd);
+void db_close(PGconn *c);
+int get_genres(PGconn *dbh, char ***genres);
+int get_subgenres(PGconn *dbh, char *genre, char ***subgenres);
 void free_genres(char **genre);
-void get_pattern(char *genre, char *patternName, struct pattern_s **p);
+int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas);
+void get_pattern(PGconn *dbh, char *genre, char *patternName,
+		 struct pattern_s **pp);
 void free_pattern(struct pattern_s *p);
 
 #endif /* improveesation/db.h */

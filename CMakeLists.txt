@@ -28,6 +28,8 @@ set(IMprovEEsation_VERSION_MINOR 1)
 
 set(CORE_SOURCE_PROJECT_DIR "${PROJECT_SOURCE_DIR}/core")
 
+set(CMAKE_MODULES_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 include(CheckFunctionExists)
@@ -43,6 +45,8 @@ add_library(improveesation_communication SHARED
 
 add_library(improveesation_db SHARED
 	"${CORE_SOURCE_PROJECT_DIR}/db.cpp")
+
+find_package(PostgreSQL_IMPRO REQUIRED)
 
 set(EXTRA_NET_LIBRARIES improveesation_communication)
 set(EXTRA_DB_LIBRARIES improveesation_db)
