@@ -27,7 +27,7 @@
 #include <improveesation/structs.h>
 
 int compose_note(struct note_s *snote, int id);
-int count_semiquivers(struct tempo_s time_signature);
+int count_semiquavers(struct tempo_s time_signature);
 int compose_measure(struct play_measure_s *pm, struct measure_s *minfo);
 
 #endif //MUSICAN_CORE_H

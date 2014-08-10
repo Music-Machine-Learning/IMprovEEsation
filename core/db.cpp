@@ -448,7 +448,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 							    INT_TYPE);
 	}
 
-	if (var_meas && strlen(var_meas) > 1 && strcmp(var_meas,"{}") {
+	if (var_meas && strlen(var_meas) > 1 && strcmp(var_meas,"{}")) {
 		p->variants_size = get_var_meas(dbh, p, var_meas);
 	}
 

@@ -32,7 +32,7 @@
 class end_of_improvisation_exception eoi_ex;
 
 /* Assign the composed note into the given structure
-   and return its length as the number of semiquivers */
+   and return its length as the number of semiquavers */
 int compose_note(struct notes_s *snote, int id)
 {
 	snote->note = 60;
@@ -42,18 +42,31 @@ int compose_note(struct notes_s *snote, int id)
 	return 0;
 }
 
-int count_semiquivers(struct tempo_s time_signature)
+int count_semiquavers(struct tempo_s time_signature)
 {
-	/* TODO: calculate the number of semiquivers according to the 
+	/* TODO: calculate the number of semiquavers according to the 
 	   time signature */
 	return 16;
 }
 
 int compose_measure(struct play_measure_s *pm, struct measure_s *minfo)
 {
+	/* 
+	  TODO:
+	   Rethink on this based on quaters:
+	   - From the minfo get some good quarters
+	   - Once the quarter are decided, scan them and for each semiquaver 
+	     check if we should change the note from the previous and in 
+	     that case decide the note (reading the probabilities).
+	   - Merge the equal consecutive notes (or directly ignore them).
+	   - What if the first note doesn't change? What do I send? 
+	     The old note as a new note? 
+	     Or do we need a new field for this situation?
+	*/
+
 	uint8_t i, sqcount, max_sqcount, ntcount;
 	
-	max_sqcount = sqcount = count_semiquivers(minfo->tempo);
+	max_sqcount = sqcount = count_semiquavers(minfo->tempo);
 		
 	/* Allocates the array of notes with the max count of notes as size.
 	 * It will be truncated later if the notes are lesser than the max. */
