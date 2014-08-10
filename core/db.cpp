@@ -427,6 +427,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	tmp_modes = (char ***) sql_array_unload_2_def(modes, CHAR_TYPE);
 
 	p->variants_size = 0;
+	p->variants = NULL;
 
 	if (!p->moods || !tmp_steps || !tmp_modes
 	    || !tmp_dynamics || !p->measures_count) {
@@ -447,7 +448,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 							    INT_TYPE);
 	}
 
-	if (var_meas) {
+	if (var_meas && strlen(var_meas) > 1 && strcmp(var_meas,"{}") {
 		p->variants_size = get_var_meas(dbh, p, var_meas);
 	}
 
@@ -474,7 +475,9 @@ void free_pattern(struct pattern_s *p)
 			free(p->variants[i].variants[j]);
 		free(p->variants[i].variants);
 	}
-	free(p->variants);
+
+	if (p->variants)
+		free(p->variants);
 
 	for (i = 0; i < p->measures_count; i++) {
 		int j;
