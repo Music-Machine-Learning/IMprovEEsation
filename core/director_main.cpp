@@ -140,6 +140,7 @@ int main(int argc, char **argv)
         }
 
         send_id(new_musician->connection, newId);
+        printf("\tregistered with id: %d\n", newId);
 	}
     printf("registered %d musicians, of wich %d are soloers\n", musicians_num, soloers_num);
 
@@ -147,7 +148,7 @@ int main(int argc, char **argv)
 
     atexit(cleanup);
 
-    init_director_core("blues", "standard", soloers_num, soloers);
+    init_director_core("blues", "bebop", soloers_num, soloers);
 
 	/* main loop */
 	printf("main loop\n");
@@ -166,7 +167,8 @@ int main(int argc, char **argv)
             current_measure_num = 0;
 
         printf("broadcasting measure...\n");
-		try {
+        fflush(stdout);
+        try {
             broadcast_measure(&nm, &musicians);
 			sync_all(&musicians);
 		} catch (end_of_improvisation_exception e) {
@@ -182,6 +184,7 @@ int main(int argc, char **argv)
     try{
         throw eoi_ex;
     } catch (end_of_improvisation_exception e){
+        free_director_core();
         printf("we have come to an end\n");
     }
 

@@ -128,7 +128,7 @@ struct play_measure_s {
 struct measure_pattern_s {
 	int stepnumber;
 	int *steps;
-	char **modes; /* NULL-Terminated */
+    char **modes;
 	char *dynamics;
 };
 

@@ -52,6 +52,9 @@
 // initialize director core with given genre and subgenre
 void init_director_core(char* gen, char* sub, uint32_t soloers_count, uint32_t *soloers_list);
 
+// free core structures and disconnect from db
+void free_director_core();
+
 /* update measure contents with next measure's decisions
  * current_measure_id is the measure number inside a section
  * return the total number of measures in one section of current genre */
