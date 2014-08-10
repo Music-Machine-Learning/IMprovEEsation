@@ -210,12 +210,13 @@ void send_to_play(int player, int director,
 	/* player send */
 	LOAD_IOVEC(iov, 0, measure->id);
 	LOAD_IOVEC(iov, 1, measure->size);
+	LOAD_IOVEC(iov, 2, measure->musician_id);
 
 	for (j = 0; j < measure->size; j++) {
-		LOAD_IOVEC(iov, j * 4 + 2, measure->measure[j].note);
-		LOAD_IOVEC(iov, j * 4 + 3, measure->measure[j].tempo);
-		LOAD_IOVEC(iov, j * 4 + 4, measure->measure[j].id);
-		LOAD_IOVEC(iov, j * 4 + 5, measure->measure[j].triplets);
+		LOAD_IOVEC(iov, j * 4 + 3, measure->measure[j].note);
+		LOAD_IOVEC(iov, j * 4 + 4, measure->measure[j].tempo);
+		LOAD_IOVEC(iov, j * 4 + 5, measure->measure[j].id);
+		LOAD_IOVEC(iov, j * 4 + 6, measure->measure[j].triplets);
 	}
 
 	if (writev(player, iov, measure->size * 4 + 2) < 0) {
