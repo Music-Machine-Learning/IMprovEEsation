@@ -49,6 +49,8 @@
 #define CHORD_CHANGE_CADENZA			60
 #define CHORD_CHANGE_TONAL_ZONE			80
 
+#define BLUES_SCALE                     0b010011101001
+
 // initialize director core with given genre and subgenre
 void init_director_core(char* gen, char* sub, uint32_t soloers_count, uint32_t *soloers_list);
 

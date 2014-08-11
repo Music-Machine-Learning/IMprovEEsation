@@ -41,13 +41,6 @@ struct scale_list_s {
 
 static char* genre;
 
-/*static int measures_per_section;
-static char** dynamics;
-static char** moods;
-static uint16_t* steps;
-static uint16_t* modes;
-*/
-
 static tempo_s tempo;
 static uint16_t tonality;
 static uint8_t bpm;
@@ -94,30 +87,6 @@ void load_genre_info(char* gen, char* sub){
     int i, j;
     char *variant;
     variant_couple_s *tmp;
-    /*measures_per_section = 12;
-    dynamics = (char**) malloc(measures_per_section*sizeof(char*));
-    for(i = 0; i < measures_per_section-1; i++){
-        dynamics[i] = (char *) malloc(6*sizeof(char));
-        strcpy(dynamics[i], "groove");
-    }
-    dynamics[measures_per_section-1] = (char*) malloc(4*sizeof(char));
-    strcpy(dynamics[measures_per_section-1], "fill");
-
-    steps = (uint16_t*) malloc(measures_per_section*sizeof(uint16_t));
-    steps[0] = steps[2] = steps[3] = steps[6] = steps[7] = steps[10] = 0;
-    steps[1] = steps[4] = steps[5] = steps[9] = 5;
-    steps[8] = steps[11] = 7;
-
-    modes = (uint16_t*) malloc(measures_per_section*sizeof(uint16_t));
-    for(i = 0; i < measures_per_section; i++)
-        modes[i] = CHORD_MAJOR|CHORD_SEVENTH;
-
-    moods_num = 2;
-    moods = (char**) malloc(moods_num*sizeof(char*));
-    moods[0] = (char*) malloc(6*sizeof(char));
-    strcpy(moods[0], "pushed");
-    moods[1] = (char*) malloc(4*sizeof(char));
-    strcpy(moods[1], "slow");*/
 
     get_pattern(database, gen, sub, &current_pattern);
 
@@ -159,7 +128,6 @@ void init_score_defs(){
      * */
     //test stubs
     tonality = 0;
-    //tonality.scale = 0b010011101001; //blues scale
     tempo.upper = 4;
     tempo.lower = 4;
     bpm = 60;
