@@ -28,10 +28,15 @@
 #include <time.h>
 #include <stdio.h>
 
-struct variant_couple {
+struct variant_couple_s {
     char *subgenre;
     pattern_s *pattern;
-    struct variant_couple *next;
+    struct variant_couple_s *next;
+};
+
+struct scale_list_s {
+    int size;
+    uint16_t *list;
 };
 
 static char* genre;
@@ -55,24 +60,40 @@ static int moods_num;
 static PGconn *database;
 
 static pattern_s *current_pattern;
-static variant_couple *improvariants;
+static variant_couple_s *improvariants;
+
+static scale_list_s available_scales;
 
 static int impro_end;
 
+//stub function
+int getScales(uint16_t **scalev, char* genre){
+    *scalev = (uint16_t *) calloc(8, sizeof(uint16_t));
+    (*scalev)[0] = 0b101010110101;
+    (*scalev)[1] = 0b011010101101;
+    (*scalev)[2] = 0b010110101011;
+    (*scalev)[3] = 0b101011010101;
+    (*scalev)[4] = 0b011010110101;
+    (*scalev)[5] = 0b010110101101;
+    (*scalev)[6] = 0b010101101011;
+    (*scalev)[7] = 0b010011101001;
+    return 8;
+}
+
 void load_genre_info(char* gen, char* sub){
-	/*
-	 * initialize:
-	 * 	measures_per_section
-	 *  dynamics,
-	 *  steps,
-	 *  modes,
-	 *  moods,
-	 * 	moods_num
-	 * */
+    /*
+     * initialize:
+     * 	measures_per_section
+     *  dynamics,
+     *  steps,
+     *  modes,
+     *  moods,
+     * 	moods_num
+     * */
     //test stubs
     int i, j;
     char *variant;
-    variant_couple *tmp;
+    variant_couple_s *tmp;
     /*measures_per_section = 12;
     dynamics = (char**) malloc(measures_per_section*sizeof(char*));
     for(i = 0; i < measures_per_section-1; i++){
@@ -105,6 +126,12 @@ void load_genre_info(char* gen, char* sub){
     while(current_pattern->moods[moods_num] != NULL)
         moods_num++;
 
+    if(available_scales.size > 0){
+        free(available_scales.list);
+    }
+
+    available_scales.size = getScales(&(available_scales.list), gen);
+
     improvariants = NULL;
 
     if(current_pattern->variants_size > 0){
@@ -113,7 +140,7 @@ void load_genre_info(char* gen, char* sub){
         for(i = 0; i < current_pattern->variants_size; i++){
             j = 0;
             while((variant = current_pattern->variants[i].variants[j++])[0] != '\0'){
-                improvariants = (variant_couple*) malloc(sizeof(variant_couple));
+                improvariants = (variant_couple_s*) malloc(sizeof(variant_couple_s));
                 strcpy(tmp->subgenre, variant);
                 get_pattern(database, gen, variant, &(tmp->pattern));
                 improvariants->next = tmp;
@@ -124,12 +151,12 @@ void load_genre_info(char* gen, char* sub){
 }
 
 void init_score_defs(){
-	/*
-	 * initialize:
+    /*
+     * initialize:
      *  tonality
      *  tempo
      * 	bpm
-	 * */
+     * */
     //test stubs
     tonality = 0;
     //tonality.scale = 0b010011101001; //blues scale
@@ -154,6 +181,46 @@ uint16_t modeToChord(char* mode){
             ret |= CHORD_SEVENTH;
     }
     return ret;
+}
+
+// performs a rotation of the lowest 12 bits of mask by rot places (positive numbers rotate left, negatives rotate right)
+uint16_t rotateMask(uint16_t mask, int rotation){
+    int rot = rotation % 12;
+    if(rot > 0){    //left rotation
+        return (mask << rot | mask >> (12-rot)) & 0b111111111111;
+    } else if(rot < 0){ //right rotation
+        return (mask >> rot | mask << (12-rot)) & 0b111111111111;
+    } else  //rot == 0, no rotations at all
+        return mask;
+}
+
+//returns a list of matching scales referred to chord and based on reference note
+int getMatchingScales(uint16_t **list, uint16_t chord_step, uint16_t chord_mode, uint16_t reference_note){
+    int i, s;
+    uint16_t scale, chord, ref;
+    *list = (uint16_t *) calloc(available_scales.size, sizeof(uint16_t));
+    for(i = 0, s = 0; i < available_scales.size; i++){
+        if(available_scales.list[i] == BLUES_SCALE){
+            //if it's a standard blues chord we have special rules (be ready for a deadly conditional branch)
+            if(chord_step == tonality || chord_step == tonality + 5 || chord_step == tonality + 7){
+                if((chord_step == tonality + 5 && reference_note == tonality + 5) ||
+                   (chord_step == tonality + 7 && (reference_note == tonality + 7 || reference_note == tonality + 4)) ||
+                   (reference_note == tonality || reference_note == tonality + 2 || reference_note == tonality + 9)){
+                    (*list)[s] = BLUES_SCALE;
+                    s++;
+                    continue;
+                }
+            }
+        }
+        scale = rotateMask(available_scales.list[i], reference_note);
+        chord = rotateMask(chord_mode, chord_step);
+        ref = scale & chord;
+        if(ref == chord){
+            (*list)[s] = available_scales.list[i];
+            s++;
+        }
+    }
+    return s;
 }
 
 //returns the reference chord if cadenza detected, -1 if not
@@ -186,10 +253,10 @@ chord_s *getCadenza(int step){
     chord_s *chords = (chord_s*) calloc(tempo.upper,sizeof(chord_s));
     printf("cadenza:\n");
 
-	/*
-	 * [II m7, V 7]
-	 * relatives to original chord
-	 * */
+    /*
+     * [II m7, V 7]
+     * relatives to original chord
+     * */
     for(i = 0; i < (tempo.upper >> 1); i++){
         chords[i].note = tonality + (step+2)%12;
         chords[i].mode = CHORD_MINOR | CHORD_SEVENTH;
@@ -206,17 +273,17 @@ chord_s *getTonalZoneChord(int step){
     chord_s *chords = (chord_s*) calloc(tempo.upper,sizeof(chord_s));
     printf("tonal zone changes:\n");
 
-	if(rand() % 1){
+    if(rand() % 1){
         for(i = 0; i < tempo.upper; i++){
             chords[i].note = tonality + (step+9)%12;
             chords[i].mode = CHORD_MINOR | CHORD_SEVENTH;
         }
-	} else {
+    } else {
         for(i = 0; i < tempo.upper; i++){
             chords[i].note = tonality + (step+4)%12;
             chords[i].mode = CHORD_MINOR; //NOTE: should be diminished
         }
-	}
+    }
     return chords;
 }
 
@@ -230,20 +297,20 @@ chord_s *getRandomChord(){
 
 RANDOM_CHORD_IS_RANDOM:
     note = rand() % 12;
-	switch(rand() % 6){
-		case 0:
+    switch(rand() % 6){
+        case 0:
             mode = CHORD_MAJOR; break;
-		case 1:
+        case 1:
             mode = CHORD_MAJOR | CHORD_SEVENTH; break;
-		case 2:
+        case 2:
             mode = CHORD_MAJOR | CHORD_DELTA; break;
-		case 3:
+        case 3:
             mode = CHORD_MINOR; break;
-		case 4:
+        case 4:
             mode = CHORD_MINOR | CHORD_SEVENTH; break;
-		case 5:
+        case 5:
             mode = CHORD_MINOR | CHORD_DELTA; break;
-	}
+    }
 
     for(; i < tempo.upper; i++){
         chords[i].note = note;
@@ -284,7 +351,7 @@ void decideChord(measure_s *measure, int current_measure_id){
     range = tempo.upper / current_pattern->measures[current_measure_id].stepnumber +
             (tempo.upper % current_pattern->measures[current_measure_id].stepnumber > 0 ? 1 : 0);
     for(i = 0; i < tempo.upper; i++){
-        measure->chords[i].note = current_pattern->measures[current_measure_id].steps[i/range];
+        measure->chords[i].note = (current_pattern->measures[current_measure_id].steps[i/range] + tonality) % 12;
         measure->chords[i].mode = modeToChord(current_pattern->measures[current_measure_id].modes[i/range]);
     }
 }
@@ -321,7 +388,7 @@ void setupTags(measure_s *measure, int current_measure_id){
 }
 
 void decideImproScale(measure_s *measure, int current_measure_id){
-    uint16_t note, scale;
+    uint16_t note, scale, *list;
     int i, j, range, step, tmp, tzones_total = 0;
     measure_pattern_s *m_patt;
     uint *count = (uint*) calloc (12, sizeof(uint));
@@ -359,7 +426,7 @@ void decideImproScale(measure_s *measure, int current_measure_id){
     for(i = 0; i < 12; i++){
         if(tzones[i] > 0){
             if(tmp < tzones[i]){
-                note = i;
+                note = (i + tonality) % 12;
                 break;
             }
             else
@@ -367,16 +434,40 @@ void decideImproScale(measure_s *measure, int current_measure_id){
         }
     }
 
-    //TODO: get all possible scales and select a matching one
-    //(if this measure has 2 chords and it is a cadenza, the second one is the refernce chord)
-    scale = 0b010011101001;
-
     measure->tonal_zones = (tonal_zone_s*) calloc(tempo.upper, sizeof(tonal_zone_s));
-    for(i = 0; i < tempo.upper; i++){
-        measure->tonal_zones[i].note = note;
-        measure->tonal_zones[i].scale = scale;
-        printf("\t\tN: %d\tS: %d\n", note, scale);
+
+    //FIXME: if matching scale vector is empty we have to do something plausible...
+
+    step = -1;
+    //if there is one valid reference chord for the entire measure decide based on that chord
+    if(current_pattern->measures[current_measure_id].stepnumber == 1 || (step = checkCadenza(&(current_pattern->measures[current_measure_id]))) >= 0){
+        if(step < 0){
+            step = current_pattern->measures[current_measure_id].steps[0];
+            scale = measure->chords[0].mode;
+        } else
+            scale = measure->chords[tempo.upper-1].mode;
+        step = (step + tonality) % 12;
+
+        i = getMatchingScales(&list, step, scale, note);
+
+        //NOTE: this is a bit rough...
+        scale = list[rand() % i];
+
+        for(i = 0; i < tempo.upper; i++){
+            measure->tonal_zones[i].note = note;
+            measure->tonal_zones[i].scale = scale;
+            printf("\t\tN: %d\tS: %d\n", note, scale);
+        }
+    } else {    //otherways select one scale for each chord
+        for(i = 0; i < tempo.upper; i++){
+            measure->tonal_zones[i].note = note;
+            i = getMatchingScales(&list, measure->chords[i].note, measure->chords[i].mode, note);
+            //NOTE: this is a bit rough as well...
+            measure->tonal_zones[i].scale = list[rand() % i];
+            printf("\t\tN: %d\tS: %d\n", note, scale);
+        }
     }
+
 }
 
 void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *sololist){
@@ -385,6 +476,8 @@ void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solo
 
     soloers = sololist;
     soloers_num = solocount;
+
+    available_scales.size = -1;
 
     srand(time(NULL));
 
@@ -400,7 +493,7 @@ void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solo
 
 void free_director_core(){
     int i;
-    variant_couple *tmp;
+    variant_couple_s *tmp;
 
     tmp = improvariants;
     while(improvariants != NULL){
@@ -410,6 +503,10 @@ void free_director_core(){
         improvariants = tmp;
     }
 
+    if(available_scales.size > 0){
+        free(available_scales.list);
+    }
+
     free_pattern(current_pattern);
 
     db_close(database);
@@ -417,32 +514,32 @@ void free_director_core(){
 
 int decide_next_measure(measure_s *measure, int current_measure_id){
     int i;
-	
-	if(rand() % 100 < (current_measure_id == 0 ? GENRE_CHANGE_ON_ONE_THRESHOLD : GENRE_CHANGE_THRESHOLD)){
+
+    if(rand() % 100 < (current_measure_id == 0 ? GENRE_CHANGE_ON_ONE_THRESHOLD : GENRE_CHANGE_THRESHOLD)){
         printf("\tchange");
-		if(rand() % 100 < CHANGE_TO_SUBGENRE){
-			/*
-			 * pick a valid subgenre
-			 */
-			 // genre = subgen;
+        if(rand() % 100 < CHANGE_TO_SUBGENRE){
+            /*
+             * pick a valid subgenre
+             */
+             // genre = subgen;
             printf("subgenre\n");
-		} else {
-			/*
-			 * pick a random genre
-			 */
-			 // genre = gen; 
+        } else {
+            /*
+             * pick a random genre
+             */
+             // genre = gen;
             printf("genre\n");
-		}
-		//if(new_genre != genre)
-			//load_genre_info();
-	}
+        }
+        //if(new_genre != genre)
+            //load_genre_info();
+    }
 
     decideChord(measure, current_measure_id);
 
     for(i = 0; i < tempo.upper; i++){   //NOTE: useless debug
         printf("\t\tN: %d\tM: %d\n", measure->chords[i].note, measure->chords[i].mode);
     }
-	
+
     measure->bpm = bpm;
     printf("\ttime: %dbpm\n", bpm);
 
@@ -456,7 +553,7 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
 
     setupTags(measure, current_measure_id);
     printf("\ttags: %s\n", measure->tags.payload);
-	
+
     //FIXME: this should follow some policy
     measure->soloist_id = soloers[rand() % soloers_num];
     printf("\tsoloer: %d\n", measure->soloist_id);
