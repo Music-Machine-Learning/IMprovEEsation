@@ -61,12 +61,16 @@ int main(int argc, char **argv)
 	char **subgenres;
 	PGconn *dbh = NULL;
 
+
 	dbh = db_connect("griffin.dberardi.eu",
 			"improveesation_experimental_testes",
 			"read_only",
 			"testiamo123");
 
+	printf("connected\n");
+	
 	genn = get_genres(dbh, &genres);
+	
 	for (i = 0; i < genn; i++) {
 		printf("%s\n", genres[i]);
 		int j;

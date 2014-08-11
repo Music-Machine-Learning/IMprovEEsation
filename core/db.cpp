@@ -157,8 +157,8 @@ int get_genres(PGconn *dbh, char ***genres)
 	int i;
 	int size = 0;
 	PGresult *res;
-	
-	res = PQexec(dbh, "SELECT DISTINCT genre FROM genres");
+
+	res = PQexec(dbh, "SELECT DISTINCT name FROM genre");
 
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
 		fprintf(stderr, "genre SELECT failed %s",
@@ -166,16 +166,16 @@ int get_genres(PGconn *dbh, char ***genres)
 		return -1;
 	}
 	size = PQntuples(res);
-	genre_num = PQfnumber(res, "genre");
+	genre_num = PQfnumber(res, "name");
 
-	*genres = (char **) calloc(size + 1, sizeof(char *));
+	*genres = (char **)calloc(size + 1, sizeof(char *));
 
 	if (!*genres) {
 		perror("malloc");
 		return -1;
 	}
-
-	for (i = 0; i < PQntuples(res); i++) {
+	
+	for (i = 0; i < size; i++) {
 		char *cvalue = PQgetvalue(res, i, genre_num);
 		(*genres)[i] = (char *)calloc(strlen(cvalue) + 1,
 					      sizeof(char));
@@ -187,7 +187,6 @@ int get_genres(PGconn *dbh, char ***genres)
 
 		strcpy((*genres)[i], cvalue);
 	}
-
 	(*genres)[size] = NULL;
 
 	PQclear(res);
@@ -202,9 +201,10 @@ int get_subgenres(PGconn *dbh, char *genre, char ***subgenres)
 	int size = 0;
 	PGresult *res;
 	
-	res = PQexecParams(dbh, "SELECT subgenre FROM genres "
-				"WHERE genre = $1",
-				1, NULL, &genre, NULL, NULL, 0);
+	const char *query = "SELECT subgenre.name FROM subgenre, genre " 
+		"WHERE genre.id = subgenre.id_genre AND genre.name = $1";
+
+	res = PQexecParams(dbh, query, 1, NULL, &genre, NULL, NULL, 0);
 
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
 		fprintf(stderr, "subgenre SELECT failed %s",
@@ -212,7 +212,7 @@ int get_subgenres(PGconn *dbh, char *genre, char ***subgenres)
 		return -1;
 	}
 	size = PQntuples(res);
-	subgenre_num = PQfnumber(res, "subgenre");
+	subgenre_num = PQfnumber(res, "name");
 
 	*subgenres = (char **) calloc(size + 1, sizeof(char *));
 
@@ -223,6 +223,9 @@ int get_subgenres(PGconn *dbh, char *genre, char ***subgenres)
 
 	for (i = 0; i < PQntuples(res); i++) {
 		char *cvalue = PQgetvalue(res, i, subgenre_num);
+		
+		printf("%s\n", cvalue);
+		
 		(*subgenres)[i] = (char *)calloc(strlen(cvalue) + 1,
 					      sizeof(char));
 
@@ -355,23 +358,26 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	/* Raw parameters */
 	char *measure_count, *moods, *steps,
 	     *modes, *dynamics, *var_meas;
-
+	
 	char **tmp_dynamics;
 	char ***tmp_modes;
 	int **tmp_steps;
 
 	char *loadv[2];
 
+	const char *query;
+
 	loadv[0] = genre;
 	loadv[1] = patternName;
 
-	res = PQexecParams(dbh,
-			   "SELECT measure_count, moods, steps, modes, "
-			   "dynamics, variable_measure "
-			   "FROM measures AS m, patterns AS p WHERE p.id = "
-			   "(SELECT id FROM genres WHERE genre = $1 "
-			   "AND subgenre = $2)"
-			   "AND m.id = p.measure",
+	query = "SELECT measure_count, moods, steps, modes, dynamics, "
+		"variable_measure FROM measures AS m, patterns AS p "
+		"WHERE p.id = (SELECT subgenre.id FROM subgenre, genre "
+		"WHERE subgenre.id_genre = genre.id and genre.name = $1 "
+		"AND subgenre.name = $2) AND m.id = p.measure";
+
+
+	res = PQexecParams(dbh, query,
 			   2, NULL, loadv, NULL, NULL, 0);
 
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
@@ -383,7 +389,11 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	if (PQntuples(res) < 1) {
 		fprintf(stderr,
 			"Warn: no results\n");
-		return;
+		// !!!! SEGFAULT WARNING URGENT TODO !!!!: 
+		// maybe it's better if we handle this error return
+		// (or it tryes to get the patterns and the measure count is 
+		// is some random value) !!
+		return; 
 	}
 
 	if (PQntuples(res) > 1) {
@@ -449,7 +459,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	}
 
 	if (var_meas && strlen(var_meas) > 1 && strcmp(var_meas,"{}")) {
-		p->variants_size = get_var_meas(dbh, p, var_meas);
+		p->variants_size = 0;//TODO: fix the db first get_var_meas(dbh, p, var_meas);
 	}
 
 	PQclear(res);
