@@ -188,6 +188,17 @@ int getMatchingScales(uint16_t **list, uint16_t chord_step, uint16_t chord_mode,
             s++;
         }
     }
+    if(!s){
+        for(i = 0, ref = 0; i < available_scales.size; i++){
+            scale = rotateMask(available_scales.list[i], reference_note);
+            chord = rotateMask(chord_mode, chord_step);
+            if(ref < chord & scale){
+                ref = chord & scale;
+                (*list)[0] = scale;
+            }
+        }
+        s = 1;
+    }
     return s;
 }
 
