@@ -379,7 +379,7 @@ void decideImproScale(measure_s *measure, int current_measure_id){
         memset(count, 0, 12 * sizeof(uint));
         for(i = 0; i < range; i++){         //count each note occurrence in range
             tmp = current_measure_id - (range >> 1) + i;
-            m_patt = &(current_pattern->measures[(tmp >= 0 ? tmp : current_pattern->measures_count + tmp)]);
+            m_patt = &(current_pattern->measures[(tmp >= 0 ? tmp % 12 : current_pattern->measures_count + tmp)]);
             if((step = checkCadenza(m_patt)) >= 0)
                 count[step] ++;
             else{
@@ -435,15 +435,15 @@ void decideImproScale(measure_s *measure, int current_measure_id){
         for(i = 0; i < tempo.upper; i++){
             measure->tonal_zones[i].note = note;
             measure->tonal_zones[i].scale = scale;
-            printf("\t\tN: %d\tS: %d\n", note, scale);
+            printf("\t\tN: %d\tS: %d\ttempo: %d\n", note, scale, tempo.upper);
         }
     } else {    //otherways select one scale for each chord
         for(i = 0; i < tempo.upper; i++){
             measure->tonal_zones[i].note = note;
-            i = getMatchingScales(&list, measure->chords[i].note, measure->chords[i].mode, note);
+            j = getMatchingScales(&list, measure->chords[i].note, measure->chords[i].mode, note);
             //NOTE: this is a bit rough as well...
-            measure->tonal_zones[i].scale = list[rand() % i];
-            printf("\t\tN: %d\tS: %d\n", note, scale);
+            measure->tonal_zones[i].scale = list[rand() % j];
+            printf("\t\tN: %d\tS: %d\ttempo: %d\n", note, scale, tempo.upper);
         }
     }
 
