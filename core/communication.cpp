@@ -205,7 +205,7 @@ void send_to_play(int player, int director,
 {
 	int j;
 	uint8_t sack = SYNC_ACK;
-	struct iovec iov[measure->size * 4 + 1];
+    struct iovec iov[measure->size * 4 + 3];
 
 	/* player send */
 	LOAD_IOVEC(iov, 0, measure->id);
@@ -541,8 +541,9 @@ void sync_all(struct list_head *musicians)
 
 	int size = 0,
 	    psize = 0,
-	    ack = 0,
-	    retval;
+        retval;
+
+    uint8_t ack = 0;
 
 	struct epoll_event *epevs;
 
