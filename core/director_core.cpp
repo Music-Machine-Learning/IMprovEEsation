@@ -523,7 +523,7 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
     printf("\ttags: %s\n", measure->tags.payload);
 
     //FIXME: this should follow some policy
-    measure->soloist_id = soloers[rand() % soloers_num];
+    measure->soloist_id = (soloers_num ? soloers[rand() % soloers_num] : 0);
     printf("\tsoloer: %d\n", measure->soloist_id);
 
     //if it is last measure and it's already time to stop, put an end to the improvisation
