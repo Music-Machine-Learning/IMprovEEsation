@@ -53,12 +53,20 @@ void printpattern(struct pattern_s *p)
 	}
 }
 
+int print_quarters(int *quarters)
+{
+	for (int i = 0; quarters[i]; i++)
+		printf("quarter_id: %d\n", quarters[i]);
+
+}
+
 int main(int argc, char **argv)
 {
 	struct pattern_s *p;
 	int i, genn, subgenn;
 	char **genres;
 	char **subgenres;
+	int *quarters, quarters_size;
 	PGconn *dbh = NULL;
 
 
@@ -69,8 +77,14 @@ int main(int argc, char **argv)
 
 	printf("connected\n");
 	
-	genn = get_genres(dbh, &genres);
-	
+	const char *args[8] = {"3", "1", "10", "137", "groove", "slow", 
+		"blues", "669"};
+
+	quarters_size = get_quarters(dbh, 0, args, &quarters);
+	print_quarters(quarters);
+	free_db_results(quarters);
+
+	genn = get_genres(dbh, &genres);	
 	for (i = 0; i < genn; i++) {
 		printf("%s\n", genres[i]);
 		int j;
@@ -79,13 +93,14 @@ int main(int argc, char **argv)
 			printf("%s %s pattern:\n", genres[i], subgenres[j]);
 
 			get_pattern(dbh, genres[i], subgenres[j], &p);
+			if (!p) continue;
 			printpattern(p);
 
-			free_pattern(p);
+			free_db_results(p);
 		}
-		free_genres(subgenres);
+		free_db_results(subgenres);
 	}
-	free_genres(genres);
+	free_db_results(genres);
 
 	db_close(dbh);
 	return 0;

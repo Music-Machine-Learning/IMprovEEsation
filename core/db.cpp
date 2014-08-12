@@ -244,18 +244,62 @@ int get_subgenres(PGconn *dbh, char *genre, char ***subgenres)
 	return size;
 }
 
-void free_genres(char **genre)
+/* Fill the quarters array of IDs with those that in the DB have some 
+ * match with the given parameters. The args_mask tells which of those 
+ * parameters should be considered. */
+int get_quarters(PGconn *dbh, uint8_t args_mask, const char **args, 
+		int **quarters)
 {
+	int quarter_num;
 	int i;
-	if (!genre) {
-		return;
+	int size = 0;
+	PGresult *res;
+
+	const char *query; 
+
+	//TODO: do the argument filtering with args_mask
+
+	query = "SELECT quarter.id FROM quarter, scale, genre, scale_genre "
+		"where scale_genre.id = quarter.scale_genre and "
+		"scale_genre.id_scale = scale.id and "
+		"scale_genre.id_genre = genre.id and "
+		"pos = $1 and instrument = $2 and chord_note = $3 and "
+		"chord_mode = $4 and tag_dyna = $5 and tag_mood = $6 and "
+		"genre.name = $7 and scale.id = $8";
+
+	res = PQexecParams(dbh, query, 8, NULL, args, NULL, NULL, 0);
+
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "subgenre SELECT failed %s",
+			PQerrorMessage(dbh));
+		return -1;
 	}
-	for (i = 0; genre[i]; i++) {
-		free(genre[i]);
+	size = PQntuples(res);
+	quarter_num = PQfnumber(res, "id");
+
+	*quarters = (int *)calloc(size + 1, sizeof(int));
+
+	if (!*quarters) {
+		perror("malloc");
+		return -1;
 	}
 
-	free(genre);
+	for (i = 0; i < PQntuples(res); i++) {
+		char *cvalue = PQgetvalue(res, i, quarter_num);
+		
+		printf("%s\n", cvalue);
+	
+		(*quarters)[i] = atoi(cvalue);
+	}
+
+	PQclear(res);
+
+	return size;
 }
+
+/* TODO:
+ * int get_semiquavers(...)
+*/
 
 int null_array_size(void *a, int type)
 {
@@ -367,6 +411,8 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 
 	const char *query;
 
+	*pp = NULL;
+
 	loadv[0] = genre;
 	loadv[1] = patternName;
 
@@ -468,7 +514,25 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	return;
 }
 
-void free_pattern(struct pattern_s *p)
+void free_db_results(int *results)
+{
+	free(results);
+}
+
+void free_db_results(char **results)
+{
+	int i;
+	if (!results) {
+		return;
+	}
+	for (i = 0; results[i]; i++) {
+		free(results[i]);
+	}
+
+	free(results);
+}
+
+void free_db_results(struct pattern_s *p)
 {
 	int i;
 	if (!p)

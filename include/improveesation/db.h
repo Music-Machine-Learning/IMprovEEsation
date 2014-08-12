@@ -52,10 +52,13 @@ PGconn *db_connect(const char *host, const char *dbname,
 void db_close(PGconn *c);
 int get_genres(PGconn *dbh, char ***genres);
 int get_subgenres(PGconn *dbh, char *genre, char ***subgenres);
-void free_genres(char **genre);
 int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas);
+int get_quarters(PGconn *dbh, uint8_t, const char **args, int **quarters);
 void get_pattern(PGconn *dbh, char *genre, char *patternName,
 		 struct pattern_s **pp);
-void free_pattern(struct pattern_s *p);
+
+void free_db_results(int *results);
+void free_db_results(char **results);
+void free_db_results(struct pattern_s *p);
 
 #endif /* improveesation/db.h */
