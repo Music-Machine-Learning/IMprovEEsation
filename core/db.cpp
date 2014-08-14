@@ -335,12 +335,13 @@ int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas)
 	}
 
 	p->variants = NULL;
+	
 
 	/* TODO: it's possible to make a single query for all the
 	 * variations. */
 	for (i = 0; var_ids[i] != -1; i++) {
 		char *char_id;
-
+		const char *query;
 		p->variants_size++;
 		p->variants = (struct impro_variant_s *) realloc(
 					p->variants,
@@ -353,10 +354,13 @@ int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas)
 		}
 
 		asprintf(&char_id, "%d", var_ids[i]);
+		printf("%s - charid\n", char_id);
+		query = "select start_meas, end_meas, array_agg(subgenre.name) "
+			"as variants from var_measure, subgenre where "
+			"var_measure.id = $1 and subgenre.id = any(variants) "
+			"group by start_meas, end_meas";
 
-		res = PQexecParams(dbh, "SELECT * "
-			     "FROM var_measure "
-			     "WHERE id = $1",
+		res = PQexecParams(dbh, query,
 			     1, NULL, &char_id, NULL, NULL, 0);
 
 		if (PQresultStatus(res) != PGRES_TUPLES_OK) {
@@ -364,20 +368,20 @@ int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas)
 				PQerrorMessage(dbh));
 			return -1;
 		}
-
 		start_meas_fn = PQfnumber(res, "start_meas");
 		end_meas_fn = PQfnumber(res, "end_meas");
 		variants_fn = PQfnumber(res, "variants");
 
-		p->variants[i].first = atoi(PQgetvalue(res, 0,
-					    start_meas_fn));
-		p->variants[i].last = atoi(PQgetvalue(res, 0,
-					    end_meas_fn));
-
-		variants = PQgetvalue(res, 0, variants_fn);
+		
+		p->variants[i].first = atoi(PQgetvalue(res, 0, 0));
+		p->variants[i].last = atoi(PQgetvalue(res, 0, 1));
+		variants = PQgetvalue(res, 0, 2);
+		
 		p->variants[i].variants = (char **) sql_array_unload_def(
 							variants, CHAR_TYPE);
-
+	
+		printf("%s\n", p->variants[i].variants[0]);
+		
 		if (!p->variants[i].variants) {
 			perror("malloc");
 			return -1;
@@ -505,7 +509,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	}
 
 	if (var_meas && strlen(var_meas) > 1 && strcmp(var_meas,"{}")) {
-		p->variants_size = 0;//TODO: fix the db first get_var_meas(dbh, p, var_meas);
+		p->variants_size = get_var_meas(dbh, p, var_meas);
 	}
 
 	PQclear(res);
