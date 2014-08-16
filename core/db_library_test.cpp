@@ -60,6 +60,25 @@ int print_quarters(int *quarters)
 
 }
 
+int print_semiquaver(struct semiquaver_s *sq)
+{
+	int i;
+	printf("--semiquaver--\n");
+	printf("quarter %d pos %d vmin %d vmax %d\n"
+		"pchange %.2f pchange_3qrt %.2f pchange_3qvr %.2f pchange_3smq "
+		"%.2f\npnotes {", sq->quarter, sq->position, sq->velocity_min, 
+		sq->velocity_max, sq->pchange, sq->pchange_3qrt, sq->pchange_3qvr,
+		sq->pchange_3smq);
+	
+	for (i = 0; i < 13; i++){
+		printf("%.2f", sq->pnote[i]);
+		if (i != 12)
+			printf(", ");
+	}
+	printf("}\n----\n");
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	struct pattern_s *p;
@@ -77,12 +96,43 @@ int main(int argc, char **argv)
 
 	printf("connected\n");
 	
-	const char *args[8] = {"3", "1", "10", "137", "groove", "slow", 
+	const char *args[8] = {"3", "1", "8", "1169", "groove", "slow", 
 		"blues", "669"};
 
 	quarters_size = get_quarters(dbh, 0, args, &quarters);
 	print_quarters(quarters);
+
+	printf("\n###single semiquaver test\n");
+
+	struct semiquaver_s *sq;
+	int sq_size = 0;
+	sq_size = get_semiquaver(dbh, quarters[0], 3, &sq);
+	if (sq_size == 0) {
+		printf("no semiquavers for the given quarter and position!\n");
+	} else if (sq_size == -1) {
+		printf("some problem in the get_semiquaver\n");
+		return -1;
+	} else {
+		print_semiquaver(sq);
+	}
+
+	printf("\n###all semiquavers in quarter test\n");
+
+	struct semiquaver_s **sqs;
+	sq_size = get_semiquavers(dbh, quarters[0], &sqs);
+	if (sq_size == 0) {
+		printf("no semiquavers for the given quarter!\n");
+	} else if (sq_size == -1){
+		printf("some problem in the get_semiquavers\n");
+		return -1;
+	}
+
+	for (i = 0; i < sq_size; i++)
+		print_semiquaver(sqs[i]);
+
 	free_db_results(quarters);
+
+	printf("\n###genres, subgenres and patterns test\n");
 
 	genn = get_genres(dbh, &genres);	
 	for (i = 0; i < genn; i++) {

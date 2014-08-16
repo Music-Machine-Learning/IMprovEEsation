@@ -220,5 +220,16 @@ struct pattern_s {
 	struct impro_variant_s *variants;
 };
 
+struct semiquaver_s{
+	uint8_t position;
+	uint8_t quarter;
+	uint8_t velocity_min;
+	uint8_t velocity_max;
+	float pchange; /* change probability */
+	float pchange_3qrt; /* triplets pchange quarters */
+	float pchange_3qvr; /* triplets pchange quavers */
+	float pchange_3smq; /* triplets pchange semiquavers */
+	float *pnote; /* Probability of note selection p[0] is a rest */
+};
 
 #endif /* _IMPROVEESATION_STRUCTS_H */

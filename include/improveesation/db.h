@@ -36,7 +36,8 @@
 enum {
 	CHAR_TYPE,
 	INT_TYPE,
-	VAR_MEAS_TYPE
+	VAR_MEAS_TYPE,
+	FLOAT_TYPE
 };
 
 void *sql_array_unload(const char *instr, const char *del, int outtype);
@@ -56,6 +57,8 @@ int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas);
 int get_quarters(PGconn *dbh, uint8_t, const char **args, int **quarters);
 void get_pattern(PGconn *dbh, char *genre, char *patternName,
 		 struct pattern_s **pp);
+int get_semiquavers(PGconn *dbh, int quarter, struct semiquaver_s ***sqs);
+int get_semiquaver(PGconn *dbh, int quarter, int pos, struct semiquaver_s **sqs);
 
 void free_db_results(int *results);
 void free_db_results(char **results);

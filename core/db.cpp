@@ -46,6 +46,8 @@ void *sql_array_unload(const char *instr, const char *del, int outtype)
 		size = sizeof(char *);
 	else if (outtype == INT_TYPE)
 		size = sizeof(int);
+	else if (outtype == FLOAT_TYPE)
+		size = sizeof(float);
 
 	do {
 		s1 = strtok_r(i ? NULL : s, del, &s2);
@@ -53,7 +55,7 @@ void *sql_array_unload(const char *instr, const char *del, int outtype)
 
 		if (s1) {
 			if (outtype == CHAR_TYPE) {
-				((char **)out)[i] = (char *) calloc(strlen(s1) + 1,
+				((char **)out)[i] = (char *)calloc(strlen(s1) + 1,
 							 sizeof(char));
 
 				if (!((char **)out)[i]) {
@@ -64,8 +66,9 @@ void *sql_array_unload(const char *instr, const char *del, int outtype)
 				strcpy(((char **)out)[i], s1);
 			} else if (outtype == INT_TYPE) {
 				((int *)out)[i] = atoi(s1);
+			} else if (outtype == FLOAT_TYPE) {
+				((float *)out)[i] = atof(s1);
 			}
-
 		} else {
 			if (outtype == CHAR_TYPE)
 				((char **)out)[i] = NULL;
@@ -297,9 +300,136 @@ int get_quarters(PGconn *dbh, uint8_t args_mask, const char **args,
 	return size;
 }
 
-/* TODO:
- * int get_semiquavers(...)
-*/
+/* Fill the semiquaver structure with the ith row result data 
+ * which is pointed by res. */
+int fill_semiquaver_result(struct semiquaver_s **semiquaver, 
+					PGresult *res,	int irow)
+{
+	int pos_fn, velocity_min_fn, velocity_max_fn, pchange_fn, 
+	    pchange_3qrt_fn, pchange_3qvr_fn, pchange_3smq_fn, pnote_fn;
+
+	char *pnote_str;
+
+	struct semiquaver_s *sq;
+
+	(*semiquaver) = (struct semiquaver_s *) 
+		malloc(sizeof(struct semiquaver_s));
+
+	if (!*semiquaver) {
+		perror("malloc");
+		return -1;
+	}
+
+	/*TODO these PQfnumber should be done before the for loop in some way */
+	pos_fn = PQfnumber(res, "pos");
+	velocity_min_fn = PQfnumber(res, "velocity_min");
+	velocity_max_fn = PQfnumber(res, "velocity_max");
+	pchange_fn = PQfnumber(res, "pchange");
+	pchange_3qrt_fn = PQfnumber(res, "pchange_3qrt");
+	pchange_3qvr_fn = PQfnumber(res, "pchange_3qvr");
+	pchange_3smq_fn = PQfnumber(res, "pchange_3smq");
+	pnote_fn = PQfnumber(res, "pnote");
+
+	sq = (*semiquaver);
+	if (pos_fn != -1)
+		sq->position = atoi(PQgetvalue(res, irow, pos_fn));
+	sq->velocity_min = atoi(PQgetvalue(res, irow, velocity_min_fn));
+	sq->velocity_max = atoi(PQgetvalue(res, irow, velocity_max_fn));
+	sq->pchange = atof(PQgetvalue(res, irow, pchange_fn));
+	sq->pchange_3qrt = atof(PQgetvalue(res, irow, pchange_3qrt_fn));
+	sq->pchange_3qvr = atof(PQgetvalue(res, irow, pchange_3qvr_fn));
+	sq->pchange_3smq = atof(PQgetvalue(res, irow, pchange_3smq_fn));
+
+	pnote_str = PQgetvalue(res, irow, pnote_fn);
+	sq->pnote = (float *)sql_array_unload_def(pnote_str, FLOAT_TYPE);
+	return 0;
+}
+
+/* Get all the semiquavers contained in the specified quarter. */
+int get_semiquavers(PGconn *dbh, int quarter, 
+		struct semiquaver_s ***semiquavers)
+{
+	int i, r, size = 0;
+	PGresult *res;
+	char *loadv;
+	const char *query;
+
+	asprintf(&loadv, "%d", quarter);
+
+	query = "select * from semiquaver where quarter = $1";
+
+	res = PQexecParams(dbh, query, 1, NULL, &loadv, NULL, NULL, 0);
+
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "subgenre SELECT failed %s",
+			PQerrorMessage(dbh));
+		return -1;
+	}
+	
+	size = PQntuples(res);
+	
+	/* Allocate the array of semiquavers */
+	if (size > 0)
+		(*semiquavers) = (struct semiquaver_s **)
+					calloc((size_t)size + 1, 
+					sizeof(struct semiquaver_s *));
+	
+	/* For each semiquaver cointained in the quarter push their retrieved 
+	   fields from the db into their corresponding data structures */
+	for (i = 0; i < size; i++) {
+		
+		if (fill_semiquaver_result(&((*semiquavers)[i]), res, i) != 0) {
+			return -1;
+		}
+		
+		(*semiquavers)[i]->quarter = quarter;
+	}
+	
+	(*semiquavers)[size] = NULL;
+
+	PQclear(res);
+
+	return size;
+}
+
+/* Get the semiquaver contained in the specified quarter that matches the 
+ * given position. (i.e. the second semiquaver of some quarter) */
+int get_semiquaver(PGconn *dbh, int quarter, int pos, 
+		struct semiquaver_s **semiquaver)
+{
+	int i, r, size = 0;
+	PGresult *res;
+	char *loadv[2];
+	const char *query;
+
+	asprintf(&(loadv[0]), "%d", quarter);
+	asprintf(&(loadv[1]), "%d", pos);
+
+	query = "select * from semiquaver where quarter = $1 and pos = $2";
+
+	res = PQexecParams(dbh, query, 2, NULL, loadv, NULL, NULL, 0);
+
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "subgenre SELECT failed %s",
+			PQerrorMessage(dbh));
+		return -1;
+	}
+	
+	size = PQntuples(res);
+
+	if (size > 0){
+		if (fill_semiquaver_result(semiquaver, res, 0) != 0){
+			return -1;
+		}
+		
+		(*semiquaver)->quarter = quarter;
+		(*semiquaver)->position = pos;
+	}
+
+	PQclear(res);
+
+	return size;
+}
 
 int null_array_size(void *a, int type)
 {
@@ -373,9 +503,9 @@ int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas)
 		variants_fn = PQfnumber(res, "variants");
 
 		
-		p->variants[i].first = atoi(PQgetvalue(res, 0, 0));
-		p->variants[i].last = atoi(PQgetvalue(res, 0, 1));
-		variants = PQgetvalue(res, 0, 2);
+		p->variants[i].first = atoi(PQgetvalue(res, 0, start_meas_fn));
+		p->variants[i].last = atoi(PQgetvalue(res, 0, end_meas_fn));
+		variants = PQgetvalue(res, 0, variants_fn);
 		
 		p->variants[i].variants = (char **) sql_array_unload_def(
 							variants, CHAR_TYPE);
@@ -518,6 +648,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	return;
 }
 
+/* TODO what about templates for these free functions? */
 void free_db_results(int *results)
 {
 	free(results);
@@ -542,7 +673,7 @@ void free_db_results(struct pattern_s *p)
 	if (!p)
 		return;
 
-	if (p->moods) {
+	if (p->moods) { 
 		for (i = 0; p->moods[i]; i++)
 			free (p->moods[i]);
 		free (p->moods);
@@ -554,7 +685,7 @@ void free_db_results(struct pattern_s *p)
 		free(p->variants[i].variants);
 	}
 
-	if (p->variants)
+	if (p->variants) ///XXX:why don't we just free? ("If ptr is a null pointer, no action occurs.)"
 		free(p->variants);
 
 	for (i = 0; i < p->measures_count; i++) {
