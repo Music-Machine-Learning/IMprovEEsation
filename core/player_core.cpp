@@ -1,4 +1,4 @@
-/*****************************************************************************/
+/**************************************-***************************************/
 /* MIDI player program.		                                                 */
 /* This is the core program which executes the whole melody                  */
 /*                                                                           */
@@ -39,6 +39,7 @@
 
 #include <time.h>
 
+/* TEST This creates a test set of 3 musicians */
 void fill_test_musician(subscription_s *new_musician, int prog){
 	switch (prog){
 		case 0:
@@ -65,6 +66,7 @@ void fill_test_musician(subscription_s *new_musician, int prog){
 		}
 	}
 	
+/* TEST Stupid and frightening cycling scale */	
 void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musicians_num){
 
 	int i, j;
@@ -74,7 +76,7 @@ void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musi
 		current.id = i; // hardcode -- not relevant
 		switch(i){
 			default:
-				current.size = 8;
+				current.size = 9;
 				
 				current.musician_id = i; //hardcode FIXME
 				if (i == 2){ // che merda di espediente
@@ -97,7 +99,10 @@ void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musi
 					}
 					cnote.tempo = 2;
 					cnote.id = j;
-					cnote.triplets = FALSE;
+					if(j>=6) // let's go with the triplet ya! 
+						cnote.triplets = TRUE;
+					else 
+						cnote.triplets = FALSE;
 					current.measure[j] = cnote;
 				}
 				break;
@@ -148,22 +153,23 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	int null_counter = 0;
 	/* This is a matrix which hosts the notes ordered by instrument (will be -1 terminated) */
 	struct notes_s notes[musicians_num][25];
-	/* This is an array which stores the pointers for every execution, the countdown to the end and the channel */
-	int note_pointer[musicians_num][3];
+	/* This is an array which stores the pointers for every execution, the countdown to the end, the channel and the triplet flag */
+	int note_pointer[musicians_num][4];
 	/* Data to be written to midi */
 	unsigned char data[musicians_num][3];
 	/* NULL NOTE */
 	struct notes_s nullnote = {-1,0,0,0};
 	
-	/* FIXME bpm are set to 120 by default. I can't obtain them. bpms is the duration of a semiquiver in mus */
+	/* FIXME bpm are set to 120 by default. I can't obtain them. bpms is the duration of half a semiquiver triplet unit in mus */
 	double bpm = 120;
-	double bpms = (15 / bpm) * 1000000;
+	double bpms = (15 / bpm) * (1000000 / 3); // the factor *3 is for the triplet
 	printf("%f\n", bpms);
 	
 	for(i=0; i<musicians_num; i++){
 		note_pointer[i][0] = 0;
 		note_pointer[i][1] = 0;
 		note_pointer[i][2] = 0;
+		note_pointer[i][3] = FALSE;
 		data[i][0] = KEY_UP(i);
 		data[i][1] = 0;
 		data[i][2] = 120;
@@ -174,23 +180,24 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 		
 		/* Fill the arrays of notes and make them -1 terminated */
 		for(j=0; j<25; j++){
-			if(j<note_list[i].size)
+			if(j<note_list[i].size){
 				notes[i][j] = note_list[i].measure[j];
-			else
+				notes[i][j].tempo = (notes[i][j].tempo * (2 + (1 - notes[i][j].triplets)));// commute the duration in a third of a semiquiver with a trick for the triplet
+			} else
 				notes[i][j] = nullnote;
 			printf("%d ",notes[i][j].note);
 		} 
 		printf("\n");
 	}
 	
-	/* For every note step (limit is max value + 1) */
-	for(i=0; i<25; i++){
+	/* For every note step (limit is max value + 1 like there would be all smallest triplets) */
+	for(i=0; i<49; i++){
 		printf("loop %d\n",i);
 		/* For every instrument */
 		for(j=0; j<musicians_num; j++){
 			
 			/* We are checking only playing channels (if all of them are -1 we're not playing) */
-			if(note_pointer[j][0] >= 0){
+			if(note_pointer[j][0] != -1){
 				
 				/* We are about to play a new note */
 				if(note_pointer[j][1] == 0){
@@ -200,7 +207,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 					data[j][0] = KEY_DOWN(note_pointer[j][2]);
 					if (notes[j][note_pointer[j][0]].note != 255)
 						data[j][1] = notes[j][note_pointer[j][0]].note;
-					else { // or enter in the depths of hell
+					else { // or enter in the depths of hell (execution terminated for the instrument)
 						note_pointer[j][0] = -1;
 						null_counter++;
 						continue;
@@ -223,6 +230,6 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 		/* Is everybody over? if so get out! */
 		if (null_counter != musicians_num)
 			usleep(bpms);
-		else break;
+		else break; // How can we stop everything??
 	}
 }

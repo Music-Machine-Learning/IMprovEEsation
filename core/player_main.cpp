@@ -57,7 +57,6 @@ void cleanup(void)
 		close(curr_musician->connection);
 		free(curr_musician);
 	}
-
 	close(director_socket);
 	close(net_handler);
 	close(fd);
@@ -237,7 +236,6 @@ int main(int argc, char **argv)
 		printf("%d:\n ", i);
 		//easter_egg_print();
 		play_measure(note_list, &musicians, musicians_num, fd, instrument_db);
-		
 	}
 
 	
