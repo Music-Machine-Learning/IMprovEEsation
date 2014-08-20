@@ -250,7 +250,7 @@ int get_subgenres(PGconn *dbh, char *genre, char ***subgenres)
 /* Fill the quarters array of IDs with those that in the DB have some 
  * match with the given parameters. The args_mask tells which of those 
  * parameters should be considered. */
-int get_quarters(PGconn *dbh, uint8_t args_mask, const char **args, 
+int get_quarters(PGconn *dbh, uint8_t args_mask, char **args, 
 		int **quarters)
 {
 	int quarter_num;
@@ -267,8 +267,8 @@ int get_quarters(PGconn *dbh, uint8_t args_mask, const char **args,
 		"scale_genre.id_scale = scale.id and "
 		"scale_genre.id_genre = genre.id and "
 		"pos = $1 and instrument = $2 and chord_note = $3 and "
-		"chord_mode = $4 and tag_dyna = $5 and tag_mood = $6 and "
-		"genre.name = $7 and scale.id = $8";
+		"chord_mode = $4 and genre.name = $5 and tag_dyna = $6 and "
+		"tag_mood = $7 and scale.id = $8";
 
 	res = PQexecParams(dbh, query, 8, NULL, args, NULL, NULL, 0);
 
@@ -290,8 +290,6 @@ int get_quarters(PGconn *dbh, uint8_t args_mask, const char **args,
 	for (i = 0; i < PQntuples(res); i++) {
 		char *cvalue = PQgetvalue(res, i, quarter_num);
 		
-		printf("%s\n", cvalue);
-	
 		(*quarters)[i] = atoi(cvalue);
 	}
 
@@ -367,28 +365,29 @@ int get_semiquavers(PGconn *dbh, int quarter,
 	}
 	
 	size = PQntuples(res);
-	
+
 	/* Allocate the array of semiquavers */
-	if (size > 0)
+	if (size > 0) {
 		(*semiquavers) = (struct semiquaver_s **)
 					calloc((size_t)size + 1, 
 					sizeof(struct semiquaver_s *));
-	
-	/* For each semiquaver cointained in the quarter push their retrieved 
-	   fields from the db into their corresponding data structures */
-	for (i = 0; i < size; i++) {
 		
-		if (fill_semiquaver_result(&((*semiquavers)[i]), res, i) != 0) {
-			return -1;
+		/* For each semiquaver cointained in the quarter push their 
+		 * retrieved fields from the db into their corresponding 
+		 * data structures */
+		for (i = 0; i < size; i++) {
+			
+			r = fill_semiquaver_result(&((*semiquavers)[i]), res, i);
+			if (r != 0) 
+				return -1;
+			
+			(*semiquavers)[i]->quarter = quarter;
 		}
 		
-		(*semiquavers)[i]->quarter = quarter;
+		(*semiquavers)[size] = NULL;
 	}
 	
-	(*semiquavers)[size] = NULL;
-
 	PQclear(res);
-
 	return size;
 }
 

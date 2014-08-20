@@ -96,8 +96,15 @@ int main(int argc, char **argv)
 
 	printf("connected\n");
 	
-	const char *args[8] = {"3", "1", "8", "1169", "groove", "slow", 
-		"blues", "669"};
+	char *args[8];
+	asprintf(&args[0], "0");
+	asprintf(&args[1], "1");
+	asprintf(&args[2], "0");
+	asprintf(&args[3], "1169");
+	asprintf(&args[4], "blues");
+	asprintf(&args[5], "groove");
+	asprintf(&args[6], "pushed");
+	asprintf(&args[7], "669");
 
 	quarters_size = get_quarters(dbh, 0, args, &quarters);
 	print_quarters(quarters);
@@ -116,7 +123,7 @@ int main(int argc, char **argv)
 		print_semiquaver(sq);
 	}
 
-	printf("\n###all semiquavers in quarter test\n");
+	printf("\n!###all semiquavers in quarter test\n");
 
 	struct semiquaver_s **sqs;
 	sq_size = get_semiquavers(dbh, quarters[0], &sqs);

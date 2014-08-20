@@ -105,6 +105,11 @@
 #define SEASHORE 122
 #define HELICOPTER 125
 
+#define NSEMITONES 12
+#define MIDI_NOCTAVES  7
+#define MIDI_FIRST_NOTE 24
+#define MIDI_REST_NOTE	128
+
 enum {
 	RYTHMIC,
 	SOLO
@@ -202,7 +207,7 @@ struct play_measure_s {
 struct measure_pattern_s {
 	int stepnumber;
 	int *steps;
-    char **modes;
+	char **modes;
 	char *dynamics;
 };
 

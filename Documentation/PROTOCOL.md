@@ -49,7 +49,7 @@ The director send at each measure a struct to all the musicians:
       uint16_t mode;
     } chords[]; //size of the current time signature upper value
 
-    //A string of 3 tags parted by a ; char (one field per each tag level dynamin, genre, mood).
+    //A string of 3 tags parted by a ; char (one field per each tag level genre, dynamin, mood).
     struct tags_s {
       uint size;  //string size
       char payload[]; //"genre;dynamics;mood\0"

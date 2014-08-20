@@ -25,9 +25,11 @@
 #define MUSICAN_CORE_H
 
 #include <improveesation/structs.h>
+#include <improveesation/db.h>
 
 int compose_note(struct note_s *snote, int id);
 int count_semiquavers(struct tempo_s time_signature);
-int compose_measure(struct play_measure_s *pm, struct measure_s *minfo);
-
+int compose_measure(struct play_measure_s *pm, struct measure_s *minfo, 
+			int instrument, PGconn *dbh);
+int musician_init(PGconn **dbh);
 #endif //MUSICAN_CORE_H

@@ -476,7 +476,7 @@ void free_director_core(){
 
     tmp = improvariants;
     while(improvariants != NULL){
-        free_pattern(improvariants->pattern);
+        free_db_results(improvariants->pattern);
         tmp = improvariants->next;
         free(improvariants);
         improvariants = tmp;
@@ -486,7 +486,7 @@ void free_director_core(){
         free(available_scales.list);
     }
 
-    free_pattern(current_pattern);
+    free_db_results(current_pattern);
 
     db_close(database);
 }

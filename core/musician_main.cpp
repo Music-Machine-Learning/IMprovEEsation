@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <improveesation/communication.h>
 #include <improveesation/musician_core.h>
+#include <improveesation/db.h>
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -37,6 +38,8 @@
 #include <time.h>
 
 #include <fcntl.h>
+
+class end_of_improvisation_exception eoi_ex;
 
 int director_socket;
 int player_socket;
@@ -55,10 +58,10 @@ void exit_usage(char *usage)
 
 int main(int argc, char **argv)
 {
-	int i, j, coupling, midi_class, soloer;
+	int i, j, coupling, midi_class, soloer, res;
 	struct sockaddr_in sout_director, sout_player;
 	struct notes_s *nt;
-
+	PGconn *dbh;
 	char *usage; 
 	asprintf(&usage, "%s <coupling> <midi-class> <soloer>\n", argv[0]);
 	
@@ -111,6 +114,11 @@ int main(int argc, char **argv)
 
 	printf("connected to player\n");
 
+	if (musician_init(&dbh) == -1){
+		fprintf(stderr, "Initialization failed\n");
+		exit(EXIT_FAILURE);
+	}
+
 	/* main loop */
 	for (i = 0; ;i++) {
 		/* TODO load the struct */
@@ -129,7 +137,9 @@ int main(int argc, char **argv)
 			       playing the random note:\n\tid: %d (%s)\n", i, 
 			       nm.tags.payload);
 			
-			compose_measure(&pm, &nm);
+			res = compose_measure(&pm, &nm, midi_class, dbh);
+			if (res == -1)
+				throw eoi_ex;
 			pm.id = i;
 			pm.musician_id = myid;
 			printf("Measure: id: %d, size: %d, musid %d\n", 
