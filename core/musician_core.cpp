@@ -87,15 +87,47 @@ int note_to_midi(int note_idx, int key_note)
 	return midi;
 }
 
-/* Assign the composed note into the given structure
-   and return its length as the number of semiquavers */
-int compose_note(struct notes_s *snote, int id)
+
+/* Compose the notes of a quarter scanning the semiquavers retreived from 
+ * the database. The number of notes inside the quarter is returned. */
+int compose_quarter(struct play_measure_s *pm, int key_note,
+		struct semiquaver_s **sqs, int sq_size, int ntcount)
 {
-	snote->note = 60;
-	snote->tempo = 2;
-	snote->id = id;
-	snote->triplets = 0;
-	return 0;
+	float rnd;
+	int idx, s;
+	struct notes_s new_note;
+
+	for (s = 0; s < sq_size; s++) {
+		memset(&new_note, 0, sizeof(new_note));
+		//TODO: just for now, we should decide some policy then
+		if (s == 0 && ntcount == 0)
+			rnd = 0.0;
+		else 
+			rnd = (float)rand() / ((float)(RAND_MAX) / 1.0);
+	
+		printf("sq_size: %d, s %d\n", sq_size, s);
+
+		if (sqs[s]->pchange >= rnd) {
+			idx = decide_note(sqs[s]->pnote);
+			
+			if (idx == -1){
+				if (ntcount != 0)
+					pm->measure[ntcount-1].tempo++;
+				else
+					return -1;
+			}
+
+			new_note.note = note_to_midi(idx, key_note);
+			new_note.tempo = 1;
+			new_note.id = ntcount;
+			new_note.triplets = 0;
+			pm->measure[ntcount++] = new_note;
+		} else {
+			pm->measure[ntcount-1].tempo++;
+		}
+	}
+	
+	return ntcount;
 }
 
 int count_semiquavers(struct tempo_s time_signature)
@@ -178,33 +210,30 @@ int fill_quarter_args(char **args, struct measure_s *minfo, int instrument,
 int compose_measure(struct play_measure_s *pm, struct measure_s *minfo, 
 	int instrument, PGconn *dbh)
 {
-	/* 
-	  TODO:
+	/* TODO 
 	   Rethink on this based on quaters:
 	   - From the minfo get some good quarters V
 	   - Once the quarter are decided, scan them and for each semiquaver 
 	     check if we should change the note from the previous and in 
-	     that case decide the note (reading the probabilities).
-	   - Merge the equal consecutive notes (or directly ignore them).
+	     that case decide the note (reading the probabilities). V
 	   - What if the first note doesn't change? What do I send? 
 	     The old note as a new note? 
 	     Or do we need a new field for this situation?
 	*/
 
-	uint8_t q, s, i, sqcount, max_sqcount, ntcount, res, q_size, sq_size;
+	uint8_t q, i, max_sqcount, ntcount, res, q_size, sq_size, key_note;
 	char *qargs[8];
 	int *qids;
 	struct semiquaver_s **sqs;
 
-	max_sqcount = sqcount = count_semiquavers(minfo->tempo);
+	ntcount = 0;
+
+	max_sqcount = count_semiquavers(minfo->tempo);
 	
 	/* Allocates the array of notes with the max count of notes as size.
 	 * It will be truncated later if the notes are lesser than the max. */
 	pm->measure = (struct notes_s *)malloc((size_t)max_sqcount *
 			sizeof(struct notes_s));
-
-
-	i = 0; /* Notes indexes in the whole measure */
 
 	for (q = 0; q < max_sqcount/4; q++) {
 		res = fill_quarter_args(qargs, minfo, instrument, q);
@@ -224,42 +253,16 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 			return -1;
 		} else if (sq_size > max_sqcount) {
 			fprintf(stderr, "Too many semiquavers in one quarter\n");
+			return -1;	
 		}
 
-		float rnd;
-		int idx, key_note;
-		struct notes_s new_note;
-		
 		key_note = minfo->tonal_zones[q].note;
-
-		for (s = 0; s < sq_size; s++) {
-	    		memset(&new_note, 0, sizeof(new_note));
-			//TODO: just for now, we should decide some policy then
-			if (s == 0)
-				rnd = 0.0;
-			else 
-				rnd = (float)rand() / ((float)(RAND_MAX) / 1.0);
-			
-			printf("Bsq_size: %d, s %d\n", sq_size, s);
-			if (sqs[s]->pchange >= rnd) {
-				idx = decide_note(sqs[s]->pnote);
-				
-				if (idx == -1) 
-					pm->measure[ntcount-1].tempo++;
-
-				new_note.note = note_to_midi(idx, key_note);
-				new_note.tempo = 1;
-				new_note.id = ntcount;
-				new_note.triplets = 0;
-				pm->measure[ntcount++] = new_note;
-			} else {
-				pm->measure[ntcount-1].tempo++;
-			}
-		}
-
+		
+		/* Be creative with the current quarter */
+		ntcount = compose_quarter(pm, key_note, sqs, sq_size, ntcount);
 
 	}
-#if 1 //SOME PROBLEM WITH RE-ALLOC 
+
 	/* Re-alloc the array of notes according to the notes count */
 	if (ntcount < max_sqcount){
 		printf("going to realloc old_size %d, new_size %d \n",
@@ -273,6 +276,5 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 		}
 		pm->size = ntcount;
 	}
-#endif	
 	return 0;
 }
