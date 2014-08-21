@@ -119,14 +119,22 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
+	/* TODO load the struct */
+	struct measure_s nm;
+	/* TODO load the struct */
+	struct play_measure_s pm;
+	
+	pm.measure = NULL;
+
 	/* main loop */
 	for (i = 0; ;i++) {
-		/* TODO load the struct */
-		struct measure_s nm;
-		/* TODO load the struct */
-		struct play_measure_s pm;
 		
-		
+		if (pm.measure != NULL){
+			printf("freeing old measure");
+			free(pm.measure);
+			pm.measure = NULL;
+		}
+
 		memset(&nm, 0, sizeof(struct measure_s));
 		memset(&pm, 0, sizeof(struct play_measure_s));
 
@@ -138,8 +146,11 @@ int main(int argc, char **argv)
 			       nm.tags.payload);
 			
 			res = compose_measure(&pm, &nm, midi_class, dbh);
-			if (res == -1)
-				throw eoi_ex;
+			if (res == -1){
+				printf("exiting\n");
+				return -1;
+			}
+				
 			pm.id = i;
 			pm.musician_id = myid;
 			printf("Measure: id: %d, size: %d, musid %d\n", 

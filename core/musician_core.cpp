@@ -197,10 +197,10 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 	struct semiquaver_s **sqs;
 
 	max_sqcount = sqcount = count_semiquavers(minfo->tempo);
-		
+	
 	/* Allocates the array of notes with the max count of notes as size.
 	 * It will be truncated later if the notes are lesser than the max. */
-	pm->measure = (struct notes_s *)calloc((size_t)max_sqcount,
+	pm->measure = (struct notes_s *)malloc((size_t)max_sqcount *
 			sizeof(struct notes_s));
 
 
@@ -255,13 +255,11 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 			} else {
 				pm->measure[ntcount-1].tempo++;
 			}
-			
-			//print_semiquaver(sqs[s]);
 		}
 
 
 	}
-
+#if 1 //SOME PROBLEM WITH RE-ALLOC 
 	/* Re-alloc the array of notes according to the notes count */
 	if (ntcount < max_sqcount){
 		printf("going to realloc old_size %d, new_size %d \n",
@@ -270,23 +268,11 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 				sizeof(struct notes_s) * (size_t)ntcount);
 		if (pm->measure == NULL){
 			fprintf(stderr, "Realloc error: %s\n", strerror(errno));
-		
+			
 			return -1;
 		}
 		pm->size = ntcount;
 	}
-#if 0
-	struct notes_s new_note;
-
-	for (i = 0; sqcount > 0; i++) {
-	    	memset(&new_note, 0, sizeof(new_note));
-		compose_note(&new_note, i);
-		sqcount -= new_note.tempo;
-		pm->measure[i] = new_note;
-		/* TODO: what if it goes under 0? and what about triplets?*/
-	}
-
-
-#endif
+#endif	
 	return 0;
 }

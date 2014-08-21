@@ -373,6 +373,8 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 	close(efd);
 }
 
+/* XXX: this function seems wrong! the array is the measure field not nl and
+ * anyway where is this used? */
 void free_play_measure(struct play_measure_s *nl, int size)
 {
 	int i;
