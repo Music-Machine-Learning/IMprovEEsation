@@ -10,7 +10,7 @@
 * DB:
   * drop table genres
   * rename measures in measure, patterns in pattern and check the corrisponding queries in the source code
-  * rename improveesation_experimental_test in improveesation DB
+  * rename the improveesation_experimental_test database in improveesation
   * remove the DB others then improveesation 
   * remove experimental branch
 
