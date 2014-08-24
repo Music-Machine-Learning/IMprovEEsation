@@ -72,7 +72,7 @@ void *sql_array_unload(const char *instr, const char *del, int outtype)
 		} else {
 			if (outtype == CHAR_TYPE)
 				((char **)out)[i] = NULL;
-			else if (outtype == INT_TYPE)
+			else if (outtype == INT_TYPE || outtype == FLOAT_TYPE)
 				((int *)out)[i] = -1;
 		}
 		i++;
