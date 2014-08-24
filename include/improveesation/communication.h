@@ -60,7 +60,7 @@ void recv_subscription(int conn_socket, struct subscription_s *new_musician);
 void send_num_of_musicians(int player_addr, uint32_t musicians_count);
 void send_id(int musician_conn, uint32_t id);
 void broadcast_measure(struct measure_s *next_measure, struct list_head *dests);
-void free_play_measure(struct play_measure_s *nl, int size);
+void free_play_measures(struct play_measure_s *nl, int size);
 void sync_all(struct list_head *dests);
 
 /* Exceptions */

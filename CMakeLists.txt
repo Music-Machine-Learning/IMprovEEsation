@@ -65,7 +65,7 @@ include_directories(${PostgreSQL_INCLUDE_DIR})
 set (POSTGRES_DB_LIBRARY ${PostgreSQL_LIBRARIES})
 
 set(EXTRA_NET_LIBRARIES improveesation_communication)
-set(EXTRA_DB_LIBRARIES improveesation_db)
+set(EXTRA_DB_LIBRARIES improveesation_db pq)
 
 file(GLOB DirectorSources "${CORE_SOURCE_PROJECT_DIR}/director_*.cpp")
 file(GLOB PlayerSources "${CORE_SOURCE_PROJECT_DIR}/player_*.cpp")
@@ -73,13 +73,13 @@ file(GLOB MusicianSources "${CORE_SOURCE_PROJECT_DIR}/musician_*.cpp")
 file(GLOB DbTestSources "${CORE_SOURCE_PROJECT_DIR}/db_*.cpp")
 
 add_executable(director ${DirectorSources})
-target_link_libraries(director ${EXTRA_NET_LIBRARIES})
+target_link_libraries(director ${EXTRA_NET_LIBRARIES} ${EXTRA_DB_LIBRARIES})
 
 add_executable(player ${PlayerSources})
-target_link_libraries(player ${EXTRA_NET_LIBRARIES})
+target_link_libraries(player ${EXTRA_NET_LIBRARIES} ${EXTRA_DB_LIBRARIES})
 
 add_executable(musician ${MusicianSources})
-target_link_libraries(musician ${EXTRA_NET_LIBRARIES})
+target_link_libraries(musician ${EXTRA_NET_LIBRARIES} ${EXTRA_DB_LIBRARIES})
 
 add_executable(db_test ${DbTestSources})
 target_link_libraries(db_test ${EXTRA_DB_LIBRARIES} ${POSTGRES_DB_LIBRARY})
