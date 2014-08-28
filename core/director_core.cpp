@@ -40,6 +40,9 @@ struct scale_list_s {
 };
 
 static char* genre;
+static char* subgenre;
+static char** genresList;
+static char** subgenresList;
 
 static tempo_s tempo;
 static uint16_t tonality;
@@ -89,6 +92,11 @@ void load_genre_info(char* gen, char* sub){
     variant_couple_s *tmp;
 
     get_pattern(database, gen, sub, &current_pattern);
+
+    if(current_pattern==NULL){
+        printf("ERROR: missing genre+subgenre: %s, %s!!!\n", gen, sub);
+        return;
+    }
 
     prev_mood = 0;
     moods_num = 0;
@@ -415,8 +423,6 @@ void decideImproScale(measure_s *measure, int current_measure_id){
 
     measure->tonal_zones = (tonal_zone_s*) calloc(tempo.upper, sizeof(tonal_zone_s));
 
-    //FIXME: if matching scale vector is empty we have to do something plausible...
-
     step = -1;
     //if there is one valid reference chord for the entire measure decide based on that chord
     if(current_pattern->measures[current_measure_id].stepnumber == 1 || (step = checkCadenza(&(current_pattern->measures[current_measure_id]))) >= 0){
@@ -449,8 +455,47 @@ void decideImproScale(measure_s *measure, int current_measure_id){
 
 }
 
+void pickSubgenre(){
+    int i;
+    char** pick;
+
+    for(i = 0; subgenresList[i] != NULL; i++);
+
+    pick = &(subgenresList[rand()%i]);
+    while(*pick=="" || !strcmp(*pick, subgenre)){
+        pick = &(subgenresList[rand()%i]);
+    }
+
+    free(subgenre);
+    subgenre = (char*)calloc(strlen(*pick)+1, sizeof(char));
+    strcpy(subgenre, *pick);
+}
+
+void pickGenre(){
+    int i;
+    char** pick;
+
+    for(i = 0; genresList[i] != NULL; i++);
+
+    pick = &(genresList[rand()%i]);
+    while(*pick=="" || !strcmp(*pick, genre)){
+        pick = &(genresList[rand()%i]);
+    }
+
+    free(genre);
+    genre = (char*)calloc(strlen(*pick)+1, sizeof(char));
+    strcpy(genre, *pick);
+
+    free_db_results(subgenresList);
+    get_subgenres(database, genre, &subgenresList);
+}
+
+
 void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *sololist){
-    genre = gen;
+    genre = (char*) calloc(strlen(gen)+1, sizeof(char));
+    strcpy(genre, gen);
+    subgenre = (char*) calloc(strlen(sub)+1, sizeof(char));
+    strcpy(subgenre, sub);
     impro_end = 0;
 
     soloers = sololist;
@@ -464,6 +509,9 @@ void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solo
                           "improveesation_experimental_testes",
                           "read_only",
                           "testiamo123");
+
+    get_genres(database, &genresList);
+    get_subgenres(database, genre, &subgenresList);
 
     load_genre_info(genre, sub);
 
@@ -495,22 +543,15 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
     int i;
 
     if(rand() % 100 < (current_measure_id == 0 ? GENRE_CHANGE_ON_ONE_THRESHOLD : GENRE_CHANGE_THRESHOLD)){
-        printf("\tchange");
+        printf("\tchanged ");
         if(rand() % 100 < CHANGE_TO_SUBGENRE){
-            /*
-             * pick a valid subgenre
-             */
-             // genre = subgen;
-            printf("subgenre\n");
+            pickSubgenre();
+            printf("subgenre: %s\n", subgenre);
         } else {
-            /*
-             * pick a random genre
-             */
-             // genre = gen;
-            printf("genre\n");
+            pickGenre();
+            printf("genre; %s\n", genre);
         }
-        //if(new_genre != genre)
-            //load_genre_info();
+        load_genre_info(genre, subgenre);
     }
 
     decideChord(measure, current_measure_id);

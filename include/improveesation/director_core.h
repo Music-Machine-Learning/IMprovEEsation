@@ -26,10 +26,10 @@
 
 #include <improveesation/structs.h>
 
-#define CHANGE_TO_SUBGENRE				80
+#define CHANGE_TO_SUBGENRE				100 //we don't have any other working genres by now..
 
 #define GENRE_CHANGE_THRESHOLD			0
-#define GENRE_CHANGE_ON_ONE_THRESHOLD	35
+#define GENRE_CHANGE_ON_ONE_THRESHOLD	30
 
 #define MOOD_CHANGE_THRESHOLD			30  //testing purpose only, needs to be dropped to at most 1
 #define MOOD_CHANGE_ON_ONE_THRESHOLD	10
