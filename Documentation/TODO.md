@@ -10,7 +10,7 @@
 * Fill the DB with a LOOOT of data
 * Configuration file for the DB parameters ^
 * Find a solution for the delay caused by the communication within the DB
-    Set up the local DBs and the git repo for the it
+  * Set up the local DBs and the git repo for the it
 * Add array priority args for quarters in the measure struct
 * ...
 
