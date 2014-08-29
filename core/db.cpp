@@ -459,7 +459,7 @@ int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas)
 	var_ids = (int *) sql_array_unload_def(var_meas, INT_TYPE);
 	if (!var_ids) {
 		fprintf(stderr,
-		       "Error in the parsing of the variable measures");
+		       "Error in the parsing of the variable measure");
 		return -1;
 	}
 
@@ -550,7 +550,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	loadv[1] = patternName;
 
 	query = "SELECT measure_count, moods, steps, modes, dynamics, "
-		"variable_measure FROM measures AS m, patterns AS p "
+		"variable_measure FROM measure AS m, pattern AS p "
 		"WHERE p.id = (SELECT subgenre.id FROM subgenre, genre "
 		"WHERE subgenre.id_genre = genre.id and genre.name = $1 "
 		"AND subgenre.name = $2) AND m.id = p.measure";
@@ -570,7 +570,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 			"Warn: no results\n");
 		// !!!! SEGFAULT WARNING URGENT TODO !!!!: 
 		// maybe it's better if we handle this error return
-		// (or it tryes to get the patterns and the measure count is 
+		// (or it tryes to get the pattern and the measure count is 
 		// is some random value) !!
 		return; 
 	}

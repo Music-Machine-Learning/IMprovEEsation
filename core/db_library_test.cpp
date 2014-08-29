@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
 
 	dbh = db_connect("griffin.dberardi.eu",
-			"improveesation_experimental_testes",
+			"improveesation",
 			"read_only",
 			"testiamo123");
 

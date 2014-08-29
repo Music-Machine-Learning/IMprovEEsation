@@ -30,13 +30,15 @@
 #include <time.h>
 #include <errno.h>
 
+int print_semiquaver(struct semiquaver_s *sq);
+
 int musician_init(PGconn **dbh)
 {
 	*dbh = NULL;
 	
 	/* TODO: some config file for these parameters */
 	*dbh = db_connect("griffin.dberardi.eu",
-			"improveesation_experimental_testes",
+			"improveesation",
 			"read_only",
 			"testiamo123");
 	
@@ -49,6 +51,11 @@ int musician_init(PGconn **dbh)
 /* Decide a note scanning an array of 13 probability values (one is the rest) */
 int decide_note(float *pnote)
 {
+	/* TODO 
+	   - What if the first note of the measure doesn't change?  
+	     What do I pick? The old note as a new note? 
+	     Or do we need a new field for this situation?
+	*/
 	int i, max_idx;
 	float rnd, ival, max_ival;
 
@@ -59,7 +66,9 @@ int decide_note(float *pnote)
 	 * For those notes that passed the random barrier, find the note which
 	 * the interval between its prob value and the its random is the maximum 
 	 */
-	for (i = 0; i < 12; i < i++) {
+	/* TODO: not a good strategy: if the decision is distributed for
+	   all the notes, all of them will have low probability to pass! */
+	for (i = 0; i < NSEMITONES + 1; i++) {
 		rnd = (float)rand() / ((float)(RAND_MAX) / 1.0);
 		if (pnote[i] >= rnd) {
 			ival = pnote[i] - rnd;
@@ -97,6 +106,7 @@ int compose_quarter(struct play_measure_s *pm, int key_note,
 	int idx, s;
 	struct notes_s new_note;
 
+	printf("composing quarter. ntcount: %d\n", ntcount);
 	for (s = 0; s < sq_size; s++) {
 		memset(&new_note, 0, sizeof(new_note));
 		//TODO: just for now, we should decide some policy then
@@ -116,12 +126,14 @@ int compose_quarter(struct play_measure_s *pm, int key_note,
 				else
 					return -1;
 			}
-
+			
 			new_note.note = note_to_midi(idx, key_note);
 			new_note.tempo = 1;
 			new_note.id = ntcount;
 			new_note.triplets = 0;
-			pm->measure[ntcount++] = new_note;
+			pm->measure[ntcount] = new_note;
+			ntcount++;
+			printf("new note added. ntcount: %d\n", ntcount);
 		} else {
 			pm->measure[ntcount-1].tempo++;
 		}
@@ -135,26 +147,6 @@ int count_semiquavers(struct tempo_s time_signature)
 	/* TODO: calculate the number of semiquavers according to the 
 	   time signature */
 	return 16;
-}
-
-/* Just a debug function that prints the values of a semiquaver structure */
-int print_semiquaver(struct semiquaver_s *sq)
-{
-	int i;
-	printf("--semiquaver--\n");
-	printf("quarter %d pos %d vmin %d vmax %d\n"
-		"pchange %.2f pchange_3qrt %.2f pchange_3qvr %.2f pchange_3smq "
-		"%.2f\npnotes {", sq->quarter, sq->position, sq->velocity_min, 
-		sq->velocity_max, sq->pchange, sq->pchange_3qrt, sq->pchange_3qvr,
-		sq->pchange_3smq);
-	
-	for (i = 0; i < 13; i++){
-		printf("%.2f", sq->pnote[i]);
-		if (i != 12)
-			printf(", ");
-	}
-	printf("}\n----\n");
-	return 0;
 }
 
 /* Split the tags string into 3 strings contained in the "results" array which 
@@ -207,21 +199,12 @@ int fill_quarter_args(char **args, struct measure_s *minfo, int instrument,
 	return 0;
 }
 
+/* Compose a measure looking into the measure hints provided by the director. */
 int compose_measure(struct play_measure_s *pm, struct measure_s *minfo, 
 	int instrument, PGconn *dbh)
 {
-	/* TODO 
-	   Rethink on this based on quaters:
-	   - From the minfo get some good quarters V
-	   - Once the quarter are decided, scan them and for each semiquaver 
-	     check if we should change the note from the previous and in 
-	     that case decide the note (reading the probabilities). V
-	   - What if the first note doesn't change? What do I send? 
-	     The old note as a new note? 
-	     Or do we need a new field for this situation?
-	*/
 
-	uint8_t q, i, max_sqcount, ntcount, res, q_size, sq_size, key_note;
+	int q, i, max_sqcount, ntcount, res, q_size, sq_size, key_note;
 	char *qargs[8];
 	int *qids;
 	struct semiquaver_s **sqs;
@@ -234,7 +217,12 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 	 * It will be truncated later if the notes are lesser than the max. */
 	pm->measure = (struct notes_s *)malloc((size_t)max_sqcount *
 			sizeof(struct notes_s));
-
+	
+	/* First retrieve the quarters that may match what the director wants.
+	 * For each quarter look in the DB for the corrisponding semiquavers
+	 * and for each of them decide to change (or not) the note and in case
+	 * of changing decide which note to choose with the decision function 
+	 * which is based on the probabilities array scan. */
 	for (q = 0; q < max_sqcount/4; q++) {
 		res = fill_quarter_args(qargs, minfo, instrument, q);
 		if (res == -1)
@@ -260,7 +248,10 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 		
 		/* Be creative with the current quarter */
 		ntcount = compose_quarter(pm, key_note, sqs, sq_size, ntcount);
-
+		if (ntcount == -1) {
+			fprintf(stderr, "Error in quarter composition\n");
+			return -1;
+		}
 	}
 
 	/* Re-alloc the array of notes according to the notes count */
@@ -276,5 +267,25 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 		}
 		pm->size = ntcount;
 	}
+	return 0;
+}
+
+/* Just a debug function that prints the values of a semiquaver structure */
+int print_semiquaver(struct semiquaver_s *sq)
+{
+	int i;
+	printf("--semiquaver--\n");
+	printf("quarter %d pos %d vmin %d vmax %d\n"
+		"pchange %.2f pchange_3qrt %.2f pchange_3qvr %.2f pchange_3smq "
+		"%.2f\npnotes {", sq->quarter, sq->position, sq->velocity_min, 
+		sq->velocity_max, sq->pchange, sq->pchange_3qrt, sq->pchange_3qvr,
+		sq->pchange_3smq);
+	
+	for (i = 0; i < 13; i++){
+		printf("%.2f", sq->pnote[i]);
+		if (i != 12)
+			printf(", ");
+	}
+	printf("}\n----\n");
 	return 0;
 }

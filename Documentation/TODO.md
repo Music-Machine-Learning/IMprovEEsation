@@ -2,17 +2,6 @@
 
 - **¿** means *"discussion needed first"*
 - **^** means *"discussion may not be needed but is appreciated"*
- 
-## Clean Stuff (needs approval)
-* remove data folder 
-* remove db folder
-* remove lib folder
-* DB:
-  * drop table genres
-  * rename measures in measure, patterns in pattern and check the corrisponding queries in the source code
-  * rename the improveesation_experimental_test database in improveesation
-  * remove the DB others then improveesation 
-  * remove experimental branch
 
 ## General
 
@@ -27,6 +16,4 @@
 * Add free_semiquavers
 * Different random seeds based on pid ^
 * ...
-
-
 

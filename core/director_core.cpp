@@ -506,7 +506,7 @@ void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solo
     srand(time(NULL));
 
     database = db_connect("griffin.dberardi.eu",
-                          "improveesation_experimental_testes",
+                          "improveesation",
                           "read_only",
                           "testiamo123");
 
