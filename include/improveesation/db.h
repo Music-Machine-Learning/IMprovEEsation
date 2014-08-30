@@ -40,12 +40,13 @@ enum {
 	FLOAT_TYPE
 };
 
-void *sql_array_unload(const char *instr, const char *del, int outtype);
+void *sql_array_unload(const char *instr, const char *del, int outtype,
+			int *arr_size);
 
 void **sql_array_unload_2(const char *instr, const char startdel,
 			  const char enddel, const char *del, int outtype);
 
-#define sql_array_unload_def(i,o) sql_array_unload(i, ",", o)
+#define sql_array_unload_def(i,o,s) sql_array_unload(i, ",", o, s)
 #define sql_array_unload_2_def(i,o) sql_array_unload_2(i, '{', '}', ",", o)
 
 PGconn *db_connect(const char *host, const char *dbname,

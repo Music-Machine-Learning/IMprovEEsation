@@ -32,7 +32,8 @@
 #include <improveesation/db.h>
 
 
-void *sql_array_unload(const char *instr, const char *del, int outtype)
+void *sql_array_unload(const char *instr, const char *del, int outtype, 
+			int *arr_size)
 {
 	char *s = NULL, *s1, *s2;
 	int i = 0;
@@ -72,12 +73,16 @@ void *sql_array_unload(const char *instr, const char *del, int outtype)
 		} else {
 			if (outtype == CHAR_TYPE)
 				((char **)out)[i] = NULL;
-			else if (outtype == INT_TYPE || outtype == FLOAT_TYPE)
+			else if (outtype == INT_TYPE)
 				((int *)out)[i] = -1;
+			else if (outtype == FLOAT_TYPE)
+				((float *)out)[i] = -1;
 		}
 		i++;
 	} while (s1);
-
+	
+	*arr_size = i - 1;
+	
 	return out;
 }
 
@@ -86,6 +91,7 @@ void **sql_array_unload_2(const char *instr, const char startdel,
 			       const char enddel, const char *del, int outtype)
 {
 	void **out = NULL;
+	int s;
 	char cp[strlen(instr)];
 
 	strcpy(cp, instr + 1);
@@ -117,8 +123,8 @@ void **sql_array_unload_2(const char *instr, const char startdel,
 				strncpy(t, cp + start, end - start + 2);
 				t[end - start + 1] = '\0';
 
-				((void **)out)[current++] = sql_array_unload(t,
-								del, outtype);
+				((void **)out)[current++] = 
+					sql_array_unload(t, del, outtype, &s);
 			}
 
 			level--;
@@ -227,8 +233,6 @@ int get_subgenres(PGconn *dbh, char *genre, char ***subgenres)
 	for (i = 0; i < PQntuples(res); i++) {
 		char *cvalue = PQgetvalue(res, i, subgenre_num);
 		
-		printf("%s\n", cvalue);
-		
 		(*subgenres)[i] = (char *)calloc(strlen(cvalue) + 1,
 					      sizeof(char));
 
@@ -304,7 +308,8 @@ int fill_semiquaver_result(struct semiquaver_s **semiquaver,
 					PGresult *res,	int irow)
 {
 	int pos_fn, velocity_min_fn, velocity_max_fn, pchange_fn, 
-	    pchange_3qrt_fn, pchange_3qvr_fn, pchange_3smq_fn, pnote_fn;
+	    pchange_3qrt_fn, pchange_3qvr_fn, pchange_3smq_fn, pnote_fn, 
+	    pnote_arr_size;
 
 	char *pnote_str;
 
@@ -339,7 +344,14 @@ int fill_semiquaver_result(struct semiquaver_s **semiquaver,
 	sq->pchange_3smq = atof(PQgetvalue(res, irow, pchange_3smq_fn));
 
 	pnote_str = PQgetvalue(res, irow, pnote_fn);
-	sq->pnote = (float *)sql_array_unload_def(pnote_str, FLOAT_TYPE);
+	sq->pnote = (float *)sql_array_unload_def(pnote_str, FLOAT_TYPE, 
+			&pnote_arr_size);
+
+	if (pnote_arr_size != PROB_ARR_SIZE){
+		fprintf(stderr, "Wrong prob array size: %d\n", pnote_arr_size);
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -430,6 +442,51 @@ int get_semiquaver(PGconn *dbh, int quarter, int pos,
 	return size;
 }
 
+/* Retrieve the scales related to a specified genre */
+int get_scales(PGconn *dbh, char *genre, uint16_t **scales)
+{
+	const char *query;
+	PGresult *res;
+	int i, size;
+	
+	query = "select scale.id from scale, genre, scale_genre where "
+		"scale_genre.id_genre = genre.id and "
+		"scale_genre.id_scale = scale.id and genre.name = $1";
+
+	res = PQexecParams(dbh, query, 1, NULL, &genre, NULL, NULL, 0);
+
+	
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "scales SELECT failed %s",
+			PQerrorMessage(dbh));
+		return -1;
+	}
+	
+	size = PQntuples(res);
+
+	*scales = (uint16_t *)calloc(size + 1, sizeof(uint16_t));
+
+	if (!*scales) {
+		perror("malloc");
+		return -1;
+	}
+
+	for (i = 0; i < size; i++) {
+		(*scales)[i] = (uint16_t)atoi(PQgetvalue(res, i, 0));
+
+		if (!(*scales)[i]) {
+			perror("malloc");
+			return -1;
+		}
+	}
+
+	(*scales)[size] = -1;
+
+	PQclear(res);
+
+	return size;
+}
+
 int null_array_size(void *a, int type)
 {
 	int i;
@@ -451,12 +508,12 @@ int null_array_size(void *a, int type)
 int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas)
 {
 	int i;
-	int start_meas_fn, end_meas_fn, variants_fn;
+	int start_meas_fn, end_meas_fn, variants_fn, marr_size, varr_size;
 	char *variants;
 	int *var_ids;
 	PGresult *res;
 
-	var_ids = (int *) sql_array_unload_def(var_meas, INT_TYPE);
+	var_ids = (int *) sql_array_unload_def(var_meas, INT_TYPE, &marr_size);
 	if (!var_ids) {
 		fprintf(stderr,
 		       "Error in the parsing of the variable measure");
@@ -483,7 +540,7 @@ int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas)
 		}
 
 		asprintf(&char_id, "%d", var_ids[i]);
-		printf("%s - charid\n", char_id);
+		
 		query = "select start_meas, end_meas, array_agg(subgenre.name) "
 			"as variants from var_measure, subgenre where "
 			"var_measure.id = $1 and subgenre.id = any(variants) "
@@ -506,10 +563,8 @@ int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas)
 		p->variants[i].last = atoi(PQgetvalue(res, 0, end_meas_fn));
 		variants = PQgetvalue(res, 0, variants_fn);
 		
-		p->variants[i].variants = (char **) sql_array_unload_def(
-							variants, CHAR_TYPE);
-	
-		printf("%s\n", p->variants[i].variants[0]);
+		p->variants[i].variants = (char **)sql_array_unload_def(
+					variants, CHAR_TYPE, &varr_size);
 		
 		if (!p->variants[i].variants) {
 			perror("malloc");
@@ -531,6 +586,8 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	/* Field Position */
 	int measure_count_fn, moods_fn, steps_fn,
 	    modes_fn, dynamics_fn, var_meas_fn;
+
+	int marr_size, darr_size; /* moods_array and dyna_array sizes */
 
 	/* Raw parameters */
 	char *measure_count, *moods, *steps,
@@ -609,9 +666,10 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 
 	/* array parsing */
 	p->measures_count = atoi(measure_count);
-	p->moods = (char **) sql_array_unload_def(moods, CHAR_TYPE);
+	p->moods = (char **)sql_array_unload_def(moods, CHAR_TYPE, &marr_size);
 
-	tmp_dynamics = (char **) sql_array_unload_def(dynamics, CHAR_TYPE);
+	tmp_dynamics = (char **)sql_array_unload_def(dynamics, CHAR_TYPE, 
+							&darr_size);
 	tmp_steps = (int **) sql_array_unload_2_def(steps, INT_TYPE);
 	tmp_modes = (char ***) sql_array_unload_2_def(modes, CHAR_TYPE);
 

@@ -51,34 +51,22 @@ int musician_init(PGconn **dbh)
 /* Decide a note scanning an array of 13 probability values (one is the rest) */
 int decide_note(float *pnote)
 {
-	/* TODO 
-	   - What if the first note of the measure doesn't change?  
-	     What do I pick? The old note as a new note? 
-	     Or do we need a new field for this situation?
-	*/
-	int i, max_idx;
-	float rnd, ival, max_ival;
-
-	max_idx = max_ival = -1;
+	/* Create a prefix sums array starting from the pnote array.
+	 * Then get a random number and scan the prefix sums array until a 
+	 * value lesser or equal than the random number is found. 
+	 * The index of the found value will be the index of the 
+	 * decided note in the pnote array. */
+	int i;
+	float r, pref[PROB_ARR_SIZE];
 	
-	/* For each note probability launch a random number, if the note prob
-	 * is greater than the random number then the note pass. 
-	 * For those notes that passed the random barrier, find the note which
-	 * the interval between its prob value and the its random is the maximum 
-	 */
-	/* TODO: not a good strategy: if the decision is distributed for
-	   all the notes, all of them will have low probability to pass! */
-	for (i = 0; i < NSEMITONES + 1; i++) {
-		rnd = (float)rand() / ((float)(RAND_MAX) / 1.0);
-		if (pnote[i] >= rnd) {
-			ival = pnote[i] - rnd;
-			if (ival > max_ival) {
-				max_idx = i;
-				max_ival = ival;
-			}
-		}
-	}
-	return max_idx;
+	pref[0] = pnote[0];
+	for (i = 1; i < PROB_ARR_SIZE; i++) 
+		pref[i] = pref[i - 1] + pnote[i];
+	
+	r = (float)rand() / (float)(RAND_MAX);
+	for (i = 0; r > pref[i]; i++);
+	
+	return i;
 }
 
 int note_to_midi(int note_idx, int key_note)
