@@ -18,7 +18,6 @@
 * Add free_semiquavers
 * Different random seeds based on pid ^
 * Handle the priority args array for the get_quarters
-* Add the new note decision algorithm in the core
 * ...
 
 ## DB API

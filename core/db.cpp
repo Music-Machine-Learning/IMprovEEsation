@@ -705,13 +705,14 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	return;
 }
 
-/* TODO what about templates for these free functions? */
-void free_db_results(int *results)
+/* Single pointer (i.e. arrays) */
+void free_db_results(void *results)
 {
 	free(results);
 }
 
-void free_db_results(char **results)
+/* Array of pointers (i.e. two dimensionalarrays) */
+void free_db_results(void **results)
 {
 	int i;
 	if (!results) {
@@ -724,6 +725,7 @@ void free_db_results(char **results)
 	free(results);
 }
 
+/* Free a pattern structure */
 void free_db_results(struct pattern_s *p)
 {
 	int i;
@@ -742,8 +744,7 @@ void free_db_results(struct pattern_s *p)
 		free(p->variants[i].variants);
 	}
 
-	if (p->variants) ///XXX:why don't we just free? ("If ptr is a null pointer, no action occurs.)"
-		free(p->variants);
+	free(p->variants);
 
 	for (i = 0; i < p->measures_count; i++) {
 		int j;
@@ -756,3 +757,26 @@ void free_db_results(struct pattern_s *p)
 
 	free(p);
 }
+
+/* Free a semiquaver structure */
+void free_db_results(struct semiquaver_s *sq)
+{
+	if (!sq)
+		return;
+	free(sq->pnote);
+	free(sq);
+}
+
+/* Free an array of semiquaver structures */
+void free_db_results(struct semiquaver_s **sqs)
+{
+	int i;
+	if (!sqs) 
+		return;
+
+	for (i = 0; sqs[i]; i++) 
+		free(sqs[i]);
+
+	free(sqs);
+}
+

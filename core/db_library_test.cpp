@@ -122,6 +122,8 @@ int main(int argc, char **argv)
 	} else {
 		print_semiquaver(sq);
 	}
+	
+	free_db_results(sq);
 
 	printf("\n!###all semiquavers in quarter test\n");
 
@@ -136,9 +138,29 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < sq_size; i++)
 		print_semiquaver(sqs[i]);
-
+	
+	printf("freeing semiquavers and quarters\n");
+	free_db_results(sqs);
 	free_db_results(quarters);
 
+
+	printf("\n###scales test\n");
+	uint16_t *scales;
+	int scales_size;
+	char gen[] = "blues";
+	
+	scales_size = get_scales(dbh, gen, &scales);
+	if (scales_size == 0) {
+		printf("no scales found for the given genre\n");
+	} else if (scales_size == -1) {
+		printf("some problem in the get_scales\n");
+		return -1;
+	}
+
+	for (i = 0; i < scales_size; i++)
+		printf("scale: %d\n", scales[i]);
+		
+	free_db_results(scales);
 	printf("\n###genres, subgenres and patterns test\n");
 
 	genn = get_genres(dbh, &genres);	
