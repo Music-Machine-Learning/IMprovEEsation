@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 
 	printf("connected\n");
 	
-	char *args[8];
+	char *args[9];
 	asprintf(&args[0], "0");
 	asprintf(&args[1], "1");
 	asprintf(&args[2], "0");
@@ -105,6 +105,7 @@ int main(int argc, char **argv)
 	asprintf(&args[5], "groove");
 	asprintf(&args[6], "pushed");
 	asprintf(&args[7], "669");
+	asprintf(&args[8], "0");
 
 	quarters_size = get_quarters(dbh, 0, args, &quarters);
 	print_quarters(quarters);

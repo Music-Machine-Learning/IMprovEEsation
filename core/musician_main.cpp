@@ -58,19 +58,19 @@ void exit_usage(char *usage)
 
 int main(int argc, char **argv)
 {
-	int i, j, coupling, midi_class, soloer, res;
+	int i, j, coupling, midi_class, soloist, res;
 	struct sockaddr_in sout_director, sout_player;
 	struct notes_s *nt;
 	PGconn *dbh;
 	char *usage; 
-	asprintf(&usage, "%s <coupling> <midi-class> <soloer>\n", argv[0]);
+	asprintf(&usage, "%s <coupling> <midi-class> <soloist>\n", argv[0]);
 	
 	if (argc < 4){
 		exit_usage(usage);
 	} else {
 		coupling = atoi(argv[1]);
 		midi_class = atoi(argv[2]);
-		soloer = atoi(argv[3]);
+		soloist = atoi(argv[3]);
 	}
 
 	srand(time(NULL));
@@ -102,11 +102,11 @@ int main(int argc, char **argv)
 	
 	/* XXX build it with an appropiate method */
 	uint32_t myid = send_subscription(director_socket,
-				coupling, midi_class, soloer);
+				coupling, midi_class, soloist);
 
 	printf("connected to director (%d)\n", myid);
 
-	send_subscription(player_socket, myid, midi_class, soloer);
+	send_subscription(player_socket, myid, midi_class, soloist);
 
 	/* set the socket to non blocking */
 	fcntl(player_socket, F_SETFL, 
@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 			       playing the random note:\n\tid: %d (%s)\n", i, 
 			       nm.tags.payload);
 			
-			res = compose_measure(&pm, &nm, midi_class, dbh);
+			res = compose_measure(&pm, &nm, myid, soloist, dbh);
 			if (res == -1){
 				printf("exiting\n");
 				return -1;

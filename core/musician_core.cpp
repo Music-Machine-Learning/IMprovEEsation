@@ -160,20 +160,21 @@ int split_tags(char *tags_str, char **tags)
 	return 0;
 }
 
-int fill_quarter_args(char **args, struct measure_s *minfo, int instrument,
-			int q_idx)
+int fill_quarter_args(char **args, struct measure_s *minfo, int myid,
+			int soloist, int q_idx)
 {
+	int quarter_solo;
 	char *qpos, *qinstr, *qchord_note, *qchorde_mode, *qdyna, *qmood,
 		*qgenre, *qscale;
 	char *qtags[3]; //TODO check for real how many tags are there
-		
+
 	if (split_tags(minfo->tags.payload, qtags) == -1){
 		fprintf(stderr, "%s\n", "Error in split_tags");
 		return -1;
 	}
 
 	asprintf(&args[0], "%d", q_idx); //pos
-	asprintf(&args[1], "%d", instrument); //instrument class
+	asprintf(&args[1], "%d", myid & 0xff); //instrument class
 	asprintf(&args[2], "%d", minfo->chords[q_idx].note); //chord_note
 	asprintf(&args[3], "%d", minfo->chords[q_idx].mode); //chord_mode mask
 	asprintf(&args[4], "%s", qtags[0]); //tag_dynamic
@@ -184,16 +185,21 @@ int fill_quarter_args(char **args, struct measure_s *minfo, int instrument,
 	asprintf(&args[6], "pushed"); //XXX temporary
 	asprintf(&args[7], "669"); //XXX temporary
 	
+	quarter_solo = 0;
+	if (soloist == 1 && myid == minfo->soloist_id)
+		quarter_solo = 1;
+	
+	asprintf(&args[8], "%d", quarter_solo);
 	return 0;
 }
 
 /* Compose a measure looking into the measure hints provided by the director. */
 int compose_measure(struct play_measure_s *pm, struct measure_s *minfo, 
-	int instrument, PGconn *dbh)
+	int myid, int soloist, PGconn *dbh)
 {
 
 	int q, i, max_sqcount, ntcount, res, q_size, sq_size, key_note;
-	char *qargs[8];
+	char *qargs[9];
 	int *qids;
 	struct semiquaver_s **sqs;
 
@@ -212,7 +218,7 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 	 * of changing decide which note to choose with the decision function 
 	 * which is based on the probabilities array scan. */
 	for (q = 0; q < max_sqcount/4; q++) {
-		res = fill_quarter_args(qargs, minfo, instrument, q);
+		res = fill_quarter_args(qargs, minfo, myid, soloist, q);
 		if (res == -1)
 			return -1;
 		q_size = get_quarters(dbh, 0, qargs, &qids);

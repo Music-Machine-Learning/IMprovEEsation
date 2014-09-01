@@ -272,12 +272,12 @@ int get_quarters(PGconn *dbh, uint8_t args_mask, char **args,
 		"scale_genre.id_genre = genre.id and "
 		"pos = $1 and instrument = $2 and chord_note = $3 and "
 		"chord_mode = $4 and genre.name = $5 and tag_dyna = $6 and "
-		"tag_mood = $7 and scale.id = $8";
+		"tag_mood = $7 and scale.id = $8 and solo = $9";
 
-	res = PQexecParams(dbh, query, 8, NULL, args, NULL, NULL, 0);
+	res = PQexecParams(dbh, query, 9, NULL, args, NULL, NULL, 0);
 
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-		fprintf(stderr, "subgenre SELECT failed %s",
+		fprintf(stderr, "quarters SELECT failed %s",
 			PQerrorMessage(dbh));
 		return -1;
 	}
@@ -291,7 +291,7 @@ int get_quarters(PGconn *dbh, uint8_t args_mask, char **args,
 		return -1;
 	}
 
-	for (i = 0; i < PQntuples(res); i++) {
+	for (i = 0; i < size; i++) {
 		char *cvalue = PQgetvalue(res, i, quarter_num);
 		
 		(*quarters)[i] = atoi(cvalue);
@@ -322,7 +322,7 @@ int fill_semiquaver_result(struct semiquaver_s **semiquaver,
 		perror("malloc");
 		return -1;
 	}
-
+	
 	/*TODO these PQfnumber should be done before the for loop in some way */
 	pos_fn = PQfnumber(res, "pos");
 	velocity_min_fn = PQfnumber(res, "velocity_min");
@@ -334,6 +334,7 @@ int fill_semiquaver_result(struct semiquaver_s **semiquaver,
 	pnote_fn = PQfnumber(res, "pnote");
 
 	sq = (*semiquaver);
+
 	if (pos_fn != -1)
 		sq->position = atoi(PQgetvalue(res, irow, pos_fn));
 	sq->velocity_min = atoi(PQgetvalue(res, irow, velocity_min_fn));
@@ -371,7 +372,7 @@ int get_semiquavers(PGconn *dbh, int quarter,
 	res = PQexecParams(dbh, query, 1, NULL, &loadv, NULL, NULL, 0);
 
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-		fprintf(stderr, "subgenre SELECT failed %s",
+		fprintf(stderr, "semiquavers SELECT failed %s",
 			PQerrorMessage(dbh));
 		return -1;
 	}
@@ -379,25 +380,28 @@ int get_semiquavers(PGconn *dbh, int quarter,
 	size = PQntuples(res);
 
 	/* Allocate the array of semiquavers */
-	if (size > 0) {
-		(*semiquavers) = (struct semiquaver_s **)
-					calloc((size_t)size + 1, 
-					sizeof(struct semiquaver_s *));
-		
-		/* For each semiquaver cointained in the quarter push their 
-		 * retrieved fields from the db into their corresponding 
-		 * data structures */
-		for (i = 0; i < size; i++) {
-			
-			r = fill_semiquaver_result(&((*semiquavers)[i]), res, i);
-			if (r != 0) 
-				return -1;
-			
-			(*semiquavers)[i]->quarter = quarter;
-		}
-		
-		(*semiquavers)[size] = NULL;
+	(*semiquavers) = (struct semiquaver_s **)
+				calloc((size_t)size + 1, 
+				sizeof(struct semiquaver_s *));
+
+	if (!*semiquavers) {
+		perror("calloc");
+		return -1;
 	}
+
+	/* For each semiquaver cointained in the quarter push their 
+	 * retrieved fields from the db into their corresponding 
+	 * data structures */
+	for (i = 0; i < size; i++) {
+		
+		r = fill_semiquaver_result(&((*semiquavers)[i]), res, i);
+		if (r != 0) 
+			return -1;
+		
+		(*semiquavers)[i]->quarter = quarter;
+	}
+	
+	(*semiquavers)[size] = NULL;
 	
 	PQclear(res);
 	return size;
@@ -413,6 +417,8 @@ int get_semiquaver(PGconn *dbh, int quarter, int pos,
 	char *loadv[2];
 	const char *query;
 
+	*semiquaver = NULL;
+
 	asprintf(&(loadv[0]), "%d", quarter);
 	asprintf(&(loadv[1]), "%d", pos);
 
@@ -421,18 +427,18 @@ int get_semiquaver(PGconn *dbh, int quarter, int pos,
 	res = PQexecParams(dbh, query, 2, NULL, loadv, NULL, NULL, 0);
 
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-		fprintf(stderr, "subgenre SELECT failed %s",
+		fprintf(stderr, "semiquaver SELECT failed %s",
 			PQerrorMessage(dbh));
 		return -1;
 	}
 	
 	size = PQntuples(res);
 
-	if (size > 0){
+	if (size > 0) {
 		if (fill_semiquaver_result(semiquaver, res, 0) != 0){
 			return -1;
 		}
-		
+
 		(*semiquaver)->quarter = quarter;
 		(*semiquaver)->position = pos;
 	}
