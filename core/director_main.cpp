@@ -31,6 +31,7 @@
 
 #include <improveesation/structs.h>
 #include <improveesation/communication.h>
+#include <improveesation/const.h>
 
 #include <improveesation/director_core.h>
 
@@ -38,6 +39,11 @@
 
 #include <time.h>
 #include <string.h>
+
+struct musician_registration_s {
+    subscription_s *subscritpion;
+    uint32_t id;
+};
 
 int net_handler;
 int player;
@@ -90,10 +96,22 @@ int net_init(int port, const char *addr)
 	return gsocket;
 }
 
-/* TODO: the real call */
-uint32_t calculateID(subscription_s *entry)
+uint32_t calculateID(subscription_s *entry, musician_registration_s *subs, int received)
 {
-    return entry->coupling + entry->instrument_class;
+    int i;
+    uint32_t id = 1 << 8 + entry->instrument_class;
+    for(i = 0; i < received; i++){
+        if(entry->coupling != NO_COUPLING
+           && subs[i].subscritpion->coupling == entry->coupling
+           && subs[i].subscritpion->instrument_class == entry->instrument_class){
+            id = subs[i].id;
+            break;
+        }
+        if(subs[i].id == id)
+            id += 1<<8;
+        i++;
+    }
+    return id;
 }
 
 int main(int argc, char **argv)
@@ -102,6 +120,7 @@ int main(int argc, char **argv)
     int measures_count = 12;
     uint32_t musicians_num, soloers_num = 0;
     int i, current_measure_num = 0, measures_per_section;
+    musician_registration_s *registrations;
 
 	if (argc < 2) {
         fprintf(stderr, "%s <number of musicians> [number of measures]\n", argv[0]);
@@ -111,6 +130,7 @@ int main(int argc, char **argv)
 	musicians_num = atoi(argv[1]);
 
     soloers = new u_int32_t[musicians_num];
+    registrations = (musician_registration_s*) calloc(musicians_num, sizeof(musician_registration_s));
 
     if (argc > 2)
         measures_count = atoi(argv[2]);
@@ -131,7 +151,10 @@ int main(int argc, char **argv)
 		       new_musician->coupling, new_musician->instrument_class,
 		       new_musician->soloer, new_musician->connection);
 
-        uint32_t newId = calculateID(new_musician);
+        uint32_t newId = calculateID(new_musician, registrations, i);
+
+        registrations[i].subscritpion = new_musician;
+        registrations[i].id = newId;
 
         list_add_tail(&new_musician->list, &musicians);
         if(new_musician->soloer == SOLO){
@@ -143,6 +166,8 @@ int main(int argc, char **argv)
         printf("\tregistered with id: %d\n", newId);
 	}
     printf("registered %d musicians, of wich %d are soloers\n", musicians_num, soloers_num);
+
+    free(registrations);
 
     send_num_of_musicians(player, musicians_num);
 

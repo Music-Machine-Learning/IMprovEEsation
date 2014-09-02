@@ -108,6 +108,8 @@
 #define MIDI_FIRST_NOTE 24
 #define MIDI_REST_NOTE	128
 
+#define NO_COUPLING 0
+
 enum {
 	RYTHMIC,
 	SOLO

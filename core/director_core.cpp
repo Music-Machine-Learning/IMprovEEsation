@@ -62,20 +62,6 @@ static scale_list_s available_scales;
 
 static int impro_end;
 
-//stub function
-int getScales(uint16_t **scalev, char* genre){
-    *scalev = (uint16_t *) calloc(8, sizeof(uint16_t));
-    (*scalev)[0] = 0b101010110101;
-    (*scalev)[1] = 0b011010101101;
-    (*scalev)[2] = 0b010110101011;
-    (*scalev)[3] = 0b101011010101;
-    (*scalev)[4] = 0b011010110101;
-    (*scalev)[5] = 0b010110101101;
-    (*scalev)[6] = 0b010101101011;
-    (*scalev)[7] = 0b010011101001;
-    return 8;
-}
-
 void load_genre_info(char* gen, char* sub){
     /*
      * initialize:
@@ -104,10 +90,10 @@ void load_genre_info(char* gen, char* sub){
         moods_num++;
 
     if(available_scales.size > 0){
-        free(available_scales.list);
+        free_db_results(available_scales.list);
     }
 
-    available_scales.size = getScales(&(available_scales.list), gen);
+    available_scales.size = get_scales(database, gen, &(available_scales.list));
 
     improvariants = NULL;
 
