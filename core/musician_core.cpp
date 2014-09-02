@@ -24,6 +24,7 @@
 #include <improveesation/musician_core.h>
 #include <improveesation/communication.h>
 #include <improveesation/db.h>
+#include <improveesation/const.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -199,11 +200,11 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 {
 
 	int q, i, max_sqcount, ntcount, res, q_size, sq_size, key_note;
-	char *qargs[9];
+	char *qargs[QUARTER_QUERY_ARGS];
 	int *qids;
 	struct semiquaver_s **sqs;
 
-	ntcount = 0;
+	q_size = ntcount = 0;
 
 	max_sqcount = count_semiquavers(minfo->tempo);
 	
@@ -221,7 +222,12 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 		res = fill_quarter_args(qargs, minfo, myid, soloist, q);
 		if (res == -1)
 			return -1;
-		q_size = get_quarters(dbh, 0, qargs, &qids);
+		
+		int i = 0;
+		int args_prios[9] = {3, 7, 1, 2, 0, 5, 4, 6, 8}; //TODO temp
+		while (q_size == 0 && i < QUARTER_QUERY_ARGS)
+			q_size = get_quarters(dbh, qargs, args_prios,//minfo->prioargs, 
+					i++, &qids);
 		if (q_size <= 0){
 			fprintf(stderr, "No quarters found\n");
 			return -1;

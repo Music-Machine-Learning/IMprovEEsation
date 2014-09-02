@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include <libpq-fe.h>
 
@@ -252,29 +253,57 @@ int get_subgenres(PGconn *dbh, char *genre, char ***subgenres)
 }
 
 /* Fill the quarters array of IDs with those that in the DB have some 
- * match with the given parameters. The args_mask tells which of those 
- * parameters should be considered. */
-int get_quarters(PGconn *dbh, uint8_t args_mask, char **args, 
+ * match with the given parameters. The args_prios array and the nargs_ignore
+ * are used to ignore some arguments accoring to their priority. */
+int get_quarters(PGconn *dbh, char **args, int *args_prios, int nargs_ignore, 
 		int **quarters)
 {
-	int quarter_num;
-	int i;
-	int size = 0;
+	int quarter_num, i, j, size, arg_idx, sc, len;
+	char **fargs; /* filtered args */
 	PGresult *res;
 
-	const char *query; 
+	char query[1024]; 
+	char *tmp;
+	const char *query_args[QUARTER_QUERY_ARGS];
+	const char *query_fst;
 
-	//TODO: do the argument filtering with args_mask
-
-	query = "SELECT quarter.id FROM quarter, scale, genre, scale_genre "
+	query_fst = "SELECT quarter.id FROM quarter, scale, genre, scale_genre "
 		"where scale_genre.id = quarter.scale_genre and "
 		"scale_genre.id_scale = scale.id and "
-		"scale_genre.id_genre = genre.id and "
-		"pos = $1 and instrument = $2 and chord_note = $3 and "
-		"chord_mode = $4 and genre.name = $5 and tag_dyna = $6 and "
-		"tag_mood = $7 and scale.id = $8 and solo = $9";
+		"scale_genre.id_genre = genre.id";
 
-	res = PQexecParams(dbh, query, 9, NULL, args, NULL, NULL, 0);
+	/* XXX: This will probably segfault badly if QUARTER_QUERY_ARGS is
+	 * smaller than expected. */
+	size = arg_idx = 0;
+	query_args[QUARTER_ARG_POS] = "pos = $";
+	query_args[QUARTER_ARG_INSTR] = "instrument = $";
+	query_args[QUARTER_ARG_CNOTE] = "chord_note = $";
+	query_args[QUARTER_ARG_CMODE] = "chord_mode = $";
+	query_args[QUARTER_ARG_GENRE] = "genre.name = $";
+	query_args[QUARTER_ARG_DYNA] = "tag_dyna = $";
+	query_args[QUARTER_ARG_MOOD] = "tag_mood = $";
+	query_args[QUARTER_ARG_SCALE] = "scale.id = $";
+	query_args[QUARTER_ARG_SOLO] = "solo = $";
+
+	fargs = (char **)calloc(QUARTER_QUERY_ARGS - nargs_ignore, sizeof(char *));
+	if (!fargs) {
+		fprintf(stderr, "%s\n", strerror(errno));
+		return -1;
+	}
+
+	/* compose query */
+	strncpy(query, query_fst, strlen(query_fst) + 1); 
+
+	for (j = 0,i = nargs_ignore; i < QUARTER_QUERY_ARGS; j++,i++) {
+		arg_idx = args_prios[i];
+		len = strlen(" and ") + strlen(query_args[arg_idx]) + 2;	
+		asprintf(&tmp, " and %s%d", query_args[arg_idx], j + 1);
+		strncat(query, tmp, len);
+		asprintf(&(fargs[j]), "%s", args[arg_idx]);	
+	}
+
+	res = PQexecParams(dbh, query, QUARTER_QUERY_ARGS - nargs_ignore, 
+				NULL, fargs, NULL, NULL, 0);
 
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
 		fprintf(stderr, "quarters SELECT failed %s",

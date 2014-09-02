@@ -55,7 +55,8 @@ void db_close(PGconn *c);
 int get_genres(PGconn *dbh, char ***genres);
 int get_subgenres(PGconn *dbh, char *genre, char ***subgenres);
 int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas);
-int get_quarters(PGconn *dbh, uint8_t args_mask, char **args, int **quarters);
+int get_quarters(PGconn *dbh, char **args, int *args_prios, 
+			int nargs_ignore, int **quarters);
 void get_pattern(PGconn *dbh, char *genre, char *patternName,
 		 struct pattern_s **pp);
 int get_semiquavers(PGconn *dbh, int quarter, struct semiquaver_s ***sqs);

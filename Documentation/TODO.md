@@ -15,10 +15,7 @@
 * ...
 
 ## Musician
-* Add free_semiquavers
 * Different random seeds based on pid ^
 * Handle the priority args array for the get_quarters
 * ...
 
-## DB API
- * int get_scales(char *genre, uint16_t **scales)

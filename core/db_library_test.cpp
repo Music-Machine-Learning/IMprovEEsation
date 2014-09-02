@@ -106,8 +106,18 @@ int main(int argc, char **argv)
 	asprintf(&args[6], "pushed");
 	asprintf(&args[7], "669");
 	asprintf(&args[8], "0");
+	
+	int args_prios[9] = {3, 7, 1, 2, 0, 5, 4, 6, 8};
 
-	quarters_size = get_quarters(dbh, 0, args, &quarters);
+	quarters_size = get_quarters(dbh, args, args_prios, 9, &quarters);
+	
+	if (quarters_size == 0){
+		printf("no quarter found");
+	}else if (quarters_size == -1){
+		printf("some problem with get_quarters");
+		return -1;
+	}
+
 	print_quarters(quarters);
 
 	printf("\n###single semiquaver test\n");
