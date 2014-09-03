@@ -94,14 +94,18 @@ void recv_measure(int director, struct measure_s *new_measure)
 	int i, retval;
 	struct subscription_s *cmusician;
 
-	struct iovec safe_to_read[4], *tmp_iov;
+	struct iovec safe_to_read[5], *tmp_iov;
 
 	LOAD_IOVEC(safe_to_read, 0, new_measure->bpm);
 	LOAD_IOVEC(safe_to_read, 1, new_measure->soloist_id);
 	LOAD_IOVEC(safe_to_read, 2, new_measure->tempo.upper);
 	LOAD_IOVEC(safe_to_read, 3, new_measure->tempo.lower);
 
-	retval = readv(director, safe_to_read, 4);
+	/* AAA: prioargs are allocated as an array IN the struct
+	 * so sizeof() will return sizeof(int) * array_size */
+	LOAD_IOVEC(safe_to_read, 4, new_measure->prioargs);
+
+	retval = readv(director, safe_to_read, 5);
 
 	if(retval < 0) {
 		perror("readv");
@@ -469,7 +473,7 @@ void send_ack(int musician_conn)
 void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 {
 	struct subscription_s *cmusician;
-	struct iovec safe_iov[4], *tmp_iov;
+	struct iovec safe_iov[5], *tmp_iov;
 	int retval;
 
 	list_for_each_entry(cmusician, dests, list) {
@@ -479,7 +483,11 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 		LOAD_IOVEC(safe_iov, 2, next_measure->tempo.upper);
 		LOAD_IOVEC(safe_iov, 3, next_measure->tempo.lower);
 
-		retval = writev(cmusician->connection, safe_iov, 4);
+		/* AAA: prioargs are allocated as an array IN the struct
+		 * so sizeof() will return sizeof(int) * array_size */
+		LOAD_IOVEC(safe_iov, 4, next_measure->prioargs);
+
+		retval = writev(cmusician->connection, safe_iov, 5);
 		if (retval <= 0) {
 			perror("writev3");
 			throw net_ex;
