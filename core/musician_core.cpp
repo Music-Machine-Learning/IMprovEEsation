@@ -180,11 +180,8 @@ int fill_quarter_args(char **args, struct measure_s *minfo, int myid,
 	asprintf(&args[3], "%d", minfo->chords[q_idx].mode); //chord_mode mask
 	asprintf(&args[4], "%s", qtags[0]); //tag_dynamic
 	asprintf(&args[5], "%s", qtags[1]); //tag_genre
-	/* TODO: We need a HUGE db first, then we can use the given scale
-	 * asprintf(&args[6], "%s", qtags[2]); //tag_mood
-	 * asprintf(&args[7], "%d", minfo->tonal_zones[q_idx].scale); //scale mask*/
-	asprintf(&args[6], "pushed"); //XXX temporary
-	asprintf(&args[7], "669"); //XXX temporary
+	asprintf(&args[6], "%s", qtags[2]); //tag_mood
+	asprintf(&args[7], "%d", minfo->tonal_zones[q_idx].scale); //scale mask
 	
 	quarter_solo = 0;
 	if (soloist == 1 && myid == minfo->soloist_id)
@@ -223,10 +220,9 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 		if (res == -1)
 			return -1;
 		
-		int i = 0;
-		int args_prios[9] = {3, 7, 1, 2, 0, 5, 4, 6, 8}; //TODO temp
+		i = 0;
 		while (q_size == 0 && i < QUARTER_QUERY_ARGS)
-			q_size = get_quarters(dbh, qargs, args_prios,//minfo->prioargs, 
+			q_size = get_quarters(dbh, qargs, minfo->prioargs, 
 					i++, &qids);
 		if (q_size <= 0){
 			fprintf(stderr, "No quarters found\n");
