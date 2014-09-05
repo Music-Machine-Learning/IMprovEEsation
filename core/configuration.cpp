@@ -107,6 +107,7 @@ int load_conf(const char *path, struct rc_conf_s *r)
 		fprintf(stderr, "warning, unknown conf: %s\n", conf_name);
 	}
 
+	free(line);
 
 	fclose(f);
 
