@@ -477,6 +477,42 @@ int get_semiquaver(PGconn *dbh, int quarter, int pos,
 	return size;
 }
 
+/* Get the range of a specified musical instrument. The range is expressed here
+ * as an interval of notes between two octaves (the lowest and the highest). */
+int get_range(PGconn *dbh, int instrument, int *octave_min, int *octave_max)
+{
+	int i, size, octave_min_fn, octave_max_fn;
+	const char *query;
+	char *loadv; 
+	PGresult *res;
+
+	asprintf(&loadv, "%d", instrument);
+	
+	query = "select octave_min, octave_max from instrument where id = $1";
+	
+	res = PQexecParams(dbh, query, 1, NULL, &loadv, NULL, NULL, 0);
+
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "octaves range SELECT failed %s",
+			PQerrorMessage(dbh));
+		return -1;
+	}
+
+	size = PQntuples(res);
+	if (size != 1) {
+		fprintf(stderr, "something wrong in the DB instrument table");
+		return -1;
+	}
+
+	octave_min_fn = PQfnumber(res, "octave_min");
+	octave_max_fn = PQfnumber(res, "octave_max");
+
+	(*octave_min) = atoi(PQgetvalue(res, 0, octave_min_fn));
+	(*octave_max) = atoi(PQgetvalue(res, 0, octave_max_fn));
+	
+	return 0;
+}
+
 /* Retrieve the scales related to a specified genre */
 int get_scales(PGconn *dbh, char *genre, uint16_t **scales)
 {
@@ -739,6 +775,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	*pp = p;
 	return;
 }
+
 
 /* Single pointer (i.e. arrays) */
 void free_db_results(void *results)

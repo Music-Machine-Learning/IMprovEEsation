@@ -97,7 +97,7 @@ struct measure_s {
 
 struct notes_s {
 	/* the actual note height expressed in midi format */
-	uint8_t note;
+	uint8_t note; 
 	/* the duration of the note */
 	uint8_t tempo;
 	/**

@@ -62,7 +62,8 @@ int main(int argc, char **argv)
 	struct sockaddr_in sout_director, sout_player;
 	struct notes_s *nt;
 	PGconn *dbh;
-	char *usage; 
+	char *usage;
+ 
 	asprintf(&usage, "%s <coupling> <midi-class> <soloist>\n", argv[0]);
 	
 	if (argc < 4){
@@ -114,7 +115,7 @@ int main(int argc, char **argv)
 
 	printf("connected to player\n");
 
-	if (musician_init(&dbh) == -1){
+	if (musician_init(&dbh, coupling, midi_class, soloist, myid) == -1){
 		fprintf(stderr, "Initialization failed\n");
 		exit(EXIT_FAILURE);
 	}

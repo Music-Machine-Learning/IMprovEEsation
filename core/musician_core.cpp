@@ -21,31 +21,50 @@
 /* USA.                                                                      */
 /*****************************************************************************/
 
-#include <improveesation/musician_core.h>
+#include <improveesation/configuration.h>
 #include <improveesation/communication.h>
+#include <improveesation/structs.h>
 #include <improveesation/db.h>
-#include <improveesation/const.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <errno.h>
 
+/* TODO refactor for all global fields, 
+   what about a struct to contain all of them? */
+static int octave_min;
+static int octave_max;
+
 int print_semiquaver(struct semiquaver_s *sq);
 
-int musician_init(PGconn **dbh)
+int musician_init(PGconn **dbh, int coupling, int instrument, 
+			int soloist, int musician_id)
 {
+	int res;
+	struct rc_conf_s conf;
+
 	*dbh = NULL;
 	
-	/* TODO: some config file for these parameters */
-	*dbh = db_connect("griffin.dberardi.eu",
-			"improveesation",
-			"read_only",
-			"testiamo123");
+	if (load_conf(DEFAULT_RC_PATH, &conf) < 4) {
+		fprintf(stderr, "error while loading configuration (%s)\n",
+			strerror(errno));
+		return 1;
+	}
+
+	*dbh = db_connect(conf.db_host,
+			conf.db_name,
+			conf.db_user,
+			conf.db_passwd);
+
 	
 	if (*dbh == NULL)
 		return -1;
-	
+
+	res = get_range(*dbh, instrument, &octave_min, &octave_max);
+	if (res != 0 || (octave_max - octave_min) > MIDI_NOCTAVES)
+		fprintf(stderr, "initialization failed\n");
+
 	return 0;
 }
 
@@ -72,16 +91,30 @@ int decide_note(float *pnote)
 
 int note_to_midi(int note_idx, int key_note)
 {
-	int midi, octave;
+	int midi, octave, r;
 
-	octave = rand() % MIDI_NOCTAVES; //TODO: decide a policy
+	r = rand();
+	
+	/* TODO: the following is wrong, it's not random 
+		btw, shoud I do a random here? */
+	octave = (r % (octave_max - octave_min)) + octave_min;
 
-	if (note_idx == 0)
+	if (note_idx == 0) {
 		midi = MIDI_REST_NOTE; //A rest;
-	else 
+	} else {  
 		midi = (MIDI_FIRST_NOTE + (NSEMITONES * octave)) + 
 				key_note + note_idx;
-	
+		if (midi < MIDI_FIRST_NOTE)
+			midi += NSEMITONES;
+		else if (midi > MIDI_LAST_NOTE)
+			midi -= NSEMITONES;
+
+		if (midi < MIDI_FIRST_NOTE || midi > MIDI_LAST_NOTE){
+			fprintf(stderr, "note out of boundaries\n");
+			return -1;
+		}
+	}
+
 	return midi;
 }
 
@@ -117,6 +150,8 @@ int compose_quarter(struct play_measure_s *pm, int key_note,
 			}
 			
 			new_note.note = note_to_midi(idx, key_note);
+			if(new_note.note == -1)
+				return -1;
 			new_note.tempo = 1;
 			new_note.id = ntcount;
 			new_note.triplets = 0;

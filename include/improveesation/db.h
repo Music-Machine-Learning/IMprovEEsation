@@ -61,6 +61,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 		 struct pattern_s **pp);
 int get_semiquavers(PGconn *dbh, int quarter, struct semiquaver_s ***sqs);
 int get_semiquaver(PGconn *dbh, int quarter, int pos, struct semiquaver_s **sqs);
+int get_range(PGconn *dbh, int instrument, int *octave_min, int *ocate_max);
 int get_scales(PGconn *dbh, char *genre, uint16_t **scales);
 
 void free_db_results(void *results);
