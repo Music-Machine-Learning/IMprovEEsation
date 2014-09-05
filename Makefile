@@ -52,7 +52,7 @@ libimpro_db.so : $(CORE_DIR)/db.cpp
 
 
 $(BUILD_DIR)/%: $(CORE_DIR)/%*.cpp
-	$(CXX) $(EXE_CXXFLAGS) $^ -o $@ $(LINK_CXX_ENDFLAGS)
+	$(CXX) $(EXE_CXXFLAGS) $^ core/configuration.cpp -o $@ $(LINK_CXX_ENDFLAGS)
 
 clean:
 	rm -rf $(BUILD_DIR)

@@ -1,0 +1,13 @@
+# Copy this file to ~/.improveesation.rc
+
+# database Host
+db_host griffin.dberardi.eu
+
+# Name of the database
+db_name improveesation
+
+# Name of the user on the database
+db_user read_only
+
+# Password for the user for the database
+db_passwd testiamo123

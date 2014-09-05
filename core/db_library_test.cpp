@@ -21,6 +21,8 @@
 /* USA.                                                                      */
 /*****************************************************************************/
 #include <improveesation/db.h>
+#include <improveesation/configuration.h>
+#include <errno.h>
 #include <stdio.h>
 void printpattern(struct pattern_s *p)
 {
@@ -86,13 +88,19 @@ int main(int argc, char **argv)
 	char **genres;
 	char **subgenres;
 	int *quarters, quarters_size;
+	struct rc_conf_s conf;
 	PGconn *dbh = NULL;
 
+	if (load_conf(DEFAULT_RC_PATH, &conf) < 4) {
+		fprintf(stderr, "error while loading configuration (%s)\n",
+			strerror(errno));
+		return 1;
+	}
 
-	dbh = db_connect("griffin.dberardi.eu",
-			"improveesation",
-			"read_only",
-			"testiamo123");
+	dbh = db_connect(conf.db_host,
+			conf.db_name,
+			conf.db_user,
+			conf.db_passwd);
 
 	printf("connected\n");
 	
@@ -193,5 +201,7 @@ int main(int argc, char **argv)
 	free_db_results(genres);
 
 	db_close(dbh);
+
+	free_conf(conf);
 	return 0;
 }
