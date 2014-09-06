@@ -576,64 +576,53 @@ int null_array_size(void *a, int type)
 	return i;
 }
 
-int get_var_meas(PGconn *dbh, struct pattern_s *p, char *var_meas)
+int get_var_meas(PGconn *dbh, struct pattern_s *p, int id)
 {
-	int i;
-	int start_meas_fn, end_meas_fn, variants_fn, marr_size, varr_size;
-	char *variants;
-	int *var_ids;
 	PGresult *res;
+	char *char_id = NULL;
+	ssize_t size;
+	int start_meas_fn, end_meas_fn, variants_fn;
+	int varr_size;
+	int i;
 
-	var_ids = (int *) sql_array_unload_def(var_meas, INT_TYPE, &marr_size);
-	if (!var_ids) {
-		fprintf(stderr,
-		       "Error in the parsing of the variable measure");
-		return -1;
-	}
+	const char *query = "SELECT start_meas, end_meas, array_agg(subgenre.name) "
+		"as variants from var_measure, subgenre where "
+		"var_measure.pattern = $1 and subgenre.id = any(target_patterns) "
+		"group by start_meas, end_meas";
 
 	p->variants = NULL;
-	
 
-	/* TODO: it's possible to make a single query for all the
-	 * variations. */
-	for (i = 0; var_ids[i] != -1; i++) {
-		char *char_id;
-		const char *query;
-		p->variants_size++;
-		p->variants = (struct impro_variant_s *) realloc(
-					p->variants,
-					(p->variants_size + 1) *
-					sizeof(struct impro_variant_s));
+	asprintf(&char_id, "%d", id);
+
+	res = PQexecParams(dbh, query,
+			   1, NULL, &char_id, NULL, NULL, 0);
+
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "var_measure SELECT failed %s",
+			PQerrorMessage(dbh));
+		return -1;
+	}
+	size = PQntuples(res);
+
+	p->variants = (struct impro_variant_s *)
+		      malloc((size + 1) * sizeof(struct impro_variant_s));
+
+	start_meas_fn = PQfnumber(res, "start_meas");
+	end_meas_fn = PQfnumber(res, "end_meas");
+	variants_fn = PQfnumber(res, "variants");
+
+	for (i = 0; i < size; i++) {
+		char *variants;
+
+		p->variants[i].first = atoi(PQgetvalue(res, i, start_meas_fn));
+		p->variants[i].last = atoi(PQgetvalue(res, i, end_meas_fn));
+		variants = PQgetvalue(res, i, variants_fn);
 
 		if (!p->variants) {
 			perror("malloc");
 			return -1;
 		}
 
-		asprintf(&char_id, "%d", var_ids[i]);
-		
-		query = "select start_meas, end_meas, array_agg(subgenre.name) "
-			"as variants from var_measure, subgenre where "
-			"var_measure.id = $1 and subgenre.id = any(variants) "
-			"group by start_meas, end_meas";
-
-		res = PQexecParams(dbh, query,
-			     1, NULL, &char_id, NULL, NULL, 0);
-
-		if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-			fprintf(stderr, "variants SELECT failed %s\n",
-				PQerrorMessage(dbh));
-			return -1;
-		}
-		start_meas_fn = PQfnumber(res, "start_meas");
-		end_meas_fn = PQfnumber(res, "end_meas");
-		variants_fn = PQfnumber(res, "variants");
-
-		
-		p->variants[i].first = atoi(PQgetvalue(res, 0, start_meas_fn));
-		p->variants[i].last = atoi(PQgetvalue(res, 0, end_meas_fn));
-		variants = PQgetvalue(res, 0, variants_fn);
-		
 		p->variants[i].variants = (char **)sql_array_unload_def(
 					variants, CHAR_TYPE, &varr_size);
 		
@@ -651,12 +640,13 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 		 struct pattern_s **pp)
 {
 	int i;
+	int id;
 	struct pattern_s *p;
 	PGresult *res;
 
 	/* Field Position */
 	int measure_count_fn, moods_fn, steps_fn,
-	    modes_fn, dynamics_fn, var_meas_fn;
+	    modes_fn, dynamics_fn, var_meas_fn, id_fn;
 
 	int marr_size, darr_size; /* moods_array and dyna_array sizes */
 
@@ -677,8 +667,8 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	loadv[0] = genre;
 	loadv[1] = patternName;
 
-	query = "SELECT measure_count, moods, steps, modes, dynamics, "
-		"variable_measure FROM measure AS m, pattern AS p "
+	query = "SELECT p.id, measure_count, moods, steps, modes, dynamics "
+		"FROM measure AS m, pattern AS p "
 		"WHERE p.id = (SELECT subgenre.id FROM subgenre, genre "
 		"WHERE subgenre.id_genre = genre.id and genre.name = $1 "
 		"AND subgenre.name = $2) AND m.id = p.measure";
@@ -708,18 +698,18 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 			"Warn: more than one result, parsing value 0 only\n");
 	}
 
+	id_fn = PQfnumber(res, "id");
 	moods_fn = PQfnumber(res, "moods");
 	steps_fn = PQfnumber(res, "steps");
 	modes_fn = PQfnumber(res, "modes");
 	dynamics_fn = PQfnumber(res, "dynamics");
-	var_meas_fn = PQfnumber(res, "variable_measure");
 	measure_count_fn = PQfnumber(res, "measure_count");
 
+	id = atoi(PQgetvalue(res, 0, id_fn));
 	moods = PQgetvalue(res, 0, moods_fn);
 	steps = PQgetvalue(res, 0, steps_fn);
 	modes = PQgetvalue(res, 0, modes_fn);
 	dynamics = PQgetvalue(res, 0, dynamics_fn);
-	var_meas = PQgetvalue(res, 0, var_meas_fn);
 	measure_count = PQgetvalue(res, 0, measure_count_fn);
 
 	/* Consinstency check */
@@ -766,9 +756,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 							    INT_TYPE);
 	}
 
-	if (var_meas && strlen(var_meas) > 1 && strcmp(var_meas,"{}")) {
-		p->variants_size = get_var_meas(dbh, p, var_meas);
-	}
+	p->variants_size = get_var_meas(dbh, p, id);
 
 	PQclear(res);
 
