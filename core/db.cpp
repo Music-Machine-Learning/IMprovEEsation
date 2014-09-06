@@ -667,11 +667,11 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	loadv[0] = genre;
 	loadv[1] = patternName;
 
-	query = "SELECT p.id, measure_count, moods, steps, modes, dynamics "
-		"FROM measure AS m, pattern AS p "
+	query = "SELECT id, measure_count, moods, steps, modes, dynamics "
+		"FROM pattern AS p "
 		"WHERE p.id = (SELECT subgenre.id FROM subgenre, genre "
 		"WHERE subgenre.id_genre = genre.id and genre.name = $1 "
-		"AND subgenre.name = $2) AND m.id = p.measure";
+		"AND subgenre.name = $2)";
 
 
 	res = PQexecParams(dbh, query,
