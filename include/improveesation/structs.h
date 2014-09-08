@@ -113,6 +113,7 @@ struct play_measure_s {
 	uint32_t id;
 	uint32_t size;
 	uint32_t musician_id;
+	uint8_t unchanged_fst;
 	struct notes_s *measure;
 };
 

@@ -265,18 +265,21 @@ int get_quarters(PGconn *dbh, char **args, int *args_prios, int nargs_ignore,
 	char query[1024]; 
 	char *tmp;
 	const char *query_args[QUARTER_QUERY_ARGS];
-	const char *query_fst;
+	const char *query_fst, *group_by;
 
-	query_fst = "SELECT quarter.id FROM quarter, scale, genre, scale_genre "
-		"where scale_genre.id = quarter.scale_genre and "
+	query_fst = "SELECT quarter.id FROM quarter, scale, genre, scale_genre, "
+		"instrument, instrument_class " 
+		"WHERE scale_genre.id = quarter.scale_genre and "
 		"scale_genre.id_scale = scale.id and "
-		"scale_genre.id_genre = genre.id";
+		"scale_genre.id_genre = genre.id and "
+		"quarter.instrument_class = instrument_class.id and "
+		"instrument_class.id = instrument.id_class ";
+	
+	group_by = " GROUP BY quarter.id";
 
-	/* XXX: This will probably segfault badly if QUARTER_QUERY_ARGS is
-	 * smaller than expected. */
 	size = arg_idx = 0;
 	query_args[QUARTER_ARG_POS] = "pos = $";
-	query_args[QUARTER_ARG_INSTR] = "instrument = $";
+	query_args[QUARTER_ARG_INSTR] = "instrument.id = $";
 	query_args[QUARTER_ARG_CNOTE] = "chord_note = $";
 	query_args[QUARTER_ARG_CMODE] = "chord_mode = $";
 	query_args[QUARTER_ARG_GENRE] = "genre.name = $";
@@ -301,6 +304,8 @@ int get_quarters(PGconn *dbh, char **args, int *args_prios, int nargs_ignore,
 		strncat(query, tmp, len);
 		asprintf(&(fargs[j]), "%s", args[arg_idx]);	
 	}
+
+	strncat(query, group_by, strlen(group_by));
 
 	res = PQexecParams(dbh, query, QUARTER_QUERY_ARGS - nargs_ignore, 
 				NULL, fargs, NULL, NULL, 0);

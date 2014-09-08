@@ -98,7 +98,9 @@ int note_to_midi(int note_idx, int key_note)
 	/* TODO: the following is wrong, it's not random 
 		btw, shoud I do a random here? */
 	octave = (r % (octave_max - octave_min)) + octave_min;
-
+	
+	printf("octave %d\n", octave);
+		
 	if (note_idx == 0) {
 		midi = MIDI_REST_NOTE; //A rest;
 	} else {  
@@ -121,8 +123,8 @@ int note_to_midi(int note_idx, int key_note)
 
 /* Compose the notes of a quarter scanning the semiquavers retreived from 
  * the database. The number of notes inside the quarter is returned. */
-int compose_quarter(struct play_measure_s *pm, int key_note,
-		struct semiquaver_s **sqs, int sq_size, int ntcount)
+int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
+		int key_note,struct semiquaver_s **sqs, int sq_size, int ntcount)
 {
 	float rnd;
 	int idx, s;
@@ -131,8 +133,10 @@ int compose_quarter(struct play_measure_s *pm, int key_note,
 	printf("composing quarter. ntcount: %d\n", ntcount);
 	for (s = 0; s < sq_size; s++) {
 		memset(&new_note, 0, sizeof(new_note));
-		//TODO: just for now, we should decide some policy then
-		if (s == 0 && ntcount == 0)
+		
+		/* If there isn't a previous measure yet, the 1st note must be
+		 * decided: pchange must be greater than rnd */
+		if (!prev_pm->measure)
 			rnd = 0.0;
 		else 
 			rnd = (float)rand() / ((float)(RAND_MAX) / 1.0);
@@ -158,6 +162,16 @@ int compose_quarter(struct play_measure_s *pm, int key_note,
 			pm->measure[ntcount] = new_note;
 			ntcount++;
 			printf("new note added. ntcount: %d\n", ntcount);
+		} else if (ntcount == 0) {
+			new_note.note = prev_pm->measure[prev_pm->size - 1].note;
+			new_note.tempo = 1;
+			new_note.id = ntcount;
+			new_note.triplets = 0; //TODO: what about this?
+			pm->measure[ntcount] = new_note;
+			ntcount++;
+			pm->unchanged_fst = 1; 
+			printf("fisrt note is unchanged: %d\n", 
+					pm->measure[ntcount].note);
 		} else {
 			pm->measure[ntcount-1].tempo++;
 		}
@@ -227,8 +241,8 @@ int fill_quarter_args(char **args, struct measure_s *minfo, int myid,
 }
 
 /* Compose a measure looking into the measure hints provided by the director. */
-int compose_measure(struct play_measure_s *pm, struct measure_s *minfo, 
-	int myid, int soloist, PGconn *dbh)
+int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm, 
+		struct measure_s *minfo, int myid, int soloist, PGconn *dbh)
 {
 
 	int q, i, max_sqcount, ntcount, res, q_size, sq_size, key_note;
@@ -242,7 +256,7 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 	
 	/* Allocates the array of notes with the max count of notes as size.
 	 * It will be truncated later if the notes are lesser than the max. */
-	pm->measure = (struct notes_s *)malloc((size_t)max_sqcount *
+	pm->measure = (struct notes_s *)calloc((size_t)max_sqcount,
 			sizeof(struct notes_s));
 	
 	/* First retrieve the quarters that may match what the director wants.
@@ -278,7 +292,7 @@ int compose_measure(struct play_measure_s *pm, struct measure_s *minfo,
 		key_note = minfo->tonal_zones[q].note;
 		
 		/* Be creative with the current quarter */
-		ntcount = compose_quarter(pm, key_note, sqs, sq_size, ntcount);
+		ntcount = compose_quarter(pm, prev_pm, key_note, sqs, sq_size, ntcount);
 		if (ntcount == -1) {
 			fprintf(stderr, "Error in quarter composition\n");
 			return -1;

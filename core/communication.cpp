@@ -209,21 +209,22 @@ void send_to_play(int player, int director,
 {
 	int j;
 	uint8_t sack = SYNC_ACK;
-    struct iovec iov[measure->size * 4 + 3];
+    struct iovec iov[measure->size * 4 + 4];
 
 	/* player send */
 	LOAD_IOVEC(iov, 0, measure->id);
 	LOAD_IOVEC(iov, 1, measure->size);
 	LOAD_IOVEC(iov, 2, measure->musician_id);
+	LOAD_IOVEC(iov, 3, measure->unchanged_fst);
 
 	for (j = 0; j < measure->size; j++) {
-		LOAD_IOVEC(iov, j * 4 + 3, measure->measure[j].note);
-		LOAD_IOVEC(iov, j * 4 + 4, measure->measure[j].tempo);
-		LOAD_IOVEC(iov, j * 4 + 5, measure->measure[j].id);
-		LOAD_IOVEC(iov, j * 4 + 6, measure->measure[j].triplets);
+		LOAD_IOVEC(iov, j * 4 + 4, measure->measure[j].note);
+		LOAD_IOVEC(iov, j * 4 + 5, measure->measure[j].tempo);
+		LOAD_IOVEC(iov, j * 4 + 6, measure->measure[j].id);
+		LOAD_IOVEC(iov, j * 4 + 7, measure->measure[j].triplets);
 	}
 
-	if (writev(player, iov, measure->size * 4 + 3) < 0) {
+	if (writev(player, iov, measure->size * 4 + 4) < 0) {
 		perror("writev2");
 		throw net_ex;
 		return;
@@ -295,7 +296,7 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 		}
 		for(i = 0; i < cprocessed; i++) {
 			int j;
-			struct iovec safe_iov[3], *iov = NULL;
+			struct iovec safe_iov[4], *iov = NULL;
 			if (!epevs[i].events & EPOLLIN) {
 				throw net_ex;
 				return;
@@ -305,8 +306,9 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 			LOAD_IOVEC(safe_iov, 0, note_list[pm_count].id);
 			LOAD_IOVEC(safe_iov, 1, note_list[pm_count].size);
 			LOAD_IOVEC(safe_iov, 2, note_list[pm_count].musician_id);
+			LOAD_IOVEC(safe_iov, 3, note_list[pm_count].unchanged_fst);
 
-			retval = readv(epevs[i].data.fd, safe_iov, 3);
+			retval = readv(epevs[i].data.fd, safe_iov, 4);
 			printf("DEBUG size: %d, musician_id %d\n", 
 					note_list[pm_count].size,
 					note_list[pm_count].musician_id);

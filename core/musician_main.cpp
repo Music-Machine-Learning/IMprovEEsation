@@ -120,24 +120,20 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	/* TODO load the struct */
 	struct measure_s nm;
-	/* TODO load the struct */
-	struct play_measure_s pm;
+	struct play_measure_s pm, prev_pm;
 	
-	pm.measure = NULL;
-
+	prev_pm.measure = pm.measure = NULL;
 	/* main loop */
 	for (i = 0; ;i++) {
 		
-		if (pm.measure != NULL){
-			printf("freeing old measure");
-			free(pm.measure);
-			pm.measure = NULL;
-		}
-
-		memset(&nm, 0, sizeof(struct measure_s));
+		free(prev_pm.measure);
+		memset(&prev_pm, 0, sizeof(struct play_measure_s));
+		
+		prev_pm = pm;
+		
 		memset(&pm, 0, sizeof(struct play_measure_s));
+		memset(&nm, 0, sizeof(struct measure_s));
 
 		try {
 			recv_measure(director_socket, &nm);
@@ -146,7 +142,8 @@ int main(int argc, char **argv)
 			       playing the random note:\n\tid: %d (%s)\n", i, 
 			       nm.tags.payload);
 			
-			res = compose_measure(&pm, &nm, myid, soloist, dbh);
+			res = compose_measure(&pm, &prev_pm,
+					&nm, myid, soloist, dbh);
 			if (res == -1){
 				printf("exiting\n");
 				return -1;

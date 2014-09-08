@@ -106,9 +106,9 @@ int main(int argc, char **argv)
 	
 	char *args[9];
 	asprintf(&args[0], "0");
-	asprintf(&args[1], "1");
+	asprintf(&args[1], "33");
 	asprintf(&args[2], "0");
-	asprintf(&args[3], "1169");
+	asprintf(&args[3], "145");
 	asprintf(&args[4], "blues");
 	asprintf(&args[5], "groove");
 	asprintf(&args[6], "pushed");
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 	
 	int args_prios[9] = {3, 7, 1, 2, 0, 5, 4, 6, 8};
 
-	quarters_size = get_quarters(dbh, args, args_prios, 9, &quarters);
+	quarters_size = get_quarters(dbh, args, args_prios, 0, &quarters);
 	
 	if (quarters_size == 0){
 		printf("no quarter found");
