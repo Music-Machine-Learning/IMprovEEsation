@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <arpa/inet.h>
 
 #define SYNC_ACK 0x42
 #define ACK 0x0
@@ -43,22 +44,48 @@
 class network_exception net_ex;
 class end_of_improvisation_exception eoi_ex;
 
-/* Musician */
+#define LOAD_IOVEC(iov, i, field)\
+	({iov[i].iov_base = &field;\
+	 iov[i].iov_len = sizeof(field);})
 
+#define IOVEC_HTONS(b, s) ({\
+	struct iovec *a = (b);\
+	int i;\
+	for (i = 0; i < (s); i++)\
+		*((uint16_t *)a[i].iov_base) = htons(*((uint16_t *)a[i].iov_base));\
+})
+#define IOVEC_NTOHS(b, s) ({\
+	struct iovec *a = (b);\
+	int i;\
+	for (i = 0; i < (s); i++)\
+		*((uint16_t *)a[i].iov_base) = ntohs(*((uint16_t *)a[i].iov_base));\
+})
+
+#define IOVEC_HTONL(b, s) ({\
+	struct iovec *a = (b);\
+	int i;\
+	for (i = 0; i < (s); i++)\
+		*((uint32_t *)a[i].iov_base) = htonl(*((uint32_t *)a[i].iov_base));\
+})
+#define IOVEC_NTOHL(b, s) ({\
+	struct iovec *a = (b);\
+	int i;\
+	for (i = 0; i < (s); i++)\
+		*((uint32_t *)a[i].iov_base) = ntohl(*((uint32_t *)a[i].iov_base));\
+})
+
+/* Musician */
 uint32_t send_subscription(int director, uint32_t coupling,
 		uint8_t instrument_class, uint8_t soloer)
 {
 	uint32_t id;
 	struct iovec comm_vec[3];
 
-	comm_vec[0].iov_base = &coupling;
-	comm_vec[0].iov_len = sizeof(uint32_t);
+	LOAD_IOVEC(comm_vec, 0, coupling);
+	LOAD_IOVEC(comm_vec, 1, instrument_class);
+	LOAD_IOVEC(comm_vec, 2, soloer);
 
-	comm_vec[1].iov_base = &instrument_class;
-	comm_vec[1].iov_len = sizeof(uint8_t);
-
-	comm_vec[2].iov_base = &soloer;
-	comm_vec[2].iov_len = sizeof(uint8_t);
+	IOVEC_HTONL(comm_vec, 1);
 
 	if (writev(director, comm_vec, 3) <= 0) {
 		perror("writev1");
@@ -66,11 +93,15 @@ uint32_t send_subscription(int director, uint32_t coupling,
 		return -1;
 	}
 
+	IOVEC_NTOHL(comm_vec, 1);
+
 	if (read(director, &id, sizeof(id)) <= 0) {
 		perror("read");
 		throw net_ex;
 		return -1;
 	}
+
+	id = ntohl(id);
 
 	return id;
 }
@@ -84,10 +115,6 @@ uint32_t send_subscription_struct(int director, struct subscription_s *s)
 	return send_subscription(director, s->coupling, s->instrument_class,
 			s->soloer);
 }
-
-#define LOAD_IOVEC(iov, i, field)\
-	({iov[i].iov_base = &field;\
-	 iov[i].iov_len = sizeof(field);})
 
 void recv_measure(int director, struct measure_s *new_measure)
 {
@@ -115,6 +142,14 @@ void recv_measure(int director, struct measure_s *new_measure)
 		/* connection ended. */
 		throw eoi_ex;
 		return;
+	}
+
+	/* Endianess realigning */
+	IOVEC_NTOHL(safe_to_read + 1, 1);
+
+	for (i = 0; i <  sizeof(new_measure->prioargs) / sizeof(*new_measure->prioargs);
+	     i++) {
+		new_measure->prioargs[i] = ntohl(new_measure->prioargs[i]);
 	}
 
 	new_measure->tonal_zones = (struct tonal_zone_s *) realloc(
@@ -149,6 +184,8 @@ void recv_measure(int director, struct measure_s *new_measure)
 		return;
 	}
 
+	IOVEC_NTOHS(tmp_iov, new_measure->tempo.upper * 2);
+
 	new_measure->chords = (struct chord_s *) realloc(new_measure->chords,
 			new_measure->tempo.upper *
 			sizeof(struct chord_s));
@@ -169,6 +206,8 @@ void recv_measure(int director, struct measure_s *new_measure)
 		return;
 	}
 
+	IOVEC_NTOHS(tmp_iov, new_measure->tempo.upper * 2);
+
 	retval = read(director, &new_measure->tags.size,
 			sizeof(new_measure->tags.size));
 	if(retval < 0) {
@@ -180,6 +219,8 @@ void recv_measure(int director, struct measure_s *new_measure)
 		throw eoi_ex;
 		return;
 	}
+
+	new_measure->tags.size = ntohl(new_measure->tags.size);
 
 	new_measure->tags.payload = (char *) realloc(new_measure->tags.payload,
 			new_measure->tags.size *
@@ -209,7 +250,8 @@ void send_to_play(int player, int director,
 {
 	int j;
 	uint8_t sack = SYNC_ACK;
-    struct iovec iov[measure->size * 4 + 4];
+	struct iovec iov[measure->size * 4 + 4];
+	uint32_t measure_size_bck = measure->size;
 
 	/* player send */
 	LOAD_IOVEC(iov, 0, measure->id);
@@ -224,11 +266,16 @@ void send_to_play(int player, int director,
 		LOAD_IOVEC(iov, j * 4 + 7, measure->measure[j].triplets);
 	}
 
-	if (writev(player, iov, measure->size * 4 + 4) < 0) {
+	IOVEC_HTONL(iov, 3);
+
+	if (writev(player, iov, measure_size_bck * 4 + 4) < 0) {
 		perror("writev2");
 		throw net_ex;
 		return;
 	}
+
+
+	IOVEC_NTOHL(iov, 3);
 
 	/* director ack */
 	if (write(director, &sack, sizeof(sack)) <= 0) {
@@ -248,7 +295,8 @@ uint32_t recv_num_of_musicians(int net_handler)
 		retval = -1;
 		throw net_ex;
 	}
-	return retval;
+
+	return ntohl(retval);
 }
 
 void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
@@ -320,6 +368,8 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 				throw eoi_ex;
 				return;
 			}
+
+			IOVEC_NTOHL(safe_iov, 3);
 
 			note_list[pm_count].measure = (struct notes_s*) realloc(
 					note_list[pm_count].measure,
@@ -424,6 +474,8 @@ void recv_subscription(int conn_socket, struct subscription_s *new_musician)
 		throw eoi_ex;
 		return;
 	}
+
+	IOVEC_NTOHL(iov, 1);
 }
 
 uint32_t recv_player(int conn_socket)
@@ -452,8 +504,8 @@ uint32_t recv_player(int conn_socket)
 
 void send_num_of_musicians(int player_conn, uint32_t musicians_count)
 {
-	if (write(player_conn, &musicians_count,
-				sizeof(musicians_count)) <= 0) {
+	uint32_t tosend = htonl(musicians_count);
+	if (write(player_conn, &tosend, sizeof(tosend)) <= 0) {
 		perror("write");
 		throw net_ex;
 	}
@@ -461,7 +513,8 @@ void send_num_of_musicians(int player_conn, uint32_t musicians_count)
 
 void send_id(int musician_conn, uint32_t id)
 {
-	if (write(musician_conn, &id, sizeof(id)) <= 0) {
+	uint32_t tosend = htonl(id);
+	if (write(musician_conn, &tosend, sizeof(tosend)) <= 0) {
 		perror("write");
 		throw net_ex;
 	}
@@ -489,11 +542,29 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 		 * so sizeof() will return sizeof(int) * array_size */
 		LOAD_IOVEC(safe_iov, 4, next_measure->prioargs);
 
+		IOVEC_HTONL(safe_iov + 1, 1);
+
+		for (i = 0;
+		     i < sizeof(next_measure->prioargs) / sizeof(*next_measure->prioargs);
+		     i++) {
+			next_measure->prioargs[i] =
+						htonl(next_measure->prioargs[i]);
+		}
+
 		retval = writev(cmusician->connection, safe_iov, 5);
 		if (retval <= 0) {
 			perror("writev3");
 			throw net_ex;
 			return;
+		}
+
+		IOVEC_NTOHL(safe_iov + 1, 1);
+
+		for (i = 0;
+		     i < sizeof(next_measure->prioargs) / sizeof(*next_measure->prioargs);
+		     i++) {
+			next_measure->prioargs[i] =
+						ntohl(next_measure->prioargs[i]);
 		}
 
 		tmp_iov = new struct iovec [next_measure->tempo.upper * 2 + 2];
@@ -505,6 +576,8 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 					next_measure->tonal_zones[i].scale);
 		}
 
+		IOVEC_HTONS(tmp_iov, next_measure->tempo.upper * 2);
+
 		retval = writev(cmusician->connection, tmp_iov,
 				next_measure->tempo.upper * 2);
 		if (retval < 0) {
@@ -512,12 +585,17 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 			throw net_ex;
 			return;
 		}
+
+		IOVEC_NTOHS(tmp_iov, next_measure->tempo.upper * 2);
+
 		for (i = 0; i < next_measure->tempo.upper; i++) {
 			LOAD_IOVEC(tmp_iov, i * 2,
 					next_measure->chords[i].note);
 			LOAD_IOVEC(tmp_iov, i * 2 + 1,
 					next_measure->chords[i].mode);
 		}
+
+		IOVEC_HTONS(tmp_iov, next_measure->tempo.upper * 2);
 
 		retval = writev(cmusician->connection, tmp_iov,
 				next_measure->tempo.upper * 2);
@@ -527,6 +605,10 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 			return;
 		}
 
+		IOVEC_NTOHS(tmp_iov, next_measure->tempo.upper * 2);
+
+		next_measure->tags.size = htonl(next_measure->tags.size);
+
 		retval = write(cmusician->connection,
 				&next_measure->tags.size,
 				sizeof(next_measure->tags.size));
@@ -535,6 +617,8 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 			throw net_ex;
 			return;
 		}
+		next_measure->tags.size = ntohl(next_measure->tags.size);
+
 		retval = write(cmusician->connection,
 				next_measure->tags.payload,
 				sizeof(char) * next_measure->tags.size);
@@ -554,9 +638,9 @@ void sync_all(struct list_head *musicians)
 
 	int size = 0,
 	    psize = 0,
-        retval;
+	    retval;
 
-    uint8_t ack = 0;
+	uint8_t ack = 0;
 
 	struct epoll_event *epevs;
 
