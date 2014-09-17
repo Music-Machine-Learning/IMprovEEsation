@@ -118,7 +118,7 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, uin
 	unsigned char data[3];
 	struct subscription_s *cmusician;
 	
-	*fd = open("/dev/midi1", O_WRONLY);
+	*fd = open("/dev/snd/midiC2D0", O_WRONLY); // FIXME
 	if (*fd < 0){
 		perror("open");
 		return 0;
@@ -129,14 +129,14 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, uin
 		
 		/* Drums are assigned by default to channel 10 and it shouldn't be selected */
 		if(cmusician->instrument_class != DRUMS){
-			data[0] = SELECT_INSTRUMENT(cmusician->connection);
+			data[0] = SELECT_INSTRUMENT(cmusician->instrument_class);//(cmusician->connection);
 			data[1] = cmusician->instrument_class;
 			data[2] = 120; // this is useless, just for parallelism
 			/* Send the instrument setup to midi (we need just 2 params) */
 			write(*fd, data, 2);
 		}
 		
-		printf("Instrment %d in channel %d selected!\n", cmusician->instrument_class, cmusician->connection);
+		printf("Instrment %d in channel %d selected!\n", cmusician->instrument_class, cmusician->instrument_class);
 	}
 	
 	return 1;
@@ -176,7 +176,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	}
 	
 	for(i=0; i<musicians_num; i++){
-		note_pointer[i][2] = note_list[i].musician_id;
+		note_pointer[i][2] = (note_list[i].musician_id && 0xff); //FIXME
 		
 		/* Fill the arrays of notes and make them -1 terminated */
 		for(j=0; j<25; j++){
@@ -212,10 +212,14 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 						null_counter++;
 						continue;
 					}
-					
-					write(fd, data[j], 3); // key down the new note
-					printf("\tMusician id %d playing %d on channel %d\n", j, notes[j][note_pointer[j][0]].note, note_pointer[j][2]);
-					data[j][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step
+					if(notes[j][note_pointer[j][0]].note < 128){ //actual note
+						write(fd, data[j], 3); // key down the new note
+						printf("\tMusician id %d playing %d on channel %d\n", j, notes[j][note_pointer[j][0]].note, note_pointer[j][2]);
+						data[j][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step
+					} else {
+						printf("\tMusician id %d playing silence on channel %d\n", j, note_pointer[j][2]);
+						data[j][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step FIXME
+					}
 					
 					note_pointer[j][1] = notes[j][note_pointer[j][0]].tempo - 1; // set the new countdown (-1 cause the first semiquiver is consumed)
 					note_pointer[j][0]++; // increase the note pointer
