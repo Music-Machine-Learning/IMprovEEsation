@@ -107,7 +107,7 @@
 #define MIDI_NOCTAVES  8 /* From A0 to C8 */
 #define MIDI_FIRST_NOTE 21 /* A0 */
 #define MIDI_LAST_NOTE 108 /* C8 */
-#define MIDI_REST_NOTE	0
+#define MIDI_REST_NOTE	128
 
 #define NO_COUPLING 0
 
