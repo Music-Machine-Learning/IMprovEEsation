@@ -99,7 +99,7 @@ int net_init(int port, const char *addr)
 uint32_t calculateID(subscription_s *entry, musician_registration_s *subs, int received)
 {
     int i;
-    uint32_t id = 1 << 8 + entry->instrument_class;
+    uint32_t id = (1 << 8) + entry->instrument_class;
     for(i = 0; i < received; i++){
         if(entry->coupling != NO_COUPLING
            && subs[i].subscritpion->coupling == entry->coupling
