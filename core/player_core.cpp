@@ -39,6 +39,15 @@
 
 #include <time.h>
 
+#include <map>
+
+using namespace std;
+
+/* Data to be written to midi */
+unsigned char data[16][3];
+/* Channel reference */
+map<int, int> Channels;
+
 /* TEST This creates a test set of 3 musicians */
 void fill_test_musician(subscription_s *new_musician, int prog){
 	switch (prog){
@@ -78,7 +87,12 @@ void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musi
 			default:
 				current.size = 9;
 				
-				current.musician_id = i; //hardcode FIXME
+				if (i == 0){ // che merda di espediente
+					current.musician_id = 0;
+				}
+				if (i == 1){ // che merda di espediente
+					current.musician_id = 33;
+				}
 				if (i == 2){ // che merda di espediente
 					current.musician_id = 10;
 				}
@@ -112,31 +126,43 @@ void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musi
 	
 }
 
-int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, uint8_t * instrument_db){
+int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, char * dev){
 	
 	int i;
-	unsigned char data[3];
+	int chcounter = 0;
+	unsigned char mdata[3];
 	struct subscription_s *cmusician;
 	
-	*fd = open("/dev/snd/midiC2D0", O_WRONLY); // FIXME
+	*fd = open(dev, O_WRONLY);
+	//*fd = open("/dev/snd/midiC2D0", O_WRONLY); // FIXME
 	if (*fd < 0){
 		perror("open");
 		return 0;
 	};
 	
+	for (i=0; i<16; i++){
+		data[i][0] = KEY_UP(i);
+		data[i][1] = 0;
+		data[i][2] = 120;
+	}
+	
 	/* Assign musicians to each channel and setup */
 	list_for_each_entry(cmusician, musicians, list) {
 		
-		/* Drums are assigned by default to channel 10 and it shouldn't be selected */
+		/* Drums are assigned by default to channel 16 and it shouldn't be selected */
 		if(cmusician->instrument_class != DRUMS){
-			data[0] = SELECT_INSTRUMENT(cmusician->instrument_class);//(cmusician->connection);
-			data[1] = cmusician->instrument_class;
-			data[2] = 120; // this is useless, just for parallelism
+			Channels[cmusician->instrument_class] = chcounter;
+			mdata[0] = SELECT_INSTRUMENT(chcounter);
+			mdata[1] = cmusician->instrument_class;
+			mdata[2] = 120; // this is useless, just for parallelism
 			/* Send the instrument setup to midi (we need just 2 params) */
-			write(*fd, data, 2);
+			write(*fd, mdata, 2);
+			printf("Instrment %d in channel %d selected!\n", cmusician->instrument_class, (chcounter + 1));
+			chcounter++;
+		} else {
+			Channels[DRUMS] = 15; /* Assigning drums to channel 16 (15 starting from 0)*/
+			printf("Instrment %d in channel %d selected!\n", cmusician->instrument_class, 16);
 		}
-		
-		printf("Instrment %d in channel %d selected!\n", cmusician->instrument_class, cmusician->instrument_class);
 	}
 	
 	return 1;
@@ -148,7 +174,7 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, uin
  * note_list is a pointer to an array of measures to play each identified by the instruent ID (obviously all different)
  * musicians is the pointer to the array of musicians involved
  * musicians_num contains the number of musicians envolved in the impro */
-void play_measure(struct play_measure_s *note_list, struct list_head *musicians, uint32_t musicians_num, int fd, uint8_t * instrument_db){
+void play_measure(struct play_measure_s *note_list, struct list_head *musicians, uint32_t musicians_num, int fd){
 	int i, j;
 	int null_counter = 0;
 	/* This is a matrix which hosts the notes ordered by instrument (will be -1 terminated) */
@@ -156,7 +182,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	/* This is an array which stores the pointers for every execution, the countdown to the end, the channel and the triplet flag */
 	int note_pointer[musicians_num][4];
 	/* Data to be written to midi */
-	unsigned char data[musicians_num][3];
+	//unsigned char data[musicians_num][3];
 	/* NULL NOTE */
 	struct notes_s nullnote = {-1,0,0,0};
 	
@@ -170,13 +196,15 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 		note_pointer[i][1] = 0;
 		note_pointer[i][2] = 0;
 		note_pointer[i][3] = FALSE;
-		data[i][0] = KEY_UP(i);
-		data[i][1] = 0;
-		data[i][2] = 120;
+		//data[i][0] = KEY_UP(i);
+		//data[i][1] = 0;
+		//data[i][2] = 120;
 	}
 	
 	for(i=0; i<musicians_num; i++){
-		note_pointer[i][2] = (note_list[i].musician_id && 0xff); //FIXME
+		note_pointer[i][2] = (Channels[note_list[i].musician_id & 0xff]); //FIXME it should be connection
+		printf("aaaaaa %d\n", note_list[i].musician_id & 0xff);
+		
 		
 		/* Fill the arrays of notes and make them -1 terminated */
 		for(j=0; j<25; j++){
@@ -202,12 +230,13 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 				/* We are about to play a new note */
 				if(note_pointer[j][1] == 0){
 					
-					write(fd, data[j], 3); // key up the previous
-					// extract the new note
-					data[j][0] = KEY_DOWN(note_pointer[j][2]);
-					if (notes[j][note_pointer[j][0]].note != 255)
+					if (notes[j][note_pointer[j][0]].note != 255) {
+						write(fd, data[j], 3); // key up the previous
+					
+						// extract the new note
+						data[j][0] = KEY_DOWN(note_pointer[j][2]);
 						data[j][1] = notes[j][note_pointer[j][0]].note;
-					else { // or enter in the depths of hell (execution terminated for the instrument)
+					} else { // or enter in the depths of hell (execution terminated for the instrument)
 						note_pointer[j][0] = -1;
 						null_counter++;
 						continue;
@@ -236,4 +265,14 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 			usleep(bpms);
 		else break; // How can we stop everything??
 	}
+}
+
+/* does not work for now */
+void smorza_incosa(int fd){
+	int i;
+	for(i=1; i<16; i++){
+		write(fd, data[i], 3); // key up everything FIXME if is keyup?
+	}
+	printf("Smorzat!");
+	fflush(stdout);
 }

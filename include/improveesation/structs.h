@@ -27,6 +27,10 @@
 #include <linux/list.h>
 #include <stdint.h>
 
+#include <map>
+
+using namespace std;
+
 struct subscription_s
 {
 	uint32_t coupling;

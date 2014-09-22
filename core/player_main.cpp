@@ -40,6 +40,10 @@
 
 #include <time.h>
 
+#include <map>
+
+using namespace std;
+
 int director_socket;
 int net_handler;
 int fd;
@@ -47,10 +51,13 @@ int fd;
 uint8_t instrument_db[16];
 LIST_HEAD(musicians);
 
+
 void cleanup(void)
 {
 	struct subscription_s *curr_musician, *tmp_musician;
 	/* Cleanup and exit */
+	
+	smorza_incosa(fd);
 	list_for_each_entry_safe(curr_musician, tmp_musician,
 				 &musicians, list) {
 		list_del(&curr_musician->list);
@@ -146,7 +153,10 @@ int main(int argc, char **argv)
 	uint32_t musicians_num;
 	
 	/* Check if the test flag is active */
-	if ((argc > 1) && !strcmp(argv[1], "--test")){
+	if (argc == 1){
+		printf("./player <midi_dev> [--test]\nThe device's name is located is usually similar to /dev/midi1 or /dev/snd/midiC2D0.\n");
+		exit(0);
+	} else if ((argc > 2) && !strcmp(argv[2], "--test")){
 		test_flag = TRUE;
 		printf("Starting testset...\n");
 	}
@@ -207,7 +217,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!midi_init(&musicians, musicians_num, &fd, instrument_db)){
+	if (!midi_init(&musicians, musicians_num, &fd, argv[1])){
 		return 1;
 	};
 		
@@ -235,7 +245,7 @@ int main(int argc, char **argv)
 
 		printf("%d:\n ", i);
 		//easter_egg_print();
-		play_measure(note_list, &musicians, musicians_num, fd, instrument_db);
+		play_measure(note_list, &musicians, musicians_num, fd);
 	}
 
 	
