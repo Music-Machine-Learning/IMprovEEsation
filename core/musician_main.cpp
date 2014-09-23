@@ -28,6 +28,7 @@
 #include <improveesation/musician_core.h>
 #include <improveesation/db.h>
 
+#include <sys/time.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -58,11 +59,13 @@ void exit_usage(char *usage)
 
 int main(int argc, char **argv)
 {
-	int i, j, coupling, midi_class, soloist, res;
+	int i, j, coupling, midi_class, soloist, res, randfd;
+	unsigned seed;
 	struct sockaddr_in sout_director, sout_player;
 	struct notes_s *nt;
 	PGconn *dbh;
 	char *usage;
+	struct timeval tv;
  
 	asprintf(&usage, "%s <coupling> <midi-class> <soloist>\n", argv[0]);
 	
@@ -74,7 +77,18 @@ int main(int argc, char **argv)
 		soloist = atoi(argv[3]);
 	}
 
-	srand(time(NULL));
+	randfd = open("/dev/urandom", O_RDONLY);
+	if (read(randfd, &seed, sizeof(seed)) < sizeof(seed)) {
+		fprintf(stderr, "error in urandom read\n");
+		return -1;
+	}
+	
+	close(randfd);
+	fprintf(stderr, "%u\n", seed);	
+	if (gettimeofday(&tv, NULL) != -1)
+		seed *= tv.tv_usec;
+	
+	srand(seed);
 
 	sout_director.sin_family = AF_INET;
 	sout_director.sin_port = htons(50000);
