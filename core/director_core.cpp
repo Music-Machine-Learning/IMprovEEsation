@@ -33,6 +33,7 @@
 struct variant_couple_s {
     char *subgenre;
     pattern_s *pattern;
+    int first, last;
     struct variant_couple_s *next;
 };
 
@@ -77,7 +78,7 @@ void load_genre_info(char* gen, char* sub){
     //test stubs
     int i, j;
     char *variant;
-    variant_couple_s *tmp;
+    variant_couple_s *tmp, *last;
 
     get_pattern(database, gen, sub, &current_pattern);
 
@@ -100,19 +101,22 @@ void load_genre_info(char* gen, char* sub){
     improvariants = NULL;
 
     if(current_pattern->variants_size > 0){
-        tmp = improvariants;
+        last = NULL;
 
         for(i = 0; i < current_pattern->variants_size; i++){
             j = 0;
-            while((variant = current_pattern->variants[i].variants[j++])[0] != '\0'){
-                improvariants = (variant_couple_s*) malloc(sizeof(variant_couple_s));
+            while((variant = current_pattern->variants[i].variants[j++]) != NULL){
+                tmp = (variant_couple_s*) malloc(sizeof(variant_couple_s));
                 tmp->subgenre = (char *) malloc(sizeof(char)*strlen(variant));
                 strcpy(tmp->subgenre, variant);
                 get_pattern(database, gen, variant, &(tmp->pattern));
-                improvariants->next = tmp;
-                tmp = improvariants;
+                tmp->first = current_pattern->variants[i].first;
+                tmp->last = current_pattern->variants[i].last;
+                tmp->next = last;
+                last = tmp;
             }
         }
+        improvariants = tmp;
     }
 }
 
@@ -468,16 +472,18 @@ void pickSubgenre(){
     int i;
     char** pick;
 
-    for(i = 0; subgenresList[i] != NULL; i++);
+    if(subgenresList){
+        for(i = 0; subgenresList[i] != NULL; i++);
 
-    pick = &(subgenresList[rand()%i]);
-    while(*pick=="" || !strcmp(*pick, subgenre)){
         pick = &(subgenresList[rand()%i]);
-    }
+        while(*pick=="" || !strcmp(*pick, subgenre)){
+            pick = &(subgenresList[rand()%i]);
+        }
 
-    free(subgenre);
-    subgenre = (char*)calloc(strlen(*pick)+1, sizeof(char));
-    strcpy(subgenre, *pick);
+        free(subgenre);
+        subgenre = (char*)calloc(strlen(*pick)+1, sizeof(char));
+        strcpy(subgenre, *pick);
+    }
 }
 
 void pickGenre(){

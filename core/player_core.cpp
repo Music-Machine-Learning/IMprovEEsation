@@ -270,9 +270,9 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 /* does not work for now */
 void smorza_incosa(int fd){
 	int i;
-	for(i=1; i<16; i++){
+	for(i=0; i<16; i++){
+		
 		write(fd, data[i], 3); // key up everything FIXME if is keyup?
 	}
-	printf("Smorzat!");
-	fflush(stdout);
+	printf("Smorzat!\n");
 }

@@ -22,7 +22,7 @@
 # TODO separate communication and dbs for the player
 
 CXX_LIB_FLAGS:=-shared
-CXXFLAGS:= -I include -g
+CXXFLAGS:= -I include
 BUILD_DIR:=build
 CORE_DIR:=core
 
@@ -32,6 +32,9 @@ EXE_CXXFLAGS:= -I include -I $(shell pg_config --includedir) -g -L $(OUT_LIB_DIR
 LINK_CXX_ENDFLAGS := -limpro_communication -limpro_db -lpq
 
 all: prepare library binary
+
+debug: CXXFLAGS+= -g
+debug: all
 
 prepare:
 	mkdir -p $(OUT_LIB_DIR)
