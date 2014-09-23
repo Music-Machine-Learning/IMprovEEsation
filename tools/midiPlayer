@@ -1,0 +1,17 @@
+#!/bin/bash
+
+VIRMIDIS=`lsmod | grep "snd_virmidi"`
+if [ -z "$VIRMIDIS" ]; then
+  sudo modprobe snd-virmidi
+fi
+
+TIMIDIS=`ps -A | grep "timidity"`
+if [ -z "$TIMIDIS" ]; then
+  timidity -iA -Os -D 16 —verbose=1 &
+  sleep 1
+fi
+
+APORT=`aconnect -i | grep "Virtual Raw MIDI" | head -n 1 | cut -d ' ' -f2`"0"
+TPORT=`aconnect -o | grep TiMidity | head -n 1 | cut -d ' ' -f2`"0"
+
+aconnect $APORT $TPORT
