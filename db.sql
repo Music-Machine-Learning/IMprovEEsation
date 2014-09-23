@@ -2,10 +2,6 @@
 -- PostgreSQL database cluster dump
 --
 
-\connect postgres
-
-SET default_transaction_read_only = off;
-
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 
@@ -17,6 +13,11 @@ CREATE ROLE postgres;
 ALTER ROLE postgres WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION;
 CREATE ROLE read_only;
 ALTER ROLE read_only WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN NOREPLICATION PASSWORD 'md54c37fd589c47b3d64e69baaec73ebfa2';
+
+
+
+
+
 
 --
 -- Database creation
@@ -35,15 +36,15 @@ REVOKE ALL ON DATABASE template1 FROM postgres;
 GRANT ALL ON DATABASE template1 TO postgres;
 GRANT CONNECT ON DATABASE template1 TO PUBLIC;
 
-\connect improveesation
 
-SET default_transaction_read_only = off;
+\connect improveesation
 
 --
 -- PostgreSQL database dump
 --
 
 SET statement_timeout = 0;
+SET lock_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
@@ -69,12 +70,21 @@ SET default_tablespace = '';
 
 SET default_with_oids = false;
 
+--
+-- Name: genre; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
 CREATE TABLE genre (
     id integer NOT NULL,
     name character varying(255)
 );
 
 
+ALTER TABLE public.genre OWNER TO postgres;
+
+--
+-- Name: genre_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
 
 CREATE SEQUENCE genre_id_seq
     START WITH 1
@@ -84,8 +94,18 @@ CREATE SEQUENCE genre_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.genre_id_seq OWNER TO postgres;
+
+--
+-- Name: genre_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
 ALTER SEQUENCE genre_id_seq OWNED BY genre.id;
 
+
+--
+-- Name: instrument; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
 
 CREATE TABLE instrument (
     id integer NOT NULL,
@@ -96,6 +116,11 @@ CREATE TABLE instrument (
 );
 
 
+ALTER TABLE public.instrument OWNER TO postgres;
+
+--
+-- Name: instrument_class; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
 
 CREATE TABLE instrument_class (
     id integer NOT NULL,
@@ -103,6 +128,11 @@ CREATE TABLE instrument_class (
 );
 
 
+ALTER TABLE public.instrument_class OWNER TO postgres;
+
+--
+-- Name: instrument_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
 
 CREATE SEQUENCE instrument_id_seq
     START WITH 1
@@ -112,8 +142,18 @@ CREATE SEQUENCE instrument_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.instrument_id_seq OWNER TO postgres;
+
+--
+-- Name: instrument_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
 
 ALTER SEQUENCE instrument_id_seq OWNED BY instrument.id;
+
+
+--
+-- Name: pattern; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
 
 CREATE TABLE pattern (
     id integer NOT NULL,
@@ -125,6 +165,12 @@ CREATE TABLE pattern (
 );
 
 
+ALTER TABLE public.pattern OWNER TO postgres;
+
+--
+-- Name: pattern_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
 CREATE SEQUENCE pattern_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -132,7 +178,19 @@ CREATE SEQUENCE pattern_id_seq
     NO MAXVALUE
     CACHE 1;
 
+
+ALTER TABLE public.pattern_id_seq OWNER TO postgres;
+
+--
+-- Name: pattern_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
 ALTER SEQUENCE pattern_id_seq OWNED BY pattern.id;
+
+
+--
+-- Name: quarter; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
 
 CREATE TABLE quarter (
     id integer NOT NULL,
@@ -146,6 +204,13 @@ CREATE TABLE quarter (
     solo boolean NOT NULL
 );
 
+
+ALTER TABLE public.quarter OWNER TO postgres;
+
+--
+-- Name: quarter_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
 CREATE SEQUENCE quarter_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -153,18 +218,44 @@ CREATE SEQUENCE quarter_id_seq
     NO MAXVALUE
     CACHE 1;
 
+
+ALTER TABLE public.quarter_id_seq OWNER TO postgres;
+
+--
+-- Name: quarter_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
 ALTER SEQUENCE quarter_id_seq OWNED BY quarter.id;
+
+
+--
+-- Name: scale; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
 
 CREATE TABLE scale (
     id smallint NOT NULL,
     description character varying(255) NOT NULL
 );
 
+
+ALTER TABLE public.scale OWNER TO postgres;
+
+--
+-- Name: scale_genre; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
 CREATE TABLE scale_genre (
     id integer NOT NULL,
     id_scale integer NOT NULL,
     id_genre integer NOT NULL
 );
+
+
+ALTER TABLE public.scale_genre OWNER TO postgres;
+
+--
+-- Name: scale_genre_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
 
 CREATE SEQUENCE scale_genre_id_seq
     START WITH 1
@@ -173,7 +264,19 @@ CREATE SEQUENCE scale_genre_id_seq
     NO MAXVALUE
     CACHE 1;
 
+
+ALTER TABLE public.scale_genre_id_seq OWNER TO postgres;
+
+--
+-- Name: scale_genre_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
 ALTER SEQUENCE scale_genre_id_seq OWNED BY scale_genre.id;
+
+
+--
+-- Name: semiquaver; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
 
 CREATE TABLE semiquaver (
     id integer NOT NULL,
@@ -188,6 +291,13 @@ CREATE TABLE semiquaver (
     pnote double precision[] NOT NULL
 );
 
+
+ALTER TABLE public.semiquaver OWNER TO postgres;
+
+--
+-- Name: semiquaver_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
 CREATE SEQUENCE semiquaver_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -195,13 +305,32 @@ CREATE SEQUENCE semiquaver_id_seq
     NO MAXVALUE
     CACHE 1;
 
+
+ALTER TABLE public.semiquaver_id_seq OWNER TO postgres;
+
+--
+-- Name: semiquaver_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
 ALTER SEQUENCE semiquaver_id_seq OWNED BY semiquaver.id;
+
+
+--
+-- Name: subgenre; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
 
 CREATE TABLE subgenre (
     id integer NOT NULL,
     name character varying(255),
     id_genre integer
 );
+
+
+ALTER TABLE public.subgenre OWNER TO postgres;
+
+--
+-- Name: subgenre_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
 
 CREATE SEQUENCE subgenre_id_seq
     START WITH 1
@@ -210,7 +339,19 @@ CREATE SEQUENCE subgenre_id_seq
     NO MAXVALUE
     CACHE 1;
 
+
+ALTER TABLE public.subgenre_id_seq OWNER TO postgres;
+
+--
+-- Name: subgenre_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
 ALTER SEQUENCE subgenre_id_seq OWNED BY subgenre.id;
+
+
+--
+-- Name: var_measure; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
 
 CREATE TABLE var_measure (
     id integer NOT NULL,
@@ -220,6 +361,13 @@ CREATE TABLE var_measure (
     pattern integer
 );
 
+
+ALTER TABLE public.var_measure OWNER TO postgres;
+
+--
+-- Name: var_measure_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
 CREATE SEQUENCE var_measure_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -227,28 +375,85 @@ CREATE SEQUENCE var_measure_id_seq
     NO MAXVALUE
     CACHE 1;
 
+
+ALTER TABLE public.var_measure_id_seq OWNER TO postgres;
+
+--
+-- Name: var_measure_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
 ALTER SEQUENCE var_measure_id_seq OWNED BY var_measure.id;
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
+--
 
 ALTER TABLE ONLY genre ALTER COLUMN id SET DEFAULT nextval('genre_id_seq'::regclass);
 
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
 ALTER TABLE ONLY pattern ALTER COLUMN id SET DEFAULT nextval('pattern_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
+--
 
 ALTER TABLE ONLY quarter ALTER COLUMN id SET DEFAULT nextval('quarter_id_seq'::regclass);
 
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
 ALTER TABLE ONLY scale_genre ALTER COLUMN id SET DEFAULT nextval('scale_genre_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
+--
 
 ALTER TABLE ONLY semiquaver ALTER COLUMN id SET DEFAULT nextval('semiquaver_id_seq'::regclass);
 
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
 ALTER TABLE ONLY subgenre ALTER COLUMN id SET DEFAULT nextval('subgenre_id_seq'::regclass);
 
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
 ALTER TABLE ONLY var_measure ALTER COLUMN id SET DEFAULT nextval('var_measure_id_seq'::regclass);
+
+
+--
+-- Data for Name: genre; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY genre (id, name) FROM stdin;
 1	blues
 2	jazz
 \.
 
+
+--
+-- Name: genre_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('genre_id_seq', 2, true);
+
+
+--
+-- Data for Name: instrument; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY instrument (id, octave_min, octave_max, name, id_class) FROM stdin;
 12	2	7	Marimba	1
@@ -294,6 +499,11 @@ COPY instrument (id, octave_min, octave_max, name, id_class) FROM stdin;
 22	3	7	Harmonica	2
 \.
 
+
+--
+-- Data for Name: instrument_class; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY instrument_class (id, name) FROM stdin;
 0	Piano
 1	Chromatic Percussion
@@ -313,7 +523,17 @@ COPY instrument_class (id, name) FROM stdin;
 15	Others
 \.
 
+
+--
+-- Name: instrument_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('instrument_id_seq', 1, false);
+
+
+--
+-- Data for Name: pattern; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY pattern (id, measure_count, moods, steps, dynamics, modes) FROM stdin;
 2	12	{pushed,slow}	{{0,-1},{5,-1},{0,-1},{7,0},{5,-1},{6,-1},{0,-1},{4,9},{2,-1},{7,-1},{4,9},{2,7}}	{groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,fill}	{{7,""},{7,""},{7,""},{m7,7},{7,""},{m7,""},{7,""},{m7,7},{m7,""},{7,""},{m7,7},{m7,7}}
@@ -321,8 +541,17 @@ COPY pattern (id, measure_count, moods, steps, dynamics, modes) FROM stdin;
 1	12	{pushed,slow}	{{0},{0},{0},{0},{5},{5},{0},{0},{7},{7},{0},{0}}	{groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,fill}	{{7},{7},{7},{7},{7},{7},{7},{7},{7},{7},{7},{7}}
 \.
 
+
+--
+-- Name: pattern_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('pattern_id_seq', 4, true);
 
+
+--
+-- Data for Name: quarter; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY quarter (id, pos, instrument_class, chord_note, chord_mode, tag_dyna, tag_mood, scale_genre, solo) FROM stdin;
 29	0	2	0	145	groove	pushed	4	t
@@ -349,7 +578,6 @@ COPY quarter (id, pos, instrument_class, chord_note, chord_mode, tag_dyna, tag_m
 8	2	0	2	145	groove	pushed	4	f
 5	2	0	9	137	groove	pushed	4	f
 6	3	0	9	137	groove	pushed	4	f
-3	2	0	0	145	groove	pushed	4	f
 9	1	0	7	1169	groove	pushed	4	f
 14	1	0	0	1169	groove	pushed	4	f
 15	2	0	0	1169	groove	pushed	4	f
@@ -360,7 +588,17 @@ COPY quarter (id, pos, instrument_class, chord_note, chord_mode, tag_dyna, tag_m
 20	3	0	5	1169	groove	pushed	4	f
 \.
 
+
+--
+-- Name: quarter_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('quarter_id_seq', 37, true);
+
+
+--
+-- Data for Name: scale; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY scale (id, description) FROM stdin;
 2741	major
@@ -371,6 +609,11 @@ COPY scale (id, description) FROM stdin;
 669	major hexatonic blues
 \.
 
+
+--
+-- Data for Name: scale_genre; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
 COPY scale_genre (id, id_scale, id_genre) FROM stdin;
 1	1193	1
 2	1257	1
@@ -378,7 +621,17 @@ COPY scale_genre (id, id_scale, id_genre) FROM stdin;
 4	669	1
 \.
 
+
+--
+-- Name: scale_genre_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('scale_genre_id_seq', 8, true);
+
+
+--
+-- Data for Name: semiquaver; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY semiquaver (id, pos, quarter, velocity_min, velocity_max, pchange, pchange_3qrt, pchange_3qvr, pchange_3smq, pnote) FROM stdin;
 10	1	7	100	200	0.5	0	0	0	{0.25,0.25,0,0,0,0.25,0,0,0.25,0,0,0,0}
@@ -465,7 +718,17 @@ COPY semiquaver (id, pos, quarter, velocity_min, velocity_max, pchange, pchange_
 96	4	37	100	200	0.5	0	0	0	{0.100000000000000006,0.200000000000000011,0,0.200000000000000011,0.100000000000000006,0.100000000000000006,0,0,0,0,0.299999999999999989,0,0}
 \.
 
+
+--
+-- Name: semiquaver_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('semiquaver_id_seq', 96, true);
+
+
+--
+-- Data for Name: subgenre; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY subgenre (id, name, id_genre) FROM stdin;
 1	base	1
@@ -476,137 +739,377 @@ COPY subgenre (id, name, id_genre) FROM stdin;
 6	swing	2
 \.
 
+
+--
+-- Name: subgenre_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('subgenre_id_seq', 6, true);
+
+
+--
+-- Data for Name: var_measure; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
 COPY var_measure (id, start_meas, end_meas, target_patterns, pattern) FROM stdin;
 2	0	4	{2,3}	1
 \.
 
+
+--
+-- Name: var_measure_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
 SELECT pg_catalog.setval('var_measure_id_seq', 2, true);
+
+
+--
+-- Name: genre_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
 
 ALTER TABLE ONLY genre
     ADD CONSTRAINT genre_pkey PRIMARY KEY (id);
 
+
+--
+-- Name: instrument_class_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
 ALTER TABLE ONLY instrument_class
     ADD CONSTRAINT instrument_class_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: instrument_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
 
 ALTER TABLE ONLY instrument
     ADD CONSTRAINT instrument_pkey PRIMARY KEY (id);
 
+
+--
+-- Name: pattern_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
 ALTER TABLE ONLY pattern
     ADD CONSTRAINT pattern_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: quarter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
 
 ALTER TABLE ONLY quarter
     ADD CONSTRAINT quarter_pkey PRIMARY KEY (id);
 
+
+--
+-- Name: scale_genre_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
 ALTER TABLE ONLY scale_genre
     ADD CONSTRAINT scale_genre_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: scale_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
 
 ALTER TABLE ONLY scale
     ADD CONSTRAINT scale_pkey PRIMARY KEY (id);
 
+
+--
+-- Name: semiquaver_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
 ALTER TABLE ONLY semiquaver
     ADD CONSTRAINT semiquaver_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: subgenre_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
 
 ALTER TABLE ONLY subgenre
     ADD CONSTRAINT subgenre_pkey PRIMARY KEY (id);
 
+
+--
+-- Name: var_measure_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
 ALTER TABLE ONLY var_measure
     ADD CONSTRAINT var_measure_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: quarter_instrument_class_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
 
 ALTER TABLE ONLY quarter
     ADD CONSTRAINT quarter_instrument_class_fkey FOREIGN KEY (instrument_class) REFERENCES instrument_class(id);
 
+
+--
+-- Name: quarter_scale_genre_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
 ALTER TABLE ONLY quarter
     ADD CONSTRAINT quarter_scale_genre_fkey FOREIGN KEY (scale_genre) REFERENCES scale_genre(id);
+
+
+--
+-- Name: scale_genre_id_genre_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
 
 ALTER TABLE ONLY scale_genre
     ADD CONSTRAINT scale_genre_id_genre_fkey FOREIGN KEY (id_genre) REFERENCES genre(id);
 
+
+--
+-- Name: scale_genre_id_scale_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
 ALTER TABLE ONLY scale_genre
     ADD CONSTRAINT scale_genre_id_scale_fkey FOREIGN KEY (id_scale) REFERENCES scale(id);
+
+
+--
+-- Name: semiquaver_quarter_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
 
 ALTER TABLE ONLY semiquaver
     ADD CONSTRAINT semiquaver_quarter_fkey FOREIGN KEY (quarter) REFERENCES quarter(id);
 
+
+--
+-- Name: subgenre_id_genre_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
 ALTER TABLE ONLY subgenre
     ADD CONSTRAINT subgenre_id_genre_fkey FOREIGN KEY (id_genre) REFERENCES genre(id);
 
+
+--
+-- Name: var_measure_pattern_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
 ALTER TABLE ONLY var_measure
     ADD CONSTRAINT var_measure_pattern_fkey FOREIGN KEY (pattern) REFERENCES pattern(id);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM postgres;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT USAGE ON SCHEMA public TO read_only;
 
+
+--
+-- Name: genre; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON TABLE genre FROM PUBLIC;
+REVOKE ALL ON TABLE genre FROM postgres;
+GRANT ALL ON TABLE genre TO postgres;
 GRANT SELECT ON TABLE genre TO read_only;
 
+
+--
+-- Name: genre_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON SEQUENCE genre_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE genre_id_seq FROM postgres;
+GRANT ALL ON SEQUENCE genre_id_seq TO postgres;
 GRANT USAGE ON SEQUENCE genre_id_seq TO read_only;
 
+
+--
+-- Name: instrument; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON TABLE instrument FROM PUBLIC;
+REVOKE ALL ON TABLE instrument FROM postgres;
+GRANT ALL ON TABLE instrument TO postgres;
 GRANT SELECT ON TABLE instrument TO read_only;
 
+
+--
+-- Name: instrument_class; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON TABLE instrument_class FROM PUBLIC;
+REVOKE ALL ON TABLE instrument_class FROM postgres;
+GRANT ALL ON TABLE instrument_class TO postgres;
 GRANT SELECT ON TABLE instrument_class TO read_only;
 
+
+--
+-- Name: instrument_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON SEQUENCE instrument_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE instrument_id_seq FROM postgres;
+GRANT ALL ON SEQUENCE instrument_id_seq TO postgres;
 GRANT USAGE ON SEQUENCE instrument_id_seq TO read_only;
 
+
+--
+-- Name: pattern; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON TABLE pattern FROM PUBLIC;
+REVOKE ALL ON TABLE pattern FROM postgres;
+GRANT ALL ON TABLE pattern TO postgres;
 GRANT SELECT ON TABLE pattern TO read_only;
 
+
+--
+-- Name: pattern_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON SEQUENCE pattern_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE pattern_id_seq FROM postgres;
+GRANT ALL ON SEQUENCE pattern_id_seq TO postgres;
 GRANT USAGE ON SEQUENCE pattern_id_seq TO read_only;
 
+
+--
+-- Name: quarter; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON TABLE quarter FROM PUBLIC;
+REVOKE ALL ON TABLE quarter FROM postgres;
+GRANT ALL ON TABLE quarter TO postgres;
 GRANT SELECT ON TABLE quarter TO read_only;
 
+
+--
+-- Name: quarter_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON SEQUENCE quarter_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE quarter_id_seq FROM postgres;
+GRANT ALL ON SEQUENCE quarter_id_seq TO postgres;
 GRANT USAGE ON SEQUENCE quarter_id_seq TO read_only;
 
+
+--
+-- Name: scale; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON TABLE scale FROM PUBLIC;
+REVOKE ALL ON TABLE scale FROM postgres;
+GRANT ALL ON TABLE scale TO postgres;
 GRANT SELECT ON TABLE scale TO read_only;
 
+
+--
+-- Name: scale_genre; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON TABLE scale_genre FROM PUBLIC;
+REVOKE ALL ON TABLE scale_genre FROM postgres;
+GRANT ALL ON TABLE scale_genre TO postgres;
 GRANT SELECT ON TABLE scale_genre TO read_only;
 
+
+--
+-- Name: scale_genre_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON SEQUENCE scale_genre_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE scale_genre_id_seq FROM postgres;
+GRANT ALL ON SEQUENCE scale_genre_id_seq TO postgres;
 GRANT USAGE ON SEQUENCE scale_genre_id_seq TO read_only;
 
+
+--
+-- Name: semiquaver; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON TABLE semiquaver FROM PUBLIC;
+REVOKE ALL ON TABLE semiquaver FROM postgres;
+GRANT ALL ON TABLE semiquaver TO postgres;
 GRANT SELECT ON TABLE semiquaver TO read_only;
 
+
+--
+-- Name: semiquaver_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON SEQUENCE semiquaver_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE semiquaver_id_seq FROM postgres;
+GRANT ALL ON SEQUENCE semiquaver_id_seq TO postgres;
 GRANT USAGE ON SEQUENCE semiquaver_id_seq TO read_only;
 
+
+--
+-- Name: subgenre; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON TABLE subgenre FROM PUBLIC;
+REVOKE ALL ON TABLE subgenre FROM postgres;
+GRANT ALL ON TABLE subgenre TO postgres;
 GRANT SELECT ON TABLE subgenre TO read_only;
 
+
+--
+-- Name: subgenre_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON SEQUENCE subgenre_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE subgenre_id_seq FROM postgres;
+GRANT ALL ON SEQUENCE subgenre_id_seq TO postgres;
 GRANT USAGE ON SEQUENCE subgenre_id_seq TO read_only;
 
+
+--
+-- Name: var_measure; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON TABLE var_measure FROM PUBLIC;
+REVOKE ALL ON TABLE var_measure FROM postgres;
+GRANT ALL ON TABLE var_measure TO postgres;
 GRANT SELECT ON TABLE var_measure TO read_only;
 
+
+--
+-- Name: var_measure_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
 REVOKE ALL ON SEQUENCE var_measure_id_seq FROM PUBLIC;
+REVOKE ALL ON SEQUENCE var_measure_id_seq FROM postgres;
+GRANT ALL ON SEQUENCE var_measure_id_seq TO postgres;
 GRANT USAGE ON SEQUENCE var_measure_id_seq TO read_only;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: read_only
+--
 
 ALTER DEFAULT PRIVILEGES FOR ROLE read_only IN SCHEMA public REVOKE ALL ON SEQUENCES  FROM PUBLIC;
 ALTER DEFAULT PRIVILEGES FOR ROLE read_only IN SCHEMA public REVOKE ALL ON SEQUENCES  FROM read_only;
 ALTER DEFAULT PRIVILEGES FOR ROLE read_only IN SCHEMA public GRANT USAGE ON SEQUENCES  TO read_only;
 
-\connect postgres
 
-SET default_transaction_read_only = off;
+--
+-- PostgreSQL database dump complete
+--
+
+\connect postgres
 
 --
 -- PostgreSQL database dump
 --
 
 SET statement_timeout = 0;
+SET lock_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
@@ -648,13 +1151,12 @@ GRANT ALL ON SCHEMA public TO postgres;
 
 \connect template1
 
-SET default_transaction_read_only = off;
-
 --
 -- PostgreSQL database dump
 --
 
 SET statement_timeout = 0;
+SET lock_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
