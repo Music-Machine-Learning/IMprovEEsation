@@ -99,13 +99,9 @@ int note_to_midi(int note_idx, int key_note)
 	oloop_iter = ojump = 0;
 
 	if (note_idx == 0) {
-		midi = MIDI_REST_NOTE; //A rest;
+		midi = MIDI_REST_NOTE;
 	} else {
 		r = rand();
-		
-		/* TODO: the following is wrong, it's not random 
-			btw, shoud I do a random here? */
-		/*octave = (r % (octave_max - octave_min)) + octave_min;*/
 		
 		ojump = r % (OCTAVE_MAX_JUMP * 2) - OCTAVE_MAX_JUMP ;
 		
@@ -121,8 +117,9 @@ int note_to_midi(int note_idx, int key_note)
 			octave--;
 		}
 		if (oloop_iter > OCTAVE_MAX_JUMP){
-			fprintf(stderr, "Warning: something not nice in note_to_midi"
-					"oloop_iter: %d\n", oloop_iter);
+			fprintf(stderr, "Warning: something not nice in "
+					"note_to_midi oloop_iter: %d\n", 
+					oloop_iter);
 		}
 		oloop_iter = 0;
 		while (octave < octave_min) {
@@ -131,8 +128,9 @@ int note_to_midi(int note_idx, int key_note)
 		}
 		
 		if (oloop_iter > OCTAVE_MAX_JUMP){
-			fprintf(stderr, "Warning: something not nice in note_to_midi"
-					"oloop_iter: %d\n", oloop_iter);
+			fprintf(stderr, "Warning: something not nice in "
+					"note_to_midi oloop_iter: %d\n", 
+					oloop_iter);
 		}
 
 		printf("octave %d\n", octave);
@@ -279,7 +277,7 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		struct measure_s *minfo, int myid, int soloist, PGconn *dbh)
 {
 
-	int q, i, max_sqcount, ntcount, res, q_size, sq_size, key_note;
+	int q, i, max_sqcount, ntcount, res, q_size, sq_size, key_note, q_id;
 	char *qargs[QUARTER_QUERY_ARGS];
 	int *qids;
 	struct semiquaver_s **sqs;
@@ -312,9 +310,10 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 			return -1;
 		}
 
-		/* TODO If nquarters are more than 1, do we need some strategy
-		 * in order to choose one of them? Now its always the 1st one */
-		sq_size = get_semiquavers(dbh, qids[0], &sqs);
+		/* Randomly choose one quarter */
+		q_id = rand() % q_size;
+		printf("quarter: %d\n", qids[q_id]);
+		sq_size = get_semiquavers(dbh, qids[q_id], &sqs);
 		if (sq_size <= 0) {
 			fprintf(stderr, "No semiquavers found\n");
 			return -1;
