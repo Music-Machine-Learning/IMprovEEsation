@@ -35,6 +35,7 @@
    what about a struct to contain all of them? */
 static int octave_min;
 static int octave_max;
+static int prev_octave;
 
 int print_semiquaver(struct semiquaver_s *sq);
 
@@ -60,6 +61,8 @@ int musician_init(PGconn **dbh, int coupling, int instrument,
 	
 	if (*dbh == NULL)
 		return -1;
+
+	prev_octave = -1;
 
 	res = get_range(*dbh, instrument, &octave_min, &octave_max);
 	if (res != 0 || (octave_max - octave_min) > MIDI_NOCTAVES)
@@ -91,19 +94,50 @@ int decide_note(float *pnote)
 
 int note_to_midi(int note_idx, int key_note)
 {
-	int midi, octave, r;
+	int midi, octave, ojump, oloop_iter, r;
 
-	r = rand();
-	
-	/* TODO: the following is wrong, it's not random 
-		btw, shoud I do a random here? */
-	octave = (r % (octave_max - octave_min)) + octave_min;
-	
-	printf("octave %d\n", octave);
-		
+	oloop_iter = ojump = 0;
+
 	if (note_idx == 0) {
 		midi = MIDI_REST_NOTE; //A rest;
-	} else {  
+	} else {
+		r = rand();
+		
+		/* TODO: the following is wrong, it's not random 
+			btw, shoud I do a random here? */
+		/*octave = (r % (octave_max - octave_min)) + octave_min;*/
+		
+		ojump = r % (OCTAVE_MAX_JUMP * 2) - OCTAVE_MAX_JUMP ;
+		
+		if (prev_octave == -1)
+			octave = (r % (octave_max - octave_min)) + octave_min;
+		else
+			octave = prev_octave;
+		
+		octave += ojump; 
+		
+		while (octave > octave_max) {
+			oloop_iter++;
+			octave--;
+		}
+		if (oloop_iter > OCTAVE_MAX_JUMP){
+			fprintf(stderr, "Warning: something not nice in note_to_midi"
+					"oloop_iter: %d\n", oloop_iter);
+		}
+		oloop_iter = 0;
+		while (octave < octave_min) {
+			oloop_iter++;
+			octave++;
+		}
+		
+		if (oloop_iter > OCTAVE_MAX_JUMP){
+			fprintf(stderr, "Warning: something not nice in note_to_midi"
+					"oloop_iter: %d\n", oloop_iter);
+		}
+
+		printf("octave %d\n", octave);
+
+		prev_octave = octave;
 		midi = (MIDI_FIRST_NOTE + (NSEMITONES * octave)) + 
 				key_note + note_idx;
 		if (midi < MIDI_FIRST_NOTE)
