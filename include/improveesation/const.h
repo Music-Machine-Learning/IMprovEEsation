@@ -104,6 +104,7 @@
 
 #define NSEMITONES 12
 #define PROB_ARR_SIZE NSEMITONES + 1
+#define OCTAVE_MAX_JUMP 2
 #define MIDI_NOCTAVES  8 /* From A0 to C8 */
 #define MIDI_FIRST_NOTE 21 /* A0 */
 #define MIDI_LAST_NOTE 108 /* C8 */
