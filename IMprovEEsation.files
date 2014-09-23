@@ -25,3 +25,4 @@ include/improveesation/structs.h
 include/linux/list.h
 CMakeLists.txt
 example_.improveesation.rc
+.gitignore

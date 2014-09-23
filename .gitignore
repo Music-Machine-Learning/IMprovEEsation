@@ -31,3 +31,6 @@ build
 
 #Ctags file
 tags
+
+# crappy qtcreator files
+*.user
