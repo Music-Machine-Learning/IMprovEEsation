@@ -24,8 +24,10 @@
 #include <improveesation/director_core.h>
 #include <improveesation/db.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <time.h>
+#include <improveesation/configuration.h>
 #include <stdio.h>
 
 struct variant_couple_s {
@@ -104,6 +106,7 @@ void load_genre_info(char* gen, char* sub){
             j = 0;
             while((variant = current_pattern->variants[i].variants[j++])[0] != '\0'){
                 improvariants = (variant_couple_s*) malloc(sizeof(variant_couple_s));
+                tmp->subgenre = (char *) malloc(sizeof(char)*strlen(variant));
                 strcpy(tmp->subgenre, variant);
                 get_pattern(database, gen, variant, &(tmp->pattern));
                 improvariants->next = tmp;
@@ -498,6 +501,7 @@ void pickGenre(){
 
 
 void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *sololist){
+    struct rc_conf_s conf;
     genre = (char*) calloc(strlen(gen)+1, sizeof(char));
     strcpy(genre, gen);
     subgenre = (char*) calloc(strlen(sub)+1, sizeof(char));
@@ -511,10 +515,14 @@ void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solo
 
     srand(time(NULL));
 
-    database = db_connect("griffin.dberardi.eu",
-                          "improveesation",
-                          "read_only",
-                          "testiamo123");
+    if(load_conf(DEFAULT_RC_PATH, &conf) < 4){
+        fprintf(stderr, "error while loading configuration (%s)\n", strerror(errno));
+    }
+
+    database = db_connect(conf.db_host,
+                          conf.db_name,
+                          conf.db_user,
+                          conf.db_passwd);
 
     get_genres(database, &genresList);
     get_subgenres(database, genre, &subgenresList);
