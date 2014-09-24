@@ -153,10 +153,10 @@ int main(int argc, char **argv)
 	uint32_t musicians_num;
 	
 	/* Check if the test flag is active */
-	if (argc == 1){
-		printf("./player <midi_dev> [--test]\nThe device's name is located is usually similar to /dev/midi1 or /dev/snd/midiC2D0.\n");
+	if (argc <= 2){
+		printf("./player <midi_dev> <seconds-to-sleep>(-1 if we want to wait the impro to end) [--test]\nThe device's name is located is usually similar to /dev/midi1 or /dev/snd/midiC2D0.\n");
 		exit(0);
-	} else if ((argc > 2) && !strcmp(argv[2], "--test")){
+	} else if ((argc > 3) && !strcmp(argv[3], "--test")){
 		test_flag = TRUE;
 		printf("Starting testset...\n");
 	}
@@ -224,6 +224,8 @@ int main(int argc, char **argv)
 
 	/* Execute a cleanup of the structures at the exit */
 	atexit(cleanup);
+	if(argv[2] >= 0)
+		usleep(atoi(argv[2])*1000000);
 	
 	/* Main loop */
 	printf("main loop\n");

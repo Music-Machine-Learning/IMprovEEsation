@@ -202,7 +202,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	}
 	
 	for(i=0; i<musicians_num; i++){
-		note_pointer[i][2] = (Channels[note_list[i].musician_id & 0xff]); //FIXME it should be connection
+		note_pointer[i][2] = (Channels[note_list[i].musician_id & 0xff]);
 		printf("aaaaaa %d\n", note_list[i].musician_id & 0xff);
 		
 		
@@ -247,7 +247,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 						data[j][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step
 					} else {
 						printf("\tMusician id %d playing silence on channel %d\n", j, note_pointer[j][2]);
-						data[j][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step FIXME
+						data[j][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step
 					}
 					
 					note_pointer[j][1] = notes[j][note_pointer[j][0]].tempo - 1; // set the new countdown (-1 cause the first semiquiver is consumed)
@@ -263,7 +263,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 		/* Is everybody over? if so get out! */
 		if (null_counter != musicians_num)
 			usleep(bpms);
-		else break; // How can we stop everything??
+		else break; 
 	}
 }
 
@@ -272,7 +272,7 @@ void smorza_incosa(int fd){
 	int i;
 	for(i=0; i<16; i++){
 		
-		write(fd, data[i], 3); // key up everything FIXME if is keyup?
+		write(fd, data[i], 3); // key up everything
 	}
 	printf("Smorzat!\n");
 }
