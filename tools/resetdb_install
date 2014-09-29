@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# Launch this script as: $0 /path/to/resetdb
+
+if [ -z $1 ]; then
+	echo Launch this script as: $0 /path/to/resetdb
+	exit
+fi
+
+chown postgres:postgres $1
+
+if which sudo; then
+	sudo -u postgres chown a+xs $1
+else
+	echo "enter password for postgres"
+	su -c "chown a+xs $1" postgres
+fi
+

@@ -27,6 +27,7 @@ set(IMprovEEsation_VERSION_MAJOR 0)
 set(IMprovEEsation_VERSION_MINOR 1)
 
 set(CORE_SOURCE_PROJECT_DIR "${PROJECT_SOURCE_DIR}/core")
+set(TOOLS_SOURCE_PROJECT_DIR "${PROJECT_SOURCE_DIR}/tools")
 
 set(CMAKE_MODULES_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
@@ -60,7 +61,7 @@ find_path(PostgreSQL_TYPE_INCLUDE_DIR
 	DOC "The ${PostgreSQL_INCLUDE_DIR_MESSAGE}"
 )
 
-find_package(PostgreSQL REQUIRED)
+#find_package(PostgreSQL REQUIRED)
 include_directories(${PostgreSQL_INCLUDE_DIR})
 set (POSTGRES_DB_LIBRARY ${PostgreSQL_LIBRARIES})
 
@@ -91,3 +92,9 @@ target_link_libraries(musician ${EXTRA_NET_LIBRARIES} ${EXTRA_DB_LIBRARIES})
 
 add_executable(db_test ${DbTestSources})
 target_link_libraries(db_test ${EXTRA_DB_LIBRARIES} ${POSTGRES_DB_LIBRARY})
+
+# tools
+file(GLOB ResetDbSources
+     "${TOOLS_SOURCE_PROJECT_DIR}/resetdb.c")
+
+add_executable(resetdb ${ResetDbSources})
