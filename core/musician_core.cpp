@@ -33,14 +33,19 @@
 
 /* TODO refactor for all global fields, 
    what about a struct to contain all of them? */
-static int octave_min;
-static int octave_max;
-static int prev_octave;
+struct musician_fields_s{
+	int octave_min;
+	int octave_max;
+	int prev_octave;
+	int play_chords;
+};
+
+static struct musician_fields_s mfields;
 
 int print_semiquaver(struct semiquaver_s *sq);
 
 int musician_init(PGconn **dbh, int coupling, int instrument, 
-			int soloist, int musician_id)
+			int soloist, int musician_id, int play_chords)
 {
 	int res;
 	struct rc_conf_s conf;
@@ -62,10 +67,12 @@ int musician_init(PGconn **dbh, int coupling, int instrument,
 	if (*dbh == NULL)
 		return -1;
 
-	prev_octave = -1;
+	mfields.prev_octave = -1;
+	mfields.play_chords = play_chords;
 
-	res = get_range(*dbh, instrument, &octave_min, &octave_max);
-	if (res != 0 || (octave_max - octave_min) > MIDI_NOCTAVES)
+	res = get_range(*dbh, instrument, &(mfields.octave_min), 
+			&(mfields.octave_max));
+	if (res != 0 || (mfields.octave_max - mfields.octave_min) > MIDI_NOCTAVES)
 		fprintf(stderr, "initialization failed\n");
 
 	return 0;
@@ -92,50 +99,59 @@ int decide_note(float *pnote)
 	return i;
 }
 
+int decide_octave(int octave_min, int octave_max)
+{
+	int r, oloop_iter, ojump, octave;
+
+	r = rand();
+	oloop_iter = ojump = 0;
+	
+	ojump = r % (OCTAVE_MAX_JUMP * 2) - OCTAVE_MAX_JUMP ;
+	
+	if (mfields.prev_octave == -1)
+		octave = (r % (octave_max - octave_min)) + octave_min;
+	else
+		octave = mfields.prev_octave;
+	
+	octave += ojump; 
+	
+	while (octave > octave_max) {
+		oloop_iter++;
+		octave--;
+	}
+	if (oloop_iter > OCTAVE_MAX_JUMP){
+		fprintf(stderr, "Warning: something not nice in "
+				"note_to_midi oloop_iter: %d\n", 
+				oloop_iter);
+	}
+	oloop_iter = 0;
+	while (octave < octave_min) {
+		oloop_iter++;
+		octave++;
+	}
+	
+	if (oloop_iter > OCTAVE_MAX_JUMP){
+		fprintf(stderr, "Warning: something not nice in "
+				"note_to_midi oloop_iter: %d\n", 
+				oloop_iter);
+	}
+
+	printf("octave_jump %d octave %d\n", ojump, octave);
+
+	mfields.prev_octave = octave;
+	
+	return octave;
+}
+
 int note_to_midi(int note_idx, int key_note)
 {
-	int midi, octave, ojump, oloop_iter, r;
+	int midi, octave;
 
-	oloop_iter = ojump = 0;
 
 	if (note_idx == 0) {
 		midi = MIDI_REST_NOTE;
 	} else {
-		r = rand();
-		
-		ojump = r % (OCTAVE_MAX_JUMP * 2) - OCTAVE_MAX_JUMP ;
-		
-		if (prev_octave == -1)
-			octave = (r % (octave_max - octave_min)) + octave_min;
-		else
-			octave = prev_octave;
-		
-		octave += ojump; 
-		
-		while (octave > octave_max) {
-			oloop_iter++;
-			octave--;
-		}
-		if (oloop_iter > OCTAVE_MAX_JUMP){
-			fprintf(stderr, "Warning: something not nice in "
-					"note_to_midi oloop_iter: %d\n", 
-					oloop_iter);
-		}
-		oloop_iter = 0;
-		while (octave < octave_min) {
-			oloop_iter++;
-			octave++;
-		}
-		
-		if (oloop_iter > OCTAVE_MAX_JUMP){
-			fprintf(stderr, "Warning: something not nice in "
-					"note_to_midi oloop_iter: %d\n", 
-					oloop_iter);
-		}
-
-		printf("octave %d\n", octave);
-
-		prev_octave = octave;
+		octave = decide_octave(mfields.octave_min, mfields.octave_max);
 		midi = (MIDI_FIRST_NOTE + (NSEMITONES * octave)) + 
 				key_note + note_idx;
 		if (midi < MIDI_FIRST_NOTE)
@@ -152,20 +168,111 @@ int note_to_midi(int note_idx, int key_note)
 	return midi;
 }
 
+int fill_chord_notes(struct notes_s *chord, struct measure_s *minfo, int q_idx)
+{
+	int chord_note, chord_mode, key_note, i, max, n_done, 
+	    octave, nidx, chord_width;
+	int chord_mode_arr[NSEMITONES], tmp_notes[MAX_CHORD_SIZE];
+
+	key_note = minfo->tonal_zones[q_idx].note;
+	chord_note = minfo->chords[q_idx].note;
+	chord_mode = minfo->chords[q_idx].mode;	
+	chord_width = 1;
+
+
+	for (i = 0, n_done = 0; i < NSEMITONES; i++) {
+		nidx = chord_mode >> i;
+		if (nidx & 1) {
+			chord_mode_arr[n_done] = i;
+			n_done++;
+		}
+	}
+	chord_mode_arr[n_done] = -1; /* list of notes from the original chord mask */
+
+	/* Randomly decide the size of the chord, but it shouln't be bigger than
+	   the given chord mask or a prechoosen max size */
+	max = MAX_CHORD_SIZE;
+	
+	if (n_done < MAX_CHORD_SIZE)
+		max = n_done;
+
+	chord->chord_size = rand() % (max - MIN_CHORD_SIZE) + MIN_CHORD_SIZE;
+
+	octave = decide_octave(mfields.octave_min, mfields.octave_max);
+	
+	/* From the set of the given chords note decide the note to put in the chord */
+	for (i = 0; i < chord->chord_size; i++) {
+		chord->notes[i] = 0;
+		tmp_notes[i] = chord_mode_arr[rand() % n_done];
+		if (i > 0) {
+			if (tmp_notes[i] < tmp_notes[i - 1]) 
+				chord->notes[i] = (NSEMITONES - tmp_notes[i - 1]);
+			chord->notes[i] += chord->notes[i - 1] + tmp_notes[i];
+			chord->notes[i] += key_note + chord_note + MIDI_FIRST_NOTE 
+				+ (octave * NSEMITONES);
+
+		} else { 
+			chord->notes[i] = tmp_notes[i];
+		}
+	}
+	
+	int max_dist = 0;
+	int move_direction = 0;
+	int move_octave = 0;
+	for (i = 0; i < chord->chord_size; i++) {
+		int dist = 0;
+		if (chord->notes[i] > MIDI_LAST_NOTE) {
+			move_direction = 1;
+			dist = chord->notes[i] - MIDI_LAST_NOTE;
+			if (dist > max_dist)
+				max_dist = dist;
+		} else if (chord->notes[i] < MIDI_FIRST_NOTE) {
+			move_direction = -1;
+			dist = MIDI_FIRST_NOTE - chord->notes[i];
+			if (dist > max_dist)
+				max_dist = dist;
+		}
+	}
+	
+	if (max_dist > 0){
+		move_octave = max_dist / NSEMITONES + 1;
+		if (move_direction == 1)
+			octave -= move_octave;
+		else if (move_direction == -1)
+			octave += move_octave;
+	
+		for (i = 0; i < chord->chord_size; i++) {
+			if (move_direction == 1)
+				chord->notes[i] -= NSEMITONES * move_octave;
+			else if (move_direction == -1)
+				chord->notes[i] += NSEMITONES * move_octave;
+		}
+	}
+	
+	mfields.prev_octave = octave;
+
+	if (n_done > MAX_CHORD_SIZE || chord->chord_size > MAX_CHORD_SIZE || 
+			n_done < MIN_CHORD_SIZE || chord->chord_size < MIN_CHORD_SIZE) {
+		fprintf(stderr, "Something wrong in fill_chord_notes\n");
+		return -1;
+	}
+}
 
 /* Compose the notes of a quarter scanning the semiquavers retreived from 
  * the database. The number of notes inside the quarter is returned. */
 int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
-		int key_note,struct semiquaver_s **sqs, int sq_size, int ntcount)
+		struct measure_s *minfo, int q_idx, struct semiquaver_s **sqs, 
+		int sq_size, int ntcount)
 {
 	float rnd;
-	int idx, s;
+	int idx, s, key_note, chord_size, notes[MAX_CHORD_SIZE];
 	struct notes_s new_note;
+
+	key_note = minfo->tonal_zones[q_idx].note;
 
 	printf("composing quarter. ntcount: %d\n", ntcount);
 	for (s = 0; s < sq_size; s++) {
 		memset(&new_note, 0, sizeof(new_note));
-		
 		/* If there isn't a previous measure yet, the 1st note must be
 		 * decided: pchange must be greater than rnd */
 		if (!prev_pm->measure)
@@ -176,37 +283,59 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		printf("sq_size: %d, s %d\n", sq_size, s);
 
 		if (sqs[s]->pchange >= rnd) {
-			idx = decide_note(sqs[s]->pnote);
-			
-			if (idx == -1){
-				if (ntcount != 0)
-					pm->measure[ntcount-1].tempo++;
-				else
+		
+		
+			if (ntcount > 0) {
+				idx = decide_note(sqs[s]->pnote);
+				
+				if (idx == -1){
+					if (ntcount != 0)
+						pm->measure[ntcount-1].tempo++;
+					else
+						return -1;
+				}
+				if (!mfields.play_chords) {
+					new_note.notes[0] = note_to_midi(idx, key_note);
+					chord_size = 1;
+					if (new_note.notes[0] == -1)
+						return -1;
+					printf("new single note added. ntcount: %d\n", ntcount);
+				} else  {
+					/* If it's a rest I don't care about the chord notes */
+					if (idx == 0)
+						chord_size == 1;
+					else 
+						fill_chord_notes(&new_note, minfo, q_idx); 
+					printf("chord added.\n");
+				}
+			} else {
+
+				/* TODO(SEGFAULT): check this, something bad happens */
+				if(prev_pm == NULL) {
+					fprintf(stderr, 
+						"something wrong with the prev measure \n");
 					return -1;
+				}
+				printf("prev_pm size: %d\n", prev_pm->size);
+				
+				memcpy(notes, prev_pm->measure[prev_pm->size - 1].notes, 
+						MAX_CHORD_SIZE);
+
+				pm->unchanged_fst = 1; 
+				/*printf("fisrt note is unchanged: %d\n", 
+						pm->measure[ntcount].note);*/
 			}
-			
-			new_note.note = note_to_midi(idx, key_note);
-			if(new_note.note == -1)
-				return -1;
+		
 			new_note.tempo = 1;
 			new_note.id = ntcount;
 			new_note.triplets = 0;
 			pm->measure[ntcount] = new_note;
 			ntcount++;
-			printf("new note added. ntcount: %d\n", ntcount);
-		} else if (ntcount == 0) {
-			new_note.note = prev_pm->measure[prev_pm->size - 1].note;
-			new_note.tempo = 1;
-			new_note.id = ntcount;
-			new_note.triplets = 0; //TODO: what about this?
-			pm->measure[ntcount] = new_note;
-			ntcount++;
-			pm->unchanged_fst = 1; 
-			printf("fisrt note is unchanged: %d\n", 
-					pm->measure[ntcount].note);
+			
 		} else {
 			pm->measure[ntcount-1].tempo++;
 		}
+	
 	}
 	
 	return ntcount;
@@ -322,10 +451,8 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 			return -1;	
 		}
 
-		key_note = minfo->tonal_zones[q].note;
-		
 		/* Be creative with the current quarter */
-		ntcount = compose_quarter(pm, prev_pm, key_note, sqs, sq_size, ntcount);
+		ntcount = compose_quarter(pm, prev_pm, minfo, q, sqs, sq_size, ntcount);
 		if (ntcount == -1) {
 			fprintf(stderr, "Error in quarter composition\n");
 			return -1;

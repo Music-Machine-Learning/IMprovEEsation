@@ -59,7 +59,7 @@ void exit_usage(char *usage)
 
 int main(int argc, char **argv)
 {
-	int i, j, coupling, midi_class, soloist, res, randfd;
+	int i, j, coupling, midi_class, soloist, res, randfd, play_chords;
 	unsigned seed;
 	struct sockaddr_in sout_director, sout_player;
 	struct notes_s *nt;
@@ -67,7 +67,8 @@ int main(int argc, char **argv)
 	char *usage;
 	struct timeval tv;
  
-	asprintf(&usage, "%s <coupling> <midi-class> <soloist>\n", argv[0]);
+	asprintf(&usage, "%s <coupling> <midi-class> <soloist> <chord_mode>\n",
+			argv[0]);
 	
 	if (argc < 4){
 		exit_usage(usage);
@@ -75,6 +76,7 @@ int main(int argc, char **argv)
 		coupling = atoi(argv[1]);
 		midi_class = atoi(argv[2]);
 		soloist = atoi(argv[3]);
+		play_chords = atoi(argv[4]);
 	}
 
 	randfd = open("/dev/urandom", O_RDONLY);
@@ -129,7 +131,8 @@ int main(int argc, char **argv)
 
 	printf("connected to player\n");
 
-	if (musician_init(&dbh, coupling, midi_class, soloist, myid) == -1){
+	if (musician_init(&dbh, coupling, midi_class, soloist, 
+					myid, play_chords) == -1){
 		fprintf(stderr, "Initialization failed\n");
 		exit(EXIT_FAILURE);
 	}
@@ -171,11 +174,11 @@ int main(int argc, char **argv)
 			printf("Note\tidx\tlength\tmidi\ttriplets\n");
 			for (j = 0; j < pm.size; j++){
 				nt = &(pm.measure[j]);
-				printf("\t%d\t%d\t%d\t%d\n",
+				/*printf("\t%d\t%d\t%d\t%d\n",
 					nt->id, 
 					nt->tempo, 
 					nt->note, 
-					nt->triplets);
+					nt->triplets);*/
 			}
 			
 			send_to_play(player_socket, director_socket, &pm);

@@ -1,0 +1,98 @@
+diff --git a/core/communication.cpp b/core/communication.cpp
+index b5633a3..f2d4600 100644
+--- a/core/communication.cpp
++++ b/core/communication.cpp
+@@ -250,7 +250,7 @@ void send_to_play(int player, int director,
+ {
+ 	int j;
+ 	uint8_t sack = SYNC_ACK;
+-	struct iovec iov[measure->size * 4 + 4];
++	struct iovec iov[measure->size * 5 + 4];
+ 	uint32_t measure_size_bck = measure->size;
+ 
+ 	/* player send */
+@@ -260,10 +260,13 @@ void send_to_play(int player, int director,
+ 	LOAD_IOVEC(iov, 3, measure->unchanged_fst);
+ 
+ 	for (j = 0; j < measure->size; j++) {
+-		LOAD_IOVEC(iov, j * 4 + 4, measure->measure[j].note);
+-		LOAD_IOVEC(iov, j * 4 + 5, measure->measure[j].tempo);
+-		LOAD_IOVEC(iov, j * 4 + 6, measure->measure[j].id);
+-		LOAD_IOVEC(iov, j * 4 + 7, measure->measure[j].triplets);
++		LOAD_IOVEC(iov, j * 5 + 4, measure->measure[j].note);
++		LOAD_IOVEC(iov, j * 5 + 5, measure->measure[j].tempo);
++		LOAD_IOVEC(iov, j * 5 + 6, measure->measure[j].id);
++		LOAD_IOVEC(iov, j * 5 + 7, measure->measure[j].triplets);
++		measure->measure[j].chord_mode =
++			htons(measure->measure[j].chord_mode);
++		LOAD_IOVEC(iov, j * 5 + 8, measure->measure[j].chord_mode);
+ 	}
+ 
+ 	IOVEC_HTONL(iov, 3);
+@@ -277,6 +280,11 @@ void send_to_play(int player, int director,
+ 
+ 	IOVEC_NTOHL(iov, 3);
+ 
++	for (j = 0; j < measure->size; j++) {
++		measure->measure[j].chord_mode =
++			ntohs(measure->measure[j].chord_mode);
++	}
++
+ 	/* director ack */
+ 	if (write(director, &sack, sizeof(sack)) <= 0) {
+ 		perror("write");
+@@ -382,20 +390,22 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
+ 				return;
+ 			}
+ 
+-			iov = new struct iovec[note_list[pm_count].size * 4];
++			iov = new struct iovec[note_list[pm_count].size * 5];
+ 			for (j = 0; j < note_list[pm_count].size; j++) {
+-				LOAD_IOVEC(iov, j * 4,
++				LOAD_IOVEC(iov, j * 5,
+ 						note_list[pm_count].measure[j].note);
+-				LOAD_IOVEC(iov, j * 4 + 1,
++				LOAD_IOVEC(iov, j * 5 + 1,
+ 						note_list[pm_count].measure[j].tempo);
+-				LOAD_IOVEC(iov, j * 4 + 2,
++				LOAD_IOVEC(iov, j * 5 + 2,
+ 						note_list[pm_count].measure[j].id);
+-				LOAD_IOVEC(iov, j * 4 + 3,
++				LOAD_IOVEC(iov, j * 5 + 3,
+ 						note_list[pm_count].measure[j].triplets);
++				LOAD_IOVEC(iov, j * 5 + 4,
++						note_list[pm_count].measure[j].chord_mode);
+ 			}
+ 
+ 			retval = readv(epevs[i].data.fd, iov,
+-					note_list[pm_count].size * 4);
++					note_list[pm_count].size * 5);
+ 
+ 			delete[] iov;
+ 
+@@ -409,6 +419,12 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
+ 				return;
+ 			}
+ 
++			/* endianess realign for chord_mode */
++			for (j = 0; j < note_list[pm_count].size; j++) {
++				note_list[pm_count].measure[j].chord_mode =
++					ntohs(note_list[pm_count].measure[j].chord_mode);
++			}
++
+ 			retval = epoll_ctl(efd, EPOLL_CTL_DEL, epevs[i].data.fd, NULL);
+ 
+ 			if (retval < 0) {
+diff --git a/include/improveesation/structs.h b/include/improveesation/structs.h
+index 5ce12e1..8ee11db 100644
+--- a/include/improveesation/structs.h
++++ b/include/improveesation/structs.h
+@@ -111,6 +111,8 @@ struct notes_s {
+ 	uint8_t id;
+ 	/* boolean: is this note a part of a triplet? */
+ 	uint8_t triplets;
++	/* TODO MATTE COMMENTA */
++	uint16_t chord_mode;
+ };
+ 
+ struct play_measure_s {
