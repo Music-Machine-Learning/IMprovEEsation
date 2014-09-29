@@ -161,11 +161,11 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
 			mdata[2] = 120; // this is useless, just for parallelism
 			/* Send the instrument setup to midi (we need just 2 params) */
 			write(*fd, mdata, 2);
-			printf("Instrment %d in channel %d selected!\n", cmusician->instrument_class, (chcounter + 1));
+			printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, (chcounter + 1));
 			chcounter++;
 		} else {
 			Channels[DRUMS] = 15; /* Assigning drums to channel 16 (15 starting from 0)*/
-			printf("Instrment %d in channel %d selected!\n", cmusician->instrument_class, 16);
+			printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, 16);
 		}
 	}
 	
@@ -191,7 +191,6 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	/* FIXME bpm are set to 120 by default. I can't obtain them. bpms is the duration of half a semiquiver triplet unit in mus */
 	double bpm = 120;
 	double bpms = (15 / bpm) * (1000000 / 3); // the factor *3 is for the triplet
-	printf("%f\n", bpms);
 	
 	/* Init note pointer for the execution */
 	for(i=0; i<musicians_num; i++){
@@ -203,8 +202,11 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	
 	for(i=0; i<musicians_num; i++){
 		note_pointer[i][2] = (Channels[note_list[i].musician_id & 0xff]);
+		
+		#ifdef DEBUG
 		printf("[debug] Instrument %d set up in channel %d!\n", note_list[i].musician_id & 0xff, Channels[note_list[i].musician_id & 0xff]);
 		printf("[debug] Notes for %d: {", i);
+		#endif
 		
 		/* Fill the arrays of notes and make them -1 terminated */
 		for(j=0; j<25; j++){
@@ -213,18 +215,26 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 				notes[i][j].tempo = (notes[i][j].tempo * (2 + (1 - notes[i][j].triplets)));// commute the duration in a third of a semiquiver with a trick for the triplet
 			} else
 				notes[i][j] = nullnote;
+			
+			#ifdef DEBUG
 			printf(" [", i);
 			for(k=0;k<notes[i][j].chord_size;k++){
 				printf(" %d",notes[i][j].notes[k]);
 			}
 			printf(" ]");
+			#endif
+			
 		} 
+		#ifdef DEBUG
 		printf(" }\n");
+		#endif
 	}
 	
 	/* For every note step (limit is max value + 1 like there would be all smallest triplets) */
 	for(i=0; i<49; i++){
+		#ifdef DEBUG
 		printf("[debug] Loop %d\n",i);
+		#endif
 		/* For every instrument */
 		for(j=0; j<musicians_num; j++){
 			
@@ -256,15 +266,24 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 						for(k=0; k<notes[j][note_pointer[j][0]].chord_size; k++){
 							write(fd, data[j][k], 3); // key down the new note set
 						}
+						
+						#ifdef DEBUG
 						printf("\tMusician id %d playing [", j);
+						#endif
+						
 						for(k=0; k<notes[j][note_pointer[j][0]].chord_size; k++){ // set a key up for the next step
 							data[j][k][0] = KEY_UP(note_pointer[j][2]);
+							#ifdef DEBUG
 							printf(" %d ", notes[j][note_pointer[j][0]].notes[k]);
+							#endif
 						}
+						#ifdef DEBUG
 						printf("] on channel %d\n", note_pointer[j][2]);
-						
+						#endif
 					} else {
+						#ifdef DEBUG
 						printf("\tMusician id %d playing silence on channel %d\n", j, note_pointer[j][2]);
+						#endif
 						data[j][0][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step (not cycled because we used only the first)
 					}
 					
@@ -293,5 +312,9 @@ void smorza_incosa(int fd){
 			write(fd, data[i][j], 3); // key up everything
 		}
 	}
+	#ifdef DEBUG
 	printf("[debug] Smorzat!\n");
+	#else
+	printf("End Of Improvisation exception reached!\n");
+	#endif
 }

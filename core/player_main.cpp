@@ -100,48 +100,6 @@ int net_init(int port, const char *addr)
 	return gsocket;
 }
 
-void easter_egg_print(void)
-{
-	/* let's get obfuscated! */
-	switch (rand() % 20) {
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-		case 6:
-		case 7:
-		case 8:
-		case 17:
-			printf("I'm just kidding! I'm not playing anything\n");
-			break;
-		case 9:
-		case 10:
-		case 11:
-		case 12:
-		case 13:
-		case 14:
-		case 15:
-		case 16:
-		case 18:
-			printf("do you expect some midi from me?\n");
-			break;
-		case 19:
-		{
-			char a[] = {0x54, 0x72, 0x6f, 0x6c, 0x6f, 0x6c, 0x6f,
-				   0x6c, 0x6f, 0x6c, 0x6f, 0x6c, 0x6c, 0x6f,
-				   0x6c, 0x6f, 0x6c, 0x6e, 0x25, 0x73,
-				   0x0};
-			char b[] = {0x6f, 0x6c, 0x6c, 0x6f,
-				   0x6c, 0x6f, 0x6c, 0x6f, 0x27, 0x21, 0x0d,
-				   0x0a, 0x0};
-			printf(a, b);
-			break;
-		}
-	}
-}
-
 /* Main Flow */
 int main(int argc, char **argv)
 {
@@ -154,7 +112,7 @@ int main(int argc, char **argv)
 	
 	/* Check if the test flag is active */
 	if (argc <= 2){
-		printf("./player <midi_dev> <seconds-to-sleep>(-1 if we want to wait the impro to end) [--test]\nThe device's name is located is usually similar to /dev/midi1 or /dev/snd/midiC2D0.\n");
+		printf("./player <midi_dev> <seconds-to-sleep>(-1 if we want to wait the impro to end) [--test]\nThe device's name is located is usually similar to /dev/midi1 or /dev/snd/midiC2D0.\nRemember to use -D DEBUG in compiling to obtain very verbose output.\n");
 		exit(0);
 	} else if ((argc > 3) && !strcmp(argv[3], "--test")){
 		test_flag = TRUE;
@@ -184,20 +142,20 @@ int main(int argc, char **argv)
 		
 		/* PROTOCOL: send the subscription to the director */
 		send_subscription(director_socket, PLAYER_ID, 0, 0);
-		printf("connected to director\n");
+		printf("Connected to director!\n");
 		/* PROTOCOL: block until the number of musicians is obtained */
 		musicians_num = recv_num_of_musicians(director_socket);
 	} else {
 		musicians_num = 3;
 	}
-	printf("initializing a %d components improvisation.\n", musicians_num);
+	printf("Initializing a %d components improvisation.\n", musicians_num);
 
 	/* Give space for the notes to be played by each musician */
 	note_list = (struct play_measure_s *) calloc(musicians_num, sizeof(struct play_measure_s));
 
 	for (i = 0; i < musicians_num; i++) {
 		struct subscription_s *new_musician = (struct subscription_s *) malloc(sizeof(struct subscription_s));
-		printf("waiting for a musician\n");
+		printf("Waiting for a musician... ");
 		
 		if (!test_flag){
 			/* PROTOCOL: from the listener socket wait for musicians subscriptions */
@@ -207,7 +165,7 @@ int main(int argc, char **argv)
 		}
 		
 		
-		printf("player: got a new musician\n\tcoupling: %d\n\tinstrument_class: %d\n\tsoloer: %d\n\tconnection :%d\n",
+		printf("got a new musician!\n\tcoupling: %d\n\tinstrument_class: %d\n\tsoloer: %d\n\tconnection :%d\n",
 		       new_musician->coupling, new_musician->instrument_class,
 		       new_musician->soloer, new_musician->connection);
 		list_add_tail(&new_musician->list, &musicians);
@@ -216,7 +174,8 @@ int main(int argc, char **argv)
 			send_ack(new_musician->connection);
 		}
 	}
-
+	
+	printf("\n");
 	if (!midi_init(&musicians, musicians_num, &fd, argv[1])){
 		return 1;
 	};
@@ -228,7 +187,7 @@ int main(int argc, char **argv)
 		usleep(atoi(argv[2])*1000000);
 	
 	/* Main loop */
-	printf("main loop\n");
+	printf("Main loop initiated!\n");
 	for (i = 0;; i++) {
 		try {
 			if (!test_flag){
@@ -245,11 +204,8 @@ int main(int argc, char **argv)
 			break;
 		}
 
-		printf("%d:\n ", i);
-		//easter_egg_print();
+		printf("\tPlaying measure %d\n ", i);
 		play_measure(note_list, &musicians, musicians_num, fd);
 	}
-
-	
 	return 0;
 }
