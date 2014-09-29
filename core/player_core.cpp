@@ -43,8 +43,8 @@
 
 using namespace std;
 
-/* Data to be written to midi */
-unsigned char data[16][3];
+/* Data to be written to midi (16 channels X 3 params per every note in chord) */
+unsigned char data[16][MAX_CHORD_SIZE][3];
 /* Channel reference */
 map<int, int> Channels;
 
@@ -102,17 +102,18 @@ void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musi
 					struct notes_s cnote;
 					switch(i){
 						case 0:
-							cnote.note = 60 + (j * 4); // hardcode
+							cnote.notes[0] = 60 + (j * 4); // hardcode
 							break;
 						case 1:
-							cnote.note = 40 + (j * 4); // hardcode
+							cnote.notes[0] = 40 + (j * 4); // hardcode
 							break;
 						case 2:
-							cnote.note = 40 + (j * 4); // snare
+							cnote.notes[0] = 40 + (j * 4); // snare
 							break;
 					}
 					cnote.tempo = 2;
 					cnote.id = j;
+					cnote.chord_size = 1;
 					if(j>=6) // let's go with the triplet ya! 
 						cnote.triplets = TRUE;
 					else 
@@ -128,7 +129,7 @@ void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musi
 
 int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, char * dev){
 	
-	int i;
+	int i,j;
 	int chcounter = 0;
 	unsigned char mdata[3];
 	struct subscription_s *cmusician;
@@ -140,10 +141,13 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
 		return 0;
 	};
 	
-	for (i=0; i<16; i++){
-		data[i][0] = KEY_UP(i);
-		data[i][1] = 0;
-		data[i][2] = 120;
+	/* Init every dataset to a pointless keyup */
+	for (i=0; i<16; i++){ 
+		for(j=0; j<MAX_CHORD_SIZE; j++){
+			data[i][j][0] = KEY_UP(i);
+			data[i][j][1] = 0;
+			data[i][j][2] = 120;
+		}
 	}
 	
 	/* Assign musicians to each channel and setup */
@@ -175,36 +179,32 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
  * musicians is the pointer to the array of musicians involved
  * musicians_num contains the number of musicians envolved in the impro */
 void play_measure(struct play_measure_s *note_list, struct list_head *musicians, uint32_t musicians_num, int fd){
-	int i, j;
+	int i, j, k;
 	int null_counter = 0;
 	/* This is a matrix which hosts the notes ordered by instrument (will be -1 terminated) */
 	struct notes_s notes[musicians_num][25];
 	/* This is an array which stores the pointers for every execution, the countdown to the end, the channel and the triplet flag */
 	int note_pointer[musicians_num][4];
-	/* Data to be written to midi */
-	//unsigned char data[musicians_num][3];
 	/* NULL NOTE */
-	struct notes_s nullnote = {-1,0,0,0};
+	struct notes_s nullnote = {0,0,0,1,{-1,0,0,0,0,0,0,0}};
 	
 	/* FIXME bpm are set to 120 by default. I can't obtain them. bpms is the duration of half a semiquiver triplet unit in mus */
 	double bpm = 120;
 	double bpms = (15 / bpm) * (1000000 / 3); // the factor *3 is for the triplet
 	printf("%f\n", bpms);
 	
+	/* Init note pointer for the execution */
 	for(i=0; i<musicians_num; i++){
 		note_pointer[i][0] = 0;
 		note_pointer[i][1] = 0;
 		note_pointer[i][2] = 0;
 		note_pointer[i][3] = FALSE;
-		//data[i][0] = KEY_UP(i);
-		//data[i][1] = 0;
-		//data[i][2] = 120;
 	}
 	
 	for(i=0; i<musicians_num; i++){
 		note_pointer[i][2] = (Channels[note_list[i].musician_id & 0xff]);
-		printf("aaaaaa %d\n", note_list[i].musician_id & 0xff);
-		
+		printf("[debug] Instrument %d set up in channel %d!\n", note_list[i].musician_id & 0xff, Channels[note_list[i].musician_id & 0xff]);
+		printf("[debug] Notes for %d: {", i);
 		
 		/* Fill the arrays of notes and make them -1 terminated */
 		for(j=0; j<25; j++){
@@ -213,14 +213,18 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 				notes[i][j].tempo = (notes[i][j].tempo * (2 + (1 - notes[i][j].triplets)));// commute the duration in a third of a semiquiver with a trick for the triplet
 			} else
 				notes[i][j] = nullnote;
-			printf("%d ",notes[i][j].note);
+			printf(" [", i);
+			for(k=0;k<notes[i][j].chord_size;k++){
+				printf(" %d",notes[i][j].notes[k]);
+			}
+			printf(" ]");
 		} 
-		printf("\n");
+		printf(" }\n");
 	}
 	
 	/* For every note step (limit is max value + 1 like there would be all smallest triplets) */
 	for(i=0; i<49; i++){
-		printf("loop %d\n",i);
+		printf("[debug] Loop %d\n",i);
 		/* For every instrument */
 		for(j=0; j<musicians_num; j++){
 			
@@ -230,27 +234,41 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 				/* We are about to play a new note */
 				if(note_pointer[j][1] == 0){
 					
-					if (notes[j][note_pointer[j][0]].note != 255) {
-						write(fd, data[j], 3); // key up the previous
+					if (notes[j][note_pointer[j][0]].notes[0] != 255) { // if the note is not -1
+						for(k=0; k<MAX_CHORD_SIZE; k++){
+							write(fd, data[j][k], 3); // key up the previous set
+						}
+						/* Notes may remain but they are set to keyup, so no bad things should happen */
 					
-						// extract the new note
-						data[j][0] = KEY_DOWN(note_pointer[j][2]);
-						data[j][1] = notes[j][note_pointer[j][0]].note;
+						// extract the new note set and stack them onto data array
+						for(k=0; k<notes[j][note_pointer[j][0]].chord_size; k++){
+							data[j][k][0] = KEY_DOWN(note_pointer[j][2]);
+							data[j][k][1] = notes[j][note_pointer[j][0]].notes[k];
+						} 
+						
 					} else { // or enter in the depths of hell (execution terminated for the instrument)
 						note_pointer[j][0] = -1;
 						null_counter++;
 						continue;
 					}
-					if(notes[j][note_pointer[j][0]].note < 128){ //actual note
-						write(fd, data[j], 3); // key down the new note
-						printf("\tMusician id %d playing %d on channel %d\n", j, notes[j][note_pointer[j][0]].note, note_pointer[j][2]);
-						data[j][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step
+					
+					if(notes[j][note_pointer[j][0]].notes[0] < 128){ //actual note (skip if silence)
+						for(k=0; k<notes[j][note_pointer[j][0]].chord_size; k++){
+							write(fd, data[j][k], 3); // key down the new note set
+						}
+						printf("\tMusician id %d playing [", j);
+						for(k=0; k<notes[j][note_pointer[j][0]].chord_size; k++){ // set a key up for the next step
+							data[j][k][0] = KEY_UP(note_pointer[j][2]);
+							printf(" %d ", notes[j][note_pointer[j][0]].notes[k]);
+						}
+						printf("] on channel %d\n", note_pointer[j][2]);
+						
 					} else {
 						printf("\tMusician id %d playing silence on channel %d\n", j, note_pointer[j][2]);
-						data[j][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step
+						data[j][0][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step (not cycled because we used only the first)
 					}
 					
-					note_pointer[j][1] = notes[j][note_pointer[j][0]].tempo - 1; // set the new countdown (-1 cause the first semiquiver is consumed)
+					note_pointer[j][1] = notes[j][note_pointer[j][0]].tempo - 1; // set the new countdown (-1 cause the first semiquaver is consumed)
 					note_pointer[j][0]++; // increase the note pointer
 					
 				} else { /* subtract from countdown */
@@ -267,12 +285,13 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	}
 }
 
-/* does not work for now */
+/* Sudden order to shut up! */
 void smorza_incosa(int fd){
-	int i;
+	int i,j;
 	for(i=0; i<16; i++){
-		
-		write(fd, data[i], 3); // key up everything
+		for(j=0;j<MAX_CHORD_SIZE;j++){
+			write(fd, data[i][j], 3); // key up everything
+		}
 	}
-	printf("Smorzat!\n");
+	printf("[debug] Smorzat!\n");
 }
