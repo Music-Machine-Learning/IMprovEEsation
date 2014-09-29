@@ -173,7 +173,7 @@ int main(int argc, char **argv)
 
     atexit(cleanup);
 
-    init_director_core("blues", "bebop", soloers_num, soloers);
+    init_director_core("blues", "bebop", soloers_num, soloers, measures_count);
 
 	/* main loop */
 	printf("main loop\n");

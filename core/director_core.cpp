@@ -42,6 +42,11 @@ struct scale_list_s {
     uint16_t *list;
 };
 
+struct soloer_s {
+    uint32_t id;
+    uint32_t measures_to_go;
+};
+
 static char* genre;
 static char* subgenre;
 static char** genresList;
@@ -50,7 +55,8 @@ static char** subgenresList;
 static tempo_s tempo;
 static uint16_t tonality;
 static uint8_t bpm;
-static uint32_t *soloers;
+static soloer_s *soloers;
+static int soloer;
 static uint32_t soloers_num;
 
 static int prev_mood;
@@ -505,17 +511,71 @@ void pickGenre(){
     get_subgenres(database, genre, &subgenresList);
 }
 
+void setupSoloers(uint32_t solocount, uint32_t *sololist, int measures_count){
+    uint32_t leader, tmp;
+    int i, solo_slot, not_solo_riffs;
 
-void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *sololist){
+    if(solocount){
+        leader = sololist[rand() % solocount];
+        printf("band leader: %d\n", leader);
+
+        solo_slot = measures_count / (solocount+2); // leader instrument will improvise twice the time as the other instuments and one soloer slot is taken for non-improvised measures;
+
+        if(current_pattern){
+            if((current_pattern->measures_count * 3) > measures_count){ //only band leader will improvise
+                soloers_num = 3;
+                soloers = (soloer_s *) calloc(soloers_num, sizeof(soloer_s));
+                soloers[0].id = leader;
+                soloers[0].measures_to_go = solo_slot - (solo_slot % current_pattern->measures_count);
+                soloers[1].id = SOLOER_NONE;
+                soloers[1].measures_to_go = solo_slot - (solo_slot % current_pattern->measures_count);
+                soloers[2].id = leader;
+                soloers[2].measures_to_go = measures_count - (soloers[0].measures_to_go + soloers[1].measures_to_go);
+            } else {
+                not_solo_riffs = (measures_count / current_pattern->measures_count) / NOT_SOLO_MAX_SECTIONS;
+                not_solo_riffs = (not_solo_riffs ? rand() % not_solo_riffs : 0);
+                soloers_num = (measures_count - ((not_solo_riffs + 2) * current_pattern->measures_count)) / current_pattern->measures_count + not_solo_riffs + 2;
+                soloers = (soloer_s *) calloc(soloers_num, sizeof(soloer_s));
+                soloers[0].id = leader;
+                soloers[0].measures_to_go = current_pattern->measures_count;
+                for(i = 1; i < soloers_num - 1; i++){
+                    tmp = rand() % solocount;
+                    if(tmp == leader && not_solo_riffs > 0){
+                        soloers[i].id = SOLOER_NONE;
+                    } else {
+                        soloers[i].id = sololist[tmp];
+                    }
+                    soloers[i].measures_to_go = current_pattern->measures_count;
+                }
+                soloers[soloers_num-1].id = leader;
+                soloers[soloers_num-1].measures_to_go = measures_count;
+            }
+        } else {
+            soloers_num = 2;
+            soloers = (soloer_s *) calloc(soloers_num, sizeof(soloer_s));
+            soloers[0].id = SOLOER_NONE;
+            soloers[0].measures_to_go = current_pattern->measures_count;
+            soloers[1].id = leader;
+            soloers[1].measures_to_go = measures_count - current_pattern->measures_count;
+        }
+
+    } else {
+        soloers_num = 1;
+        soloers = (soloer_s *) calloc(soloers_num, sizeof(soloer_s));
+        soloers[0].id = SOLOER_NONE;
+        soloers[0].measures_to_go = measures_count;
+    }
+
+    soloer = 0;
+}
+
+void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *sololist, int measures_count){
     struct rc_conf_s conf;
     genre = (char*) calloc(strlen(gen)+1, sizeof(char));
     strcpy(genre, gen);
     subgenre = (char*) calloc(strlen(sub)+1, sizeof(char));
     strcpy(subgenre, sub);
     impro_end = 0;
-
-    soloers = sololist;
-    soloers_num = solocount;
 
     available_scales.size = -1;
 
@@ -534,6 +594,8 @@ void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solo
     get_subgenres(database, genre, &subgenresList);
 
     load_genre_info(genre, sub);
+
+    setupSoloers(solocount, sololist, measures_count);
 
     init_score_defs();
 }
@@ -602,7 +664,10 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
     printf("\t}\n");
 
     //FIXME: this should follow some policy
-    measure->soloist_id = (soloers_num ? soloers[rand() % soloers_num] : 0);
+    if(soloers[soloer].measures_to_go <= 0)
+        soloer ++;
+    measure->soloist_id = soloers[soloer].id;
+    soloers[soloer].measures_to_go --;
     printf("\tsoloer: %d\n", measure->soloist_id);
 
     //if it is last measure and it's already time to stop, put an end to the improvisation
