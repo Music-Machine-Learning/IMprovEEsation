@@ -100,8 +100,6 @@ struct measure_s {
 };
 
 struct notes_s {
-	/* the actual note height expressed in midi format */
-	uint8_t note; 
 	/* the duration of the note */
 	uint8_t tempo;
 	/**
@@ -111,6 +109,10 @@ struct notes_s {
 	uint8_t id;
 	/* boolean: is this note a part of a triplet? */
 	uint8_t triplets;
+	/* how many notes the chord contains */
+	uint8_t chord_size;
+	/* the notes array that should be played simultaneously */
+	uint8_t notes[MAX_CHORD_SIZE]; 
 };
 
 struct play_measure_s {
@@ -119,6 +121,7 @@ struct play_measure_s {
 	uint32_t musician_id;
 	uint8_t unchanged_fst;
 	struct notes_s *measure;
+	
 };
 
 struct measure_pattern_s {
