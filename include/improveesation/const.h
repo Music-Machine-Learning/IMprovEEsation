@@ -111,6 +111,8 @@
 #define MIDI_REST_NOTE	128
 
 #define NO_COUPLING 0
+#define MAX_CHORD_SIZE 8
+#define MIN_CHORD_SIZE 2
 
 enum {
 	RYTHMIC,
