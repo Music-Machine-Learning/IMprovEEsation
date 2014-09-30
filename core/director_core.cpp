@@ -126,18 +126,17 @@ void load_genre_info(char* gen, char* sub){
     }
 }
 
-void init_score_defs(){
+void init_score_defs(uint8_t key=-1, uint8_t tUpper=4, uint8_t tLower=4, uint8_t beats=80){
     /*
      * initialize:
      *  tonality
      *  tempo
      * 	bpm
      * */
-    //test stubs
-    tonality = 0;
-    tempo.upper = 4;
-    tempo.lower = 4;
-    bpm = 60;
+    tonality = (key==-1 ? rand() % 12 : key);
+    tempo.upper = tUpper;
+    tempo.lower = tLower;
+    bpm = beats;
 }
 
 //NOTE: if new modes are to be added, update this function!
@@ -358,19 +357,8 @@ void setupTags(measure_s *measure, int current_measure_id){
 
     measure->tags.size = genLen + 1 + moodLen + 1 + dynLen + 1;
     measure->tags.payload = (char *) calloc(measure->tags.size, sizeof(char));
-    //FIXME: violence!
-    for(i = 0; i < genLen; i++){
-        measure->tags.payload[i] = genre[i];
-    }
-    measure->tags.payload[i] = ';';
-    for(i ++; i < dynLen+genLen+1; i++){
-        measure->tags.payload[i] = dyn[i-genLen-1];
-    }
-    measure->tags.payload[i] = ';';
-    for(i ++; i < moodLen+dynLen+genLen+2; i++){
-        measure->tags.payload[i] = mood[i-genLen-dynLen-2];
-    }
-    measure->tags.payload[i] = '\0';
+
+    sprintf(measure->tags.payload, "%s;%s;%s", genre, dyn, mood);
 }
 
 void decideImproScale(measure_s *measure, int current_measure_id){
@@ -663,7 +651,6 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
 	    printf("%d ", measure->prioargs[i]);
     printf("\t}\n");
 
-    //FIXME: this should follow some policy
     if(soloers[soloer].measures_to_go <= 0)
         soloer ++;
     measure->soloist_id = soloers[soloer].id;
