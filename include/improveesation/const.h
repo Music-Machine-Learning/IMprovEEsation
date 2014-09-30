@@ -23,6 +23,7 @@
 #ifndef _CONST_H
 #define _CONST_H
 
+#define DB_CONN_TIMEOUT "10"
 
 #define NSEMITONES 12
 #define PROB_ARR_SIZE NSEMITONES + 1
