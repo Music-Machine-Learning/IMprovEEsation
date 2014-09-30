@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 	asprintf(&usage, "%s <coupling> <midi-class> <soloist> <chord_mode>\n",
 			argv[0]);
 	
-	if (argc < 4){
+	if (argc < 5){
 		exit_usage(usage);
 	} else {
 		coupling = atoi(argv[1]);

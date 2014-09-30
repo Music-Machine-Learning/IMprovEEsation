@@ -143,8 +143,8 @@ PGconn *db_connect(const char *host, const char *dbname,
 	/* DO NOT use it with rw privileged accounts. */
 	char *connstring;
 	asprintf(&connstring,
-			      "host=%s dbname=%s user=%s password=%s",
-			      host, dbname, user, passwd);
+			      "host=%s dbname=%s user=%s password=%s connect_timeout=%s",
+			      host, dbname, user, passwd, DB_CONN_TIMEOUT);
 
 	PGconn *ret = PQconnectdb(connstring);
 

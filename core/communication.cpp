@@ -358,9 +358,6 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 			LOAD_IOVEC(safe_iov, 3, note_list[pm_count].unchanged_fst);
 
 			retval = readv(epevs[i].data.fd, safe_iov, 4);
-			printf("DEBUG size: %d, musician_id %d\n", 
-					note_list[pm_count].size,
-					note_list[pm_count].musician_id);
 			if (retval < 0) {
 				perror("readv");
 				throw net_ex;
@@ -372,6 +369,10 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 
 			IOVEC_NTOHL(safe_iov, 3);
 
+			printf("DEBUG size: %d, musician_id %d\n", 
+					note_list[pm_count].size,
+					note_list[pm_count].musician_id);
+			
 			note_list[pm_count].measure = (struct notes_s*) realloc(
 					note_list[pm_count].measure,
 					sizeof(struct notes_s) *
