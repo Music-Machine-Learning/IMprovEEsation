@@ -141,6 +141,7 @@ int main(int argc, char **argv)
 	struct play_measure_s pm, prev_pm;
 	
 	prev_pm.measure = pm.measure = NULL;
+	memset(&pm, 0, sizeof(struct play_measure_s));
 	/* main loop */
 	for (i = 0; ;i++) {
 		

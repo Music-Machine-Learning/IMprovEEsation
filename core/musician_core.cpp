@@ -258,6 +258,14 @@ int fill_chord_notes(struct notes_s *chord, struct measure_s *minfo, int q_idx)
 	}
 }
 
+inline void assign_new_notes(struct play_measure_s *pm, struct notes_s *new_notes,  
+		int ntcount)
+{
+	new_notes->id = ntcount;
+	new_notes->triplets = 0;
+	pm->measure[ntcount] = *new_notes;
+}
+
 /* Compose the notes of a quarter scanning the semiquavers retreived from 
  * the database. The number of notes inside the quarter is returned. */
 int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
@@ -265,14 +273,14 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		int sq_size, int ntcount)
 {
 	float rnd;
-	int idx, s, key_note, chord_size, notes[MAX_CHORD_SIZE];
-	struct notes_s new_note;
+	int idx, s, key_note, chord_size;
+	struct notes_s new_notes;
 
 	key_note = minfo->tonal_zones[q_idx].note;
 
 	printf("composing quarter. ntcount: %d\n", ntcount);
 	for (s = 0; s < sq_size; s++) {
-		memset(&new_note, 0, sizeof(new_note));
+		memset(&new_notes, 0, sizeof(new_notes));
 		/* If there isn't a previous measure yet, the 1st note must be
 		 * decided: pchange must be greater than rnd */
 		if (!prev_pm->measure)
@@ -284,30 +292,33 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 
 		if (sqs[s]->pchange >= rnd) {
 		
-		
+			idx = decide_note(sqs[s]->pnote);
+			
+			if (idx == -1){
+				if (ntcount != 0)
+					pm->measure[ntcount-1].tempo++;
+				else
+					return -1;
+			}
+			if (!mfields.play_chords) {
+				new_notes.notes[0] = note_to_midi(idx, key_note);
+				chord_size = 1;
+				if (new_notes.notes[0] == -1)
+					return -1;
+				printf("new single note added. ntcount: %d\n", ntcount);
+			} else  {
+				/* If it's a rest I don't care about the chord notes */
+				if (idx == 0)
+					chord_size == 1;
+				else 
+					fill_chord_notes(&new_notes, minfo, q_idx); 
+				printf("chord added.\n");
+			}
+			assign_new_notes(pm, &new_notes, ntcount);
+			ntcount++;
+		} else {
 			if (ntcount > 0) {
-				idx = decide_note(sqs[s]->pnote);
-				
-				if (idx == -1){
-					if (ntcount != 0)
-						pm->measure[ntcount-1].tempo++;
-					else
-						return -1;
-				}
-				if (!mfields.play_chords) {
-					new_note.notes[0] = note_to_midi(idx, key_note);
-					chord_size = 1;
-					if (new_note.notes[0] == -1)
-						return -1;
-					printf("new single note added. ntcount: %d\n", ntcount);
-				} else  {
-					/* If it's a rest I don't care about the chord notes */
-					if (idx == 0)
-						chord_size == 1;
-					else 
-						fill_chord_notes(&new_note, minfo, q_idx); 
-					printf("chord added.\n");
-				}
+				pm->measure[ntcount-1].tempo++;
 			} else {
 
 				/* TODO(SEGFAULT): check this, something bad happens */
@@ -318,22 +329,15 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 				}
 				printf("prev_pm size: %d\n", prev_pm->size);
 				
-				memcpy(notes, prev_pm->measure[prev_pm->size - 1].notes, 
+				memcpy(new_notes.notes, prev_pm->measure[prev_pm->size - 1].notes, 
 						MAX_CHORD_SIZE);
-
+					
 				pm->unchanged_fst = 1; 
 				/*printf("fisrt note is unchanged: %d\n", 
 						pm->measure[ntcount].note);*/
+				assign_new_notes(pm, &new_notes, ntcount);
+				ntcount++;
 			}
-		
-			new_note.tempo = 1;
-			new_note.id = ntcount;
-			new_note.triplets = 0;
-			pm->measure[ntcount] = new_note;
-			ntcount++;
-			
-		} else {
-			pm->measure[ntcount-1].tempo++;
 		}
 	
 	}
