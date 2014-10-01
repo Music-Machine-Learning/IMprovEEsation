@@ -273,7 +273,7 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		int sq_size, int ntcount)
 {
 	float rnd;
-	int idx, s, key_note, chord_size;
+	int idx, s, key_note;
 	struct notes_s new_notes;
 
 	key_note = minfo->tonal_zones[q_idx].note;
@@ -281,6 +281,7 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 	printf("composing quarter. ntcount: %d\n", ntcount);
 	for (s = 0; s < sq_size; s++) {
 		memset(&new_notes, 0, sizeof(new_notes));
+		new_notes.chord_size = 1;
 		/* If there isn't a previous measure yet, the 1st note must be
 		 * decided: pchange must be greater than rnd */
 		if (!prev_pm->measure)
@@ -302,14 +303,13 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 			}
 			if (!mfields.play_chords) {
 				new_notes.notes[0] = note_to_midi(idx, key_note);
-				chord_size = 1;
 				if (new_notes.notes[0] == -1)
 					return -1;
 				printf("new single note added. ntcount: %d\n", ntcount);
 			} else  {
 				/* If it's a rest I don't care about the chord notes */
 				if (idx == 0)
-					chord_size == 1;
+					new_notes.notes[0] = MIDI_REST_NOTE;
 				else 
 					fill_chord_notes(&new_notes, minfo, q_idx); 
 				printf("chord added.\n");

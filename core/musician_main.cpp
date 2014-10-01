@@ -59,7 +59,7 @@ void exit_usage(char *usage)
 
 int main(int argc, char **argv)
 {
-	int i, j, coupling, midi_class, soloist, res, randfd, play_chords;
+	int i, j, k, coupling, midi_class, soloist, res, randfd, play_chords;
 	unsigned seed;
 	struct sockaddr_in sout_director, sout_player;
 	struct notes_s *nt;
@@ -172,14 +172,17 @@ int main(int argc, char **argv)
 			printf("Measure: id: %d, size: %d, musid %d\n", 
 					pm.id, pm.size, pm.musician_id);
 			
-			printf("Note\tidx\tlength\tmidi\ttriplets\n");
+			printf("Note\tidx\tlength\ttripl\tch_size\tnotes\n");
 			for (j = 0; j < pm.size; j++){
 				nt = &(pm.measure[j]);
-				/*printf("\t%d\t%d\t%d\t%d\n",
+				printf("\t%d\t%d\t%d\t%d\t[",
 					nt->id, 
 					nt->tempo, 
-					nt->note, 
-					nt->triplets);*/
+					nt->triplets,
+					nt->chord_size);
+				for (k = 0; k < nt->chord_size; k++)
+					printf("%d, ", nt->notes[k]);
+				printf("]\n");
 			}
 			
 			send_to_play(player_socket, director_socket, &pm);
