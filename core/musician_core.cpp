@@ -259,53 +259,89 @@ int fill_chord_notes(struct notes_s *chord, struct measure_s *minfo, int q_idx)
 }
 
 inline void assign_new_notes(struct play_measure_s *pm, struct notes_s *new_notes,  
-		int ntcount)
+		int *ntcount)
 {
-	new_notes->id = ntcount;
+	printf("new notes assignment\n");
+	new_notes->id = *ntcount;
 	new_notes->triplets = 0;
-	pm->measure[ntcount] = *new_notes;
+	new_notes->tempo = 1;
+	pm->measure[*ntcount] = *new_notes;
+	(*ntcount)++;
 }
+
+int continue_last_note(struct play_measure_s *pm, struct play_measure_s *prev_pm, 
+		struct notes_s *new_notes,  int *ntcount)
+{
+	if (*ntcount == 0) {
+		memcpy(new_notes->notes, prev_pm->measure[prev_pm->size - 1].notes, 
+				MAX_CHORD_SIZE);
+			
+		pm->unchanged_fst = 1; 
+		printf("fisrt note is unchanged\n");
+		assign_new_notes(pm, new_notes, ntcount);
+	} else if (*ntcount > 0) {
+		pm->measure[(*ntcount)-1].tempo++;
+	} else {
+		fprintf(stderr, "invalid ntcount: %d\n", *ntcount);
+		return -1;
+	}
+}
+
 
 /* Compose the notes of a quarter scanning the semiquavers retreived from 
  * the database. The number of notes inside the quarter is returned. */
 int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
-		struct measure_s *minfo, int q_idx, struct semiquaver_s **sqs, 
-		int sq_size, int ntcount)
+		struct measure_s *minfo, int q_idx, int max_sqcount,
+		struct semiquaver_s **sqs, int sq_size, int ntcount)
 {
 	float rnd;
-	int idx, s, key_note;
+	int idx, i, s, ret, key_note;
 	struct notes_s new_notes;
 
 	key_note = minfo->tonal_zones[q_idx].note;
-
+	
 	printf("composing quarter. ntcount: %d\n", ntcount);
-	for (s = 0; s < sq_size; s++) {
+	for (s = 0; s < sq_size; s++)
+		print_semiquaver(sqs[s]);
+
+	/* Compose semiquavers until they are present in the array of semiquavers
+	 * that have chance to be played or until the maximum of semiquavers 
+	 * in the quarter is reached */
+	for (s = 0, i = 0; s < sq_size && i < max_sqcount; i++) {
 		memset(&new_notes, 0, sizeof(new_notes));
 		new_notes.chord_size = 1;
-		/* If there isn't a previous measure yet, the 1st note must be
-		 * decided: pchange must be greater than rnd */
-		if (!prev_pm->measure)
-			rnd = 0.0;
-		else 
-			rnd = (float)rand() / ((float)(RAND_MAX) / 1.0);
-	
-		printf("sq_size: %d, s %d\n", sq_size, s);
+		
+		if (s >= max_sqcount) {
+			fprintf(stderr, "sq count too big\n");
+			return -1;
+		}
 
-		if (sqs[s]->pchange >= rnd) {
+		rnd = (float)rand() / ((float)(RAND_MAX) / 1.0);
+	
+		printf("sq_size: %d, ntcount %d, (i %d s %d spos %d) \n", 
+				sq_size, ntcount, i, s, sqs[s]->position);
+
+		/* If the current sq doesn't exists in the db for the picked 
+		 * quarter or if it exists but does not pass the changing prob, 
+		 * we increment the tempo of the previous note, 
+		 * event if it's in the previous measure */
+		if ((sqs[s]->position != i || sqs[s]->pchange < rnd) &&
+				(prev_pm->measure != NULL || ntcount > 0)) {
+			printf("continuing last note\n");
+			ret = continue_last_note(pm, prev_pm, &new_notes, &ntcount);
+			if (ret == -1){
+				fprintf(stderr, "error in continue_last_note\n");
+				return -1;
+			}
+		} else {
 		
 			idx = decide_note(sqs[s]->pnote);
 			
-			if (idx == -1){
-				if (ntcount != 0)
-					pm->measure[ntcount-1].tempo++;
-				else
-					return -1;
-			}
 			if (!mfields.play_chords) {
 				new_notes.notes[0] = note_to_midi(idx, key_note);
 				if (new_notes.notes[0] == -1)
 					return -1;
-				printf("new single note added. ntcount: %d\n", ntcount);
+				printf("new single note added\n");
 			} else  {
 				/* If it's a rest I don't care about the chord notes */
 				if (idx == 0)
@@ -314,32 +350,13 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 					fill_chord_notes(&new_notes, minfo, q_idx); 
 				printf("chord added.\n");
 			}
-			assign_new_notes(pm, &new_notes, ntcount);
-			ntcount++;
-		} else {
-			if (ntcount > 0) {
-				pm->measure[ntcount-1].tempo++;
-			} else {
+			assign_new_notes(pm, &new_notes, &ntcount);
+		} 	
 
-				/* TODO(SEGFAULT): check this, something bad happens */
-				if(prev_pm == NULL) {
-					fprintf(stderr, 
-						"something wrong with the prev measure \n");
-					return -1;
-				}
-				printf("prev_pm size: %d\n", prev_pm->size);
-				
-				memcpy(new_notes.notes, prev_pm->measure[prev_pm->size - 1].notes, 
-						MAX_CHORD_SIZE);
-					
-				pm->unchanged_fst = 1; 
-				/*printf("fisrt note is unchanged: %d\n", 
-						pm->measure[ntcount].note);*/
-				assign_new_notes(pm, &new_notes, ntcount);
-				ntcount++;
-			}
-		}
-	
+		/* Increment the s counter only if the current sq position
+		   matched with the current sq in the quarter */
+		if (sqs[s]->position == i)
+			s++;
 	}
 	
 	return ntcount;
@@ -456,7 +473,8 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		}
 
 		/* Be creative with the current quarter */
-		ntcount = compose_quarter(pm, prev_pm, minfo, q, sqs, sq_size, ntcount);
+		ntcount = compose_quarter(pm, prev_pm, minfo, q, max_sqcount,
+				sqs, sq_size, ntcount);
 		if (ntcount == -1) {
 			fprintf(stderr, "Error in quarter composition\n");
 			return -1;

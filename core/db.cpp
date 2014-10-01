@@ -267,15 +267,15 @@ int get_quarters(PGconn *dbh, char **args, int *args_prios, int nargs_ignore,
 	const char *query_args[QUARTER_QUERY_ARGS];
 	const char *query_fst, *group_by;
 
-	query_fst = "SELECT quarter.id FROM quarter, scale, genre, scale_genre, "
-		"instrument, instrument_class " 
+	query_fst = "SELECT quarter.id, quarter.pos FROM quarter, scale, genre, " 
+		"scale_genre, instrument, instrument_class " 
 		"WHERE scale_genre.id = quarter.scale_genre and "
 		"scale_genre.id_scale = scale.id and "
 		"scale_genre.id_genre = genre.id and "
 		"quarter.instrument_class = instrument_class.id and "
 		"instrument_class.id = instrument.id_class ";
 	
-	group_by = " GROUP BY quarter.id";
+	group_by = " GROUP BY quarter.id ORDER BY quarter.pos";
 
 	size = arg_idx = 0;
 	query_args[QUARTER_ARG_POS] = "pos = $";
@@ -401,7 +401,7 @@ int get_semiquavers(PGconn *dbh, int quarter,
 
 	asprintf(&loadv, "%d", quarter);
 
-	query = "select * from semiquaver where quarter = $1";
+	query = "select * from semiquaver where quarter = $1 ORDER BY pos";
 
 	res = PQexecParams(dbh, query, 1, NULL, &loadv, NULL, NULL, 0);
 
