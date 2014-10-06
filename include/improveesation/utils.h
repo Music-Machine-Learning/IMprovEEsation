@@ -28,6 +28,7 @@
 #include <stdio.h>
 
 #define BPM_TO_ATOM(bpm) ((15 / bpm) * (1000000 / 3))
+#define MAX_SAMPLE_ROW 32 /* Maximum samples in the file */
 
 void shuffle_array(int *array, size_t n);
 int parse_sample(char * filename);

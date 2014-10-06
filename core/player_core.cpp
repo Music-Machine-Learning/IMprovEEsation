@@ -25,7 +25,7 @@
 #include <fcntl.h>
 #include <improveesation/communication.h>
 #include <improveesation/structs.h>
-
+#include <improveesation/utils.h>
 #include <improveesation/player_core.h>
 
 #include <unistd.h>
@@ -48,7 +48,7 @@ unsigned char data[16][MAX_CHORD_SIZE][3];
 /* Channel reference */
 map<int, int> Channels;
 /* Used by the midifile for progression */
-int atom_couter = 0;
+int atom_counter = 0;
 
 /* TEST This creates a test set of 3 musicians */
 void fill_test_musician(subscription_s *new_musician, int prog){
@@ -129,7 +129,8 @@ void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musi
 	
 }
 
-int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, char * dev){
+int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, char * dev)
+{
 	
 	int i,j;
 	int chcounter = 0;
@@ -141,7 +142,7 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
 	if (*fd < 0){
 		perror("open");
 		return 0;
-	};
+	}
 	
 	/* Init every dataset to a pointless keyup */
 	for (i=0; i<16; i++){ 
