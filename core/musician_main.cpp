@@ -27,6 +27,7 @@
 #include <improveesation/communication.h>
 #include <improveesation/musician_core.h>
 #include <improveesation/db.h>
+#include <improveesation/const.h>
 
 #include <sys/time.h>
 #include <unistd.h>
@@ -40,6 +41,10 @@
 
 #include <fcntl.h>
 
+#include <getopt.h>
+#include <netdb.h>
+#include <errno.h>
+
 class end_of_improvisation_exception eoi_ex;
 
 int director_socket;
@@ -51,9 +56,75 @@ void cleanup(void)
 	close(player_socket);
 }
 
+void separate_port(char *d, char **a, char **p)
+{
+	int i;
+
+	for (i = 0; d[i] != ':' && d[i] != '\0'; i++)
+		;
+
+	*a = (char *) malloc(sizeof(char) * (i + 1));
+	strncpy(*a, d, i);
+	(*a)[i] = 0;
+
+	if (d[i] == ':') {
+		*p = (char *) malloc(sizeof(char) * (strlen(d + i) + 1));
+		strcpy(*p, d + i + 1);
+	}
+}
+
+void dns_query(char *dns_string, struct sockaddr_in *out,
+		in_port_t default_port)
+{
+	struct addrinfo *hostInfo;
+	char *port_string, *address_string;
+	in_addr_t inaddr;
+	in_port_t inport = default_port;
+
+	out->sin_family = AF_INET;
+	if (dns_string == NULL) {
+		inaddr = htonl(INADDR_LOOPBACK);
+		inport = htons(default_port);
+		out->sin_port = inport;
+		out->sin_addr.s_addr = inaddr;
+		return;
+	}
+
+	separate_port(dns_string, &address_string, &port_string);
+
+	if (strncasecmp(address_string, "none", 4) == 0) {
+		inaddr = htonl(INADDR_NONE);
+	} else if (strncasecmp(address_string, "localhost", 9) == 0) {
+		inaddr = htonl(INADDR_LOOPBACK);
+	} else if (strncasecmp(address_string, "any", 9) == 0) {
+		inaddr = htonl(INADDR_ANY);
+	} else if (getaddrinfo(address_string, NULL, NULL, &hostInfo) >= 0) {		
+		while (hostInfo->ai_next) hostInfo = hostInfo->ai_next;
+
+		inaddr = ((struct sockaddr_in *)(hostInfo->ai_addr))->sin_addr.s_addr;
+		if (hostInfo)
+			freeaddrinfo(hostInfo);
+
+	} else {
+		fprintf(stderr, "Error in main getaddrinfo (%s)",
+			strerror(errno));
+	}
+
+	if (port_string) {
+		inport = htons(atoi(port_string));
+		free(port_string);
+	}
+
+	if (address_string)
+		free(address_string);
+
+	out->sin_port = inport;
+	out->sin_addr.s_addr = inaddr;
+}
+
 void exit_usage(char *usage)
 {
-	fprintf(stderr, usage);
+	fprintf(stderr, "%s", usage);
 	exit(EXIT_FAILURE);
 }
 
@@ -66,17 +137,59 @@ int main(int argc, char **argv)
 	PGconn *dbh;
 	char *usage;
 	struct timeval tv;
+	int c;
+	int digit_optind = 0;
+	int default_player = 1, default_director = 1;
  
 	asprintf(&usage, "%s <coupling> <midi-class> <soloist> <chord_mode>\n",
 			argv[0]);
 	
-	if (argc < 5){
+	for (;;) {
+		int current_optind = (optind ? optind : 1);
+		int option_index = 0;
+
+		static struct option long_options[] = {
+			{ "player", required_argument, 0, 'p' },
+			{ "director", required_argument, 0, 'd' },
+			{ 0, 0, 0, 0 },
+		};
+		c = getopt_long(argc, argv, "p:d:",
+				long_options, &option_index);
+		if (c == -1)
+			break;
+		switch(c) {
+			case 'p':
+				default_player = 0;
+				dns_query(optarg, &sout_player,
+					  PLA_DEFAULT_PORT);
+				printf("player: %s\n", optarg);
+				break;
+			case 'd':
+				default_director = 0;
+				dns_query(optarg, &sout_director,
+					  DIR_DEFAULT_PORT);
+				printf("director: %s\n", optarg);
+				break;
+			default:
+				printf("option not recognized\n");
+		}
+	}
+
+	if (default_director)
+		dns_query(NULL, &sout_director,
+			  DIR_DEFAULT_PORT);
+	if (default_player)
+		dns_query(NULL, &sout_player,
+			  PLA_DEFAULT_PORT);
+
+
+	if (argc - optind + 1 < 5){
 		exit_usage(usage);
 	} else {
-		coupling = atoi(argv[1]);
-		midi_class = atoi(argv[2]);
-		soloist = atoi(argv[3]);
-		play_chords = atoi(argv[4]);
+		coupling = atoi(argv[optind]);
+		midi_class = atoi(argv[optind + 1]);
+		soloist = atoi(argv[optind + 2]);
+		play_chords = atoi(argv[optind + 3]);
 	}
 
 	randfd = open("/dev/urandom", O_RDONLY);
@@ -91,14 +204,6 @@ int main(int argc, char **argv)
 		seed *= tv.tv_usec;
 	
 	srand(seed);
-
-	sout_director.sin_family = AF_INET;
-	sout_director.sin_port = htons(50000);
-	inet_pton(AF_INET, "127.0.0.1", &sout_director.sin_addr.s_addr);
-
-	sout_player.sin_family = AF_INET;
-	sout_player.sin_port = htons(50001);
-	inet_pton(AF_INET, "127.0.0.1", &sout_player.sin_addr.s_addr);
 
 	director_socket = socket(AF_INET, SOCK_STREAM, 0);
 	player_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -116,7 +221,7 @@ int main(int argc, char **argv)
 		perror("connect player");
 		return 1;
 	}
-	
+
 	/* XXX build it with an appropiate method */
 	uint32_t myid = send_subscription(director_socket,
 				coupling, midi_class, soloist);
