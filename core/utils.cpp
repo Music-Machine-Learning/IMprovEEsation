@@ -23,6 +23,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
 #include <improveesation/structs.h>
 #include <improveesation/utils.h>
 
@@ -52,22 +54,78 @@ void shuffle_array(int *array, size_t n)
 int parse_sample(const char * filename){
 	int res = 0;
 	FILE* file = fopen(filename, "r");
-	if (!file)
+	if (!file){
+		perror("open");
 		return -1;
+	}
 		
 	char * line = NULL;
+	char temp[16];
 	size_t size = 0;
-	int n, csize;	
+	int n, csize, cnote, ctime, ctriplet;	
+	
+	printf("Paring the sample file...\n");
 		
 	for (n = 0; (csize = getline(&line, &size, file)) > 0; n++) {
 		/* avoid comments */
-		if (trim(line)[0] == '#' || size <= 1)
+		strcpy(line, trim(line));
+		if (line[0] == '#' || size <= 1){
+			n--;
+			#ifdef DEBUG
+			printf("Found comment\n");
+			#endif
 			continue;
+			}
 		
-		/* Parse the CSV string TODO */
+		/* Parse the CSV string */
+
+		#ifdef DEBUG
+		printf("Parsing line%n:\n", n);
+		#endif
 		
+		/* Set the basic fields of the play_measure */
+		glob_ideal[n].id = 0;
+		glob_ideal[n].musician_id = 0;
+		strcpy(dyna_list[n], strtok(line, ",")); //TODO control
+		glob_ideal[n].unchanged_fst = atoi(strtok(NULL, ","));
+		glob_ideal[n].size = 0;
+		/* For now we allocate the max size of a play_measure */
+		glob_ideal[n].measure = (struct notes_s *) malloc(sizeof(struct notes_s) * 48);
 		
+		do {
+			/* Read in this weird way three by three the parameters (note,time,triplet flag) */
+			strcpy(temp, strtok(NULL, ","));
+			if(!temp){
+				break;
+			} else {
+				cnote = atoi(temp);
+			}
+			strcpy(temp, strtok(NULL, ","));
+			if(!temp){
+				break;
+			} else {
+				ctime = atoi(temp);
+			}
+			strcpy(temp, strtok(NULL, ","));
+			if(!temp){
+				break;
+			} else {
+				ctriplet = atoi(temp);
+			}
+		    /* Set the note values (always just one note) */
+			glob_ideal[n].measure[glob_ideal[n].size].tempo = ctime;
+			glob_ideal[n].measure[glob_ideal[n].size].id = 0;
+			glob_ideal[n].measure[glob_ideal[n].size].triplets = ctriplet;
+			glob_ideal[n].measure[glob_ideal[n].size].chord_size = 1;
+			glob_ideal[n].measure[glob_ideal[n].size].notes[0] = cnote; 
+			glob_ideal[n].size++; // We're using the measure size as a counter.... risky?
+			#ifdef DEBUG
+			printf("\tGot note %n duration %n triplet %n\n", cnote, ctime, ctriplet);
+			#endif
+		} while(1);
 	}
+	
+	printf("parse successful!\n");
 	
 	return 0;	
 }

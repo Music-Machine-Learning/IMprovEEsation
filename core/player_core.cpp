@@ -198,7 +198,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	
 	/* FIXME bpm are set to 120 by default. I can't obtain them. bpms is the duration of half a semiquiver triplet unit in mus */
 	double bpm = 120;
-	double bpms = BPM_TO_ATOM; // the factor *3 is for the triplet
+	double bpms = BPM_TO_ATOM(bpm); // the factor *3 is for the triplet
 	
 	/* Init note pointer for the execution */
 	for(i=0; i<musicians_num; i++){
