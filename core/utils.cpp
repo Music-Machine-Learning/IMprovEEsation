@@ -40,3 +40,13 @@ void shuffle_array(int *array, size_t n)
 		array[i] = t;
 	}
 }
+
+/* This allocs a list of "ideal" patterns and gives its size in output */
+/* the list is extracted from the file given in input selecting the dynamics also given */
+int parse_sample(char * filename, play_measure_s ** output, char * dyna, uint16_t key_note){
+	int res = 0;
+	int file = fopen(filename, O_RDONLY);
+	
+	
+	
+}

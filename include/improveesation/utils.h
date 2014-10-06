@@ -27,6 +27,9 @@
 
 #include <stdio.h>
 
+#define BPM_TO_ATOM(bpm) ((15 / bpm) * (1000000 / 3))
+
 void shuffle_array(int *array, size_t n);
+int parse_sample(char * filename, play_measure_s * output, char * dyna, uint16_t key_note);
 
 #endif /* improveesation/utils.h */
