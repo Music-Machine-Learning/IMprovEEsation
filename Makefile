@@ -28,12 +28,13 @@ CORE_DIR:=core
 
 OUT_LIB_DIR:=$(BUILD_DIR)/lib
 
-EXE_CXXFLAGS:= -I include -I $(shell pg_config --includedir) -g -L $(OUT_LIB_DIR)
+EXE_CXXFLAGS:= -I include -I $(shell pg_config --includedir) -g -L $(OUT_LIB_DIR) 
 LINK_CXX_ENDFLAGS := -limpro_communication -limpro_db -lpq
 
 all: prepare library binary
 
 debug: CXXFLAGS+= -g
+debug: EXE_CXXFLAGS+= -DDEBUG
 debug: all
 
 prepare:
@@ -53,9 +54,9 @@ libimpro_db.so : $(CORE_DIR)/db.cpp
 	$(CXX) $(CXX_LIB_FLAGS) -o $(OUT_LIB_DIR)/$@ $(BUILD_DIR)/libimpro_db.o
 	rm $(BUILD_DIR)/libimpro_db.o
 
-
 $(BUILD_DIR)/%: $(CORE_DIR)/%*.cpp
-	$(CXX) $(EXE_CXXFLAGS) $^ core/configuration.cpp -o $@ $(LINK_CXX_ENDFLAGS)
+	$(CXX) $(EXE_CXXFLAGS) $^ core/utils.cpp core/configuration.cpp -o $@ $(LINK_CXX_ENDFLAGS)
+
 
 clean:
 	rm -rf $(BUILD_DIR)

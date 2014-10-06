@@ -157,4 +157,11 @@ struct semiquaver_s{
 	float *pnote; /* Probability of note selection p[0] is a rest */
 };
 
+struct musician_fields_s{
+	int octave_min;
+	int octave_max;
+	int prev_octave;
+	int play_chords;
+};
+
 #endif /* _IMPROVEESATION_STRUCTS_H */
