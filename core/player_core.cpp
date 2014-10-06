@@ -163,7 +163,7 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
 			mdata[2] = 120; // this is useless, just for parallelism
 			/* Send the instrument setup to midi (we need just 2 params) */
 			write(*fd, mdata, 2);
-			// TOCHECK writeNote(atom_counter, mdata, NULL, NULL);
+			writeNote(atom_counter, mdata, NULL, NULL); /* not properly a write NOTE */
 			
 			printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, (chcounter + 1));
 			chcounter++;

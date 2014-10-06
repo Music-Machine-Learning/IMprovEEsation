@@ -24,6 +24,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_SAMPLE_ROW 32 /* Maximum samples in the file */
+
+struct play_measure_s * glob_ideal;
+
+char * trim(char *s); /* in configuration.cpp */
 
 /* Arrange the N elements of ARRAY in random order. */
 void shuffle_array(int *array, size_t n)
@@ -41,12 +46,34 @@ void shuffle_array(int *array, size_t n)
 	}
 }
 
-/* This allocs a list of "ideal" patterns and gives its size in output */
+/* This allocs a list of "ideal" patterns */
 /* the list is extracted from the file given in input selecting the dynamics also given */
-int parse_sample(char * filename, play_measure_s ** output, char * dyna, uint16_t key_note){
+int parse_sample(char * filename){
 	int res = 0;
 	int file = fopen(filename, O_RDONLY);
+	if (!file)
+		return -1;
+		
+	char * line = NULL;
+	int size = 0;
+	int n, csize;
 	
+	glob_ideal = (struct play_measure_s *) malloc(sizeof(struct play_measure_s) * MAX_SAMPLE_ROW);	
+		
+	for (n = 0; (csize = getline(&line, &size, file)) > 0; n++) {
+		/* avoid comments */
+		if (trim(line)[0] == '#' || size <= 1)
+		continue;
+		
+		/* Parse the CSV string TODO */
+		
+		
+	}
 	
-	
+	return 0;	
+}
+
+/* This crawls the goal measures and gives the ones with the right dyna (output = list size) */
+int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna, uint16_t key_note){
+	return 0;
 }
