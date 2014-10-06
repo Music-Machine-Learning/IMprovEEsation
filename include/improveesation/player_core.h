@@ -24,9 +24,6 @@
 #ifndef PLAYER_CORE_H
 #define PLAYER_CORE_H
 
-#define TRUE 1
-#define FALSE 0
-
 /* IF USING TIMIDITY - now by default (so no ifdef) */
 /* The instrument classification is located in /etc/timidity/freepats.cfg 
  * even the drum key code */

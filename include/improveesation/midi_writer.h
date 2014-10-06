@@ -1,5 +1,5 @@
 /*****************************************************************************/
-/* Improveesation general constants header file.                             */
+/* Midi files outputting library                                             */
 /* This library is a part of the IMprovEEsation suite.                       */
 /*                                                                           */
 /* Copyright (C) 2014                                                        */
@@ -20,49 +20,30 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,*/
 /* USA.                                                                      */
 /*****************************************************************************/
-#ifndef _CONST_H
-#define _CONST_H
 
-#define DB_CONN_TIMEOUT "10"
+#ifndef MIDI_WRITER_H
 
-#define NSEMITONES 12
-#define PROB_ARR_SIZE NSEMITONES + 1
-#define OCTAVE_MAX_JUMP 2
-#define MIDI_NOCTAVES  8 /* From A0 to C8 */
-#define MIDI_FIRST_NOTE 21 /* A0 */
-#define MIDI_LAST_NOTE 108 /* C8 */
-#define MIDI_REST_NOTE	128
+#include <map>
+#include <stdint.h>
 
-#define NO_COUPLING 0
-#define MAX_CHORD_SIZE 8
-#define MIN_CHORD_SIZE 2
-#define CHORD_LOOP_DECISIONS MAX_CHORD_SIZE * 3
+/*
+ * initialize midi file
+ * returns TRUE if something bad happened
+ */
+int initFile(char *fname, std::map<int, int> *instruments, uint8_t bpm, int *midiDev);
 
-#define TRUE 1
-#define FALSE 0
+/*
+ * write midi note to file, event represents note, meta are STM metadata infos and sysex are System Exclusive Events
+ * returns TRUE if something bad happened
+ */
+int writeNote(unsigned int atom, unsigned char* event);
 
-enum {
-	RYTHMIC,
-	SOLO
-};
+/*
+ * close and save midi file
+ * returns TRUE if something bad happened
+ */
+int closeFile();
 
-enum {
-	QUARTER_ARG_POS = 0,
-	QUARTER_ARG_INSTR,
-	QUARTER_ARG_CNOTE,
-	QUARTER_ARG_CMODE,
-	QUARTER_ARG_GENRE,
-	QUARTER_ARG_DYNA,
-	QUARTER_ARG_MOOD,
-	QUARTER_ARG_SCALE,
-	QUARTER_ARG_SOLO,
-	QUARTER_ARG_LAST
-};
+#define MIDI_WRITER_H
 
-#define QUARTER_ARG_FIRST QUARTER_ARG_POS
-#define QUARTER_QUERY_ARGS (QUARTER_ARG_LAST - QUARTER_ARG_FIRST)
-
-#define DIR_DEFAULT_PORT 50000
-#define PLA_DEFAULT_PORT 50001
-
-#endif /* _CONST_H */
+#endif // MIDI_WRITER_H

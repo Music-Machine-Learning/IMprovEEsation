@@ -26,3 +26,17 @@ include/linux/list.h
 CMakeLists.txt
 example_.improveesation.rc
 .gitignore
+core/midi_writer.cpp
+include/improveesation/midi_writer.h
+core/utils.cpp
+include/improveesation/utils.h
+include/improveesation/structs.h
+include/improveesation/player_core.h
+include/improveesation/musician_improviser.h
+include/improveesation/musician_core.h
+include/improveesation/midi_writer.h
+include/improveesation/director_core.h
+include/improveesation/db.h
+include/improveesation/const.h
+include/improveesation/configuration.h
+include/improveesation/communication.h
