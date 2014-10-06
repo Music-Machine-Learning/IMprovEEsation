@@ -31,6 +31,14 @@ set(TOOLS_SOURCE_PROJECT_DIR "${PROJECT_SOURCE_DIR}/tools")
 
 set(CMAKE_MODULES_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
+if (DEFINED IMPROVEESATION_DEBUG AND IMPROVEESATION_DEBUG)
+	MESSAGE(STATUS "Compiling with debug flag.")
+	ADD_DEFINITIONS(-D DEBUG)
+else()
+	MESSAGE(STATUS "Compiling without debug flag.")
+	REMOVE_DEFINITIONS(-D DEBUG)
+endif()
+
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 include(CheckFunctionExists)
