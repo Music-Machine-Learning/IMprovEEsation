@@ -23,14 +23,15 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <improveesation/midi_writer.h>
 #include <improveesation/utils.h>
 #include <improveesation/const.h>
 
-#define BUFFER_INIT_SIZE    1024;
-#define MIDI_EVENT_SIZE     3;
-#define ATOM_TO_PPQN        12;
+#define BUFFER_INIT_SIZE    1024
+#define MIDI_EVENT_SIZE     3
+#define ATOM_TO_PPQN        12
 
 int *dev;
 FILE *midifile;
@@ -78,17 +79,17 @@ int initFile(char *fname, map<int, int> *instruments, uint8_t bpm, int *midiDev)
     /* midi format */
     header[9] = 1;
     /* number of tracks */
-    header[11] = instruments.size();
+    header[11] = instruments->size();
     /* time division */
     header[13] = ATOM_TO_PPQN;
     header[4] = header[5] = header[6] = header[8] = header[10] = header[12] = 0;
 
-    tracks = (char **)calloc(instruments.size(), sizeof(char *));
-    trackPointer = (unsigned int *)calloc(instruments.size(), sizeof(unsigned int));
-    lastAtom = (uint32_t *)calloc(instruments.size(), sizeof(uint32_t));
-    for(i = 0, it = instruments.begin(); i < instruments.size(); i++, it++){
-        tracks[i] = (char *)calloc(BUFFER_INIT_SIZE, sizeof(char));
-        memccpy(tracks[i], "MTrk", 4);
+    tracks = (unsigned char **)calloc(instruments->size(), sizeof(unsigned char *));
+    trackPointer = (unsigned int *)calloc(instruments->size(), sizeof(unsigned int));
+    lastAtom = (uint32_t *)calloc(instruments->size(), sizeof(uint32_t));
+    for(i = 0, it = instruments->begin(); i < instruments->size(); i++, it++){
+        tracks[i] = (unsigned char *)calloc(BUFFER_INIT_SIZE, sizeof(unsigned char));
+        memcpy(tracks[i], "MTrk", 4);
         /* move buffer pointer to the beginning of the midi event sequence */
         trackPointer[i] = 8;
         instMap[it->first] = i;
@@ -113,16 +114,17 @@ int initFile(char *fname, map<int, int> *instruments, uint8_t bpm, int *midiDev)
 
 int writeNote(unsigned int atom, unsigned char* event){
     unsigned int chnum, v_size, i;
-    int *pointer;
-    char *track, *v_time;
+    unsigned int *pointer;
+    unsigned char *track;
+    char *v_time;
     /* write to midi dev */
-    write(dev, event, MIDI_EVENT_SIZE);
+    write(*dev, event, MIDI_EVENT_SIZE);
 
     /* write to midi buffer */
     if(midifile != NULL){
         chnum = event[0] & 0xF;
         pointer = trackPointer + instMap[chnum];
-        track = tracks + instMap[chnum];
+        track = tracks[instMap[chnum]];
 
         i = atom - lastAtom[instMap[chnum]];
         //FIXME add byte_size() to utils.cpp
@@ -130,7 +132,7 @@ int writeNote(unsigned int atom, unsigned char* event){
 
         //check della morte da rifare
         if(((*pointer) % BUFFER_INIT_SIZE) + (MIDI_EVENT_SIZE + v_size) > BUFFER_INIT_SIZE){
-            track = (char *) realloc (track, (BUFFER_INIT_SIZE - (*pointer)%BUFFER_INIT_SIZE)+(*pointer));
+            track = (unsigned char *) realloc (track, (BUFFER_INIT_SIZE - (*pointer)%BUFFER_INIT_SIZE)+(*pointer));
         }
 
         memcpy(track+(*pointer), event, MIDI_EVENT_SIZE);

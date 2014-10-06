@@ -27,6 +27,7 @@
 #include <improveesation/structs.h>
 #include <improveesation/utils.h>
 #include <improveesation/player_core.h>
+#include <improveesation/midi_writer.h>
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -164,7 +165,7 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
 			mdata[2] = 120; // this is useless, just for parallelism
 			/* Send the instrument setup to midi (we need just 2 params) */
 			write(*fd, mdata, 2);
-			writeNote(atom_counter, mdata, NULL, NULL); /* not properly a write NOTE */
+            writeNote(atom_counter, mdata); /* not properly a write NOTE */
 			
 			printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, (chcounter + 1));
 			chcounter++;
@@ -174,7 +175,7 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
 		}
 		
 		/* Parameters for the MIDI file */
-		initFile("output.MID", &Channels, 120, *fd); // FIXME hardcode
+        initFile("output.MID", &Channels, 120, fd); // FIXME hardcode
 	}
 	
 	return 1;
@@ -255,7 +256,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 					if (notes[j][note_pointer[j][0]].notes[0] != 255) { // if the note is not -1
 						for(k=0; k<MAX_CHORD_SIZE; k++){
 							write(fd, data[j][k], 3); // key up the previous set
-							writeNote(atom_counter, data[j][k], NULL, NULL);
+                            writeNote(atom_counter, data[j][k]);
 						}
 						/* Notes may remain but they are set to keyup, so no bad things should happen */
 					
@@ -274,7 +275,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 					if(notes[j][note_pointer[j][0]].notes[0] < 128){ //actual note (skip if silence)
 						for(k=0; k<notes[j][note_pointer[j][0]].chord_size; k++){
 							write(fd, data[j][k], 3); // key down the new note set
-							writeNote(atom_counter, data[j][k], NULL, NULL);
+                            writeNote(atom_counter, data[j][k]);
 						}
 						
 						#ifdef DEBUG
@@ -321,7 +322,7 @@ void smorza_incosa(int fd){
 	for(i=0; i<16; i++){
 		for(j=0;j<MAX_CHORD_SIZE;j++){
 			write(fd, data[i][j], 3); // key up everything
-			writeNote(atom_counter, data[i][j], NULL, NULL);
+            writeNote(atom_counter, data[i][j]);
 		}
 	}
 	
