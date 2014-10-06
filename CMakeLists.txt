@@ -69,7 +69,7 @@ find_path(PostgreSQL_TYPE_INCLUDE_DIR
 	DOC "The ${PostgreSQL_INCLUDE_DIR_MESSAGE}"
 )
 
-#find_package(PostgreSQL REQUIRED)
+find_package(PostgreSQL REQUIRED)
 include_directories(${PostgreSQL_INCLUDE_DIR})
 set (POSTGRES_DB_LIBRARY ${PostgreSQL_LIBRARIES})
 
