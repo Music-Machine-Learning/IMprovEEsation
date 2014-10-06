@@ -42,6 +42,10 @@
 
 #include <map>
 
+#include <getopt.h>
+#include <netdb.h>
+#include <errno.h>
+
 using namespace std;
 
 int director_socket;
@@ -100,6 +104,71 @@ int net_init(int port, const char *addr)
 	return gsocket;
 }
 
+void separate_port(char *d, char **a, char **p)
+{
+	int i;
+
+	for (i = 0; d[i] != ':' && d[i] != '\0'; i++)
+		;
+
+	*a = (char *) malloc(sizeof(char) * (i + 1));
+	strncpy(*a, d, i);
+	(*a)[i] = 0;
+
+	if (d[i] == ':') {
+		*p = (char *) malloc(sizeof(char) * (strlen(d + i) + 1));
+		strcpy(*p, d + i + 1);
+	}
+}
+
+void dns_query(char *dns_string, struct sockaddr_in *out,
+		in_port_t default_port)
+{
+	struct addrinfo *hostInfo;
+	char *port_string, *address_string;
+	in_addr_t inaddr;
+	in_port_t inport = default_port;
+
+	out->sin_family = AF_INET;
+	if (dns_string == NULL) {
+		inaddr = htonl(INADDR_LOOPBACK);
+		inport = htons(default_port);
+		out->sin_port = inport;
+		out->sin_addr.s_addr = inaddr;
+		return;
+	}
+
+	separate_port(dns_string, &address_string, &port_string);
+
+	if (strncasecmp(address_string, "none", 4) == 0) {
+		inaddr = htonl(INADDR_NONE);
+	} else if (strncasecmp(address_string, "localhost", 9) == 0) {
+		inaddr = htonl(INADDR_LOOPBACK);
+	} else if (strncasecmp(address_string, "any", 9) == 0) {
+		inaddr = htonl(INADDR_ANY);
+	} else if (getaddrinfo(address_string, NULL, NULL, &hostInfo) >= 0) {		
+		while (hostInfo->ai_next) hostInfo = hostInfo->ai_next;
+
+		inaddr = ((struct sockaddr_in *)(hostInfo->ai_addr))->sin_addr.s_addr;
+		if (hostInfo)
+			freeaddrinfo(hostInfo);
+
+	} else {
+		fprintf(stderr, "Error in main getaddrinfo (%s)",
+			strerror(errno));
+	}
+
+	if (port_string) {
+		inport = htons(atoi(port_string));
+		free(port_string);
+	}
+
+	if (address_string)
+		free(address_string);
+
+	out->sin_port = inport;
+	out->sin_addr.s_addr = inaddr;
+}
 /* Main Flow */
 int main(int argc, char **argv)
 {
@@ -109,12 +178,46 @@ int main(int argc, char **argv)
 	struct play_measure_s *note_list = NULL;
 	bool test_flag = FALSE;
 	uint32_t musicians_num;
+	in_port_t port = PLA_DEFAULT_PORT;
+	int c, default_director = 1;
 	
+	for (;;) {
+		int current_optind = (optind ? optind : 1);
+		int option_index = 0;
+
+		static struct option long_options[] = {
+			{ "port", required_argument, 0, 'P' },
+			{ "director", required_argument, 0, 'd' },
+			{ 0, 0, 0, 0 },
+		};
+		c = getopt_long(argc, argv, "P:d:",
+				long_options, &option_index);
+		if (c == -1)
+			break;
+		switch(c) {
+			case 'P':
+				port = atoi(optarg);
+				break;
+			case 'd':
+				default_director = 0;
+				dns_query(optarg, &sout,
+					  DIR_DEFAULT_PORT);
+				printf("director: %s\n", optarg);
+				break;
+			default:
+				printf("option not recognized\n");
+		}
+	}
+
+	if (default_director)
+		dns_query(NULL, &sout,
+			  DIR_DEFAULT_PORT);
+
 	/* Check if the test flag is active */
-	if (argc <= 2){
+	if (argc - optind + 1 <= 2){
 		printf("./player <midi_dev> <seconds-to-sleep>(-1 if we want to wait the impro to end) [--test]\nThe device's name is located is usually similar to /dev/midi1 or /dev/snd/midiC2D0.\nRemember to use -D DEBUG in compiling to obtain very verbose output.\n");
 		exit(0);
-	} else if ((argc > 3) && !strcmp(argv[3], "--test")){
+	} else if ((argc - optind + 1 > 3) && !strcmp(argv[optind + 2], "--test")){
 		test_flag = TRUE;
 		printf("Starting testset...\n");
 	}
@@ -123,15 +226,12 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 
 	/* Configure the parameters for the socket player-director */
-	sout.sin_family = AF_INET;
-	sout.sin_port = htons(50000);
-	inet_pton(AF_INET, "127.0.0.1", &sout.sin_addr.s_addr);
 
 	director_socket = socket(AF_INET, SOCK_STREAM, 0);
 	
 	if (!test_flag){
 		/* Obtain the listener socket for musicians */
-		net_handler = net_init(50001, "127.0.0.1");
+		net_handler = net_init(port, "0.0.0.0");
 
 		/* Connect the socket to the director */
 		if (connect(director_socket, (struct sockaddr *) &sout,
@@ -176,15 +276,15 @@ int main(int argc, char **argv)
 	}
 	
 	printf("\n");
-	if (!midi_init(&musicians, musicians_num, &fd, argv[1])){
+	if (!midi_init(&musicians, musicians_num, &fd, argv[optind])){
 		return 1;
 	};
 		
 
 	/* Execute a cleanup of the structures at the exit */
 	atexit(cleanup);
-	if(argv[2] >= 0)
-		usleep(atoi(argv[2])*1000000);
+	if(argv[optind + 1] >= 0)
+		usleep(atoi(argv[optind + 1])*1000000);
 	
 	/* Main loop */
 	printf("Main loop initiated!\n");
