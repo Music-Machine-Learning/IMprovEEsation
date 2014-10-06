@@ -78,16 +78,20 @@ set(EXTRA_DB_LIBRARIES improveesation_db pq)
 
 file(GLOB DirectorSources
      "${CORE_SOURCE_PROJECT_DIR}/director_*.cpp"
-     "${CORE_SOURCE_PROJECT_DIR}/configuration.cpp")
+     "${CORE_SOURCE_PROJECT_DIR}/configuration.cpp"
+     "${CORE_SOURCE_PROJECT_DIR}/utils.cpp")
 file(GLOB PlayerSources
      "${CORE_SOURCE_PROJECT_DIR}/player_*.cpp"
-     "${CORE_SOURCE_PROJECT_DIR}/configuration.cpp")
+     "${CORE_SOURCE_PROJECT_DIR}/configuration.cpp"
+     "${CORE_SOURCE_PROJECT_DIR}/utils.cpp")
 file(GLOB MusicianSources
      "${CORE_SOURCE_PROJECT_DIR}/musician_*.cpp"
-     "${CORE_SOURCE_PROJECT_DIR}/configuration.cpp")
+     "${CORE_SOURCE_PROJECT_DIR}/configuration.cpp"
+     "${CORE_SOURCE_PROJECT_DIR}/utils.cpp")
 file(GLOB DbTestSources
      "${CORE_SOURCE_PROJECT_DIR}/db_*.cpp"
-     "${CORE_SOURCE_PROJECT_DIR}/configuration.cpp")
+     "${CORE_SOURCE_PROJECT_DIR}/configuration.cpp"
+     "${CORE_SOURCE_PROJECT_DIR}/utils.cpp")
 
 add_executable(director ${DirectorSources})
 target_link_libraries(director ${EXTRA_NET_LIBRARIES} ${EXTRA_DB_LIBRARIES})
