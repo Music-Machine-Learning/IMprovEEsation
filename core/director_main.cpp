@@ -40,6 +40,9 @@
 #include <time.h>
 #include <string.h>
 
+#include <getopt.h>
+#include <errno.h>
+
 struct musician_registration_s {
     subscription_s *subscritpion;
     uint32_t id;
@@ -121,21 +124,43 @@ int main(int argc, char **argv)
     uint32_t musicians_num, soloers_num = 0;
     int i, current_measure_num = 0, measures_per_section;
     musician_registration_s *registrations;
+	int c;
+	in_port_t port = DIR_DEFAULT_PORT;
+	
+	for (;;) {
+		int current_optind = (optind ? optind : 1);
+		int option_index = 0;
 
-	if (argc < 2) {
+		static struct option long_options[] = {
+			{ "port", required_argument, 0, 'P' },
+			{ 0, 0, 0, 0 },
+		};
+		c = getopt_long(argc, argv, "P:",
+				long_options, &option_index);
+		if (c == -1)
+			break;
+		switch(c) {
+			case 'P':
+				port = atoi(optarg);
+				break;
+			default:
+				printf("option not recognized\n");
+		}
+	}
+	if (argc - optind + 1 < 2) {
         fprintf(stderr, "%s <number of musicians> [number of measures]\n", argv[0]);
 		return 1;
 	}
 
-	musicians_num = atoi(argv[1]);
+	musicians_num = atoi(argv[optind]);
 
     soloers = new u_int32_t[musicians_num];
     registrations = (musician_registration_s*) calloc(musicians_num, sizeof(musician_registration_s));
 
-    if (argc > 2)
-        measures_count = atoi(argv[2]);
+    if (argc - optind + 1 > 2)
+        measures_count = atoi(argv[optind + 1]);
 
-	net_handler = net_init(50000, "127.0.0.1");
+	net_handler = net_init(port, "127.0.0.1");
 
 	player = recv_player(net_handler);
 
