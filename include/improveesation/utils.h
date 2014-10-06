@@ -32,6 +32,7 @@
 
 void shuffle_array(int *array, size_t n);
 int parse_sample(char * filename);
-void get_goal_measures(struct play_measure_s ** goal_ms, char * dyna, uint16_t key_note);
+int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna, uint16_t key_note);
+int byte_size(unsigned int n);
 
 #endif /* improveesation/utils.h */

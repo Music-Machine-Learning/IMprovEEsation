@@ -33,6 +33,16 @@ char dyna_list[MAX_SAMPLE_ROW][16]; /* Fictional hash corresponding to the above
 
 char * trim(char *s); /* in configuration.cpp */
 
+int byte_size(unsigned int n){
+	int h = 0;
+	int j = n;
+	while(j > 0){
+		h++;
+		j = j>>8;
+	}
+	return h;
+}
+
 /* Arrange the N elements of ARRAY in random order. */
 void shuffle_array(int *array, size_t n)
 {
@@ -132,5 +142,6 @@ int parse_sample(const char * filename){
 
 /* This crawls the goal measures and gives the ones with the right dyna (output = list size) */
 int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna, int key_note){
+	
 	return 0;
 }
