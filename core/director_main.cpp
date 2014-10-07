@@ -196,11 +196,14 @@ int main(int argc, char **argv)
 
     send_num_of_musicians(player, musicians_num);
 
-    atexit(cleanup);
+    //atexit(cleanup);
+
+    fflush(stdout);
 
     if(!init_director_core("blues", "bebop", soloers_num, soloers, measures_count)){
-        fprintf(stderr, "failed to initialize director core");
-        throw eoi_ex;
+        fprintf(stderr, "failed to initialize director core\n");
+        cleanup();
+        return 1;
     }
 
 	/* main loop */
@@ -233,13 +236,8 @@ int main(int argc, char **argv)
 		sleep(1);
 	}
 
-    //FIXME: ugly solution
-    try{
-        throw eoi_ex;
-    } catch (end_of_improvisation_exception e){
-        free_director_core();
-        printf("we have come to an end\n");
-    }
-
+    free_director_core();
+    printf("we have come to an end\n");
+    cleanup();
 	return 0;
 }
