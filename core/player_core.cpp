@@ -40,16 +40,23 @@
 
 #include <time.h>
 
-#include <map>
-
 using namespace std;
 
 /* Data to be written to midi (16 channels X 3 params per every note in chord) */
 unsigned char data[16][MAX_CHORD_SIZE][3];
 /* Channel reference */
-map<int, int> Channels;
+int *Channels;
 /* Used by the midifile for progression */
 int atom_counter = 0;
+
+int findMidiChannel(uint8_t instrumentClass){
+    int i;
+    for(i = 0; i < MIDI_CHANNELS; i++){
+        if(Channels[i] == instrumentClass)
+            return i;
+    }
+    return -1;
+}
 
 /* TEST This creates a test set of 3 musicians */
 void fill_test_musician(subscription_s *new_musician, int prog){
@@ -151,6 +158,8 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
 		}
 	}
 
+    Channels = (int *)calloc(MIDI_CHANNELS, sizeof(int));
+
     /* Parameters for the MIDI file */
     initFile("output.MID", &Channels, 120, fd, musicians, musicians_num); // FIXME hardcode
 
@@ -184,15 +193,15 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 		note_pointer[i][2] = 0;
 		note_pointer[i][3] = FALSE;
 	}
-	
-    printf("Channels:\n<%d> : %d\n<%d> : %d\n<%d> : %d\n", 0, Channels[0], 33, Channels[33], 16, Channels[16]);
-    fflush(stdout);
 
 	for(i=0; i<musicians_num; i++){
-		note_pointer[i][2] = (Channels[note_list[i].musician_id & 0xff]);
+        note_pointer[i][2] = findMidiChannel(note_list[i].musician_id & 0xff);
+
+        if(note_pointer[i][2] < 0)
+            fprintf(stderr, "shit happened, unable to find musician %d midi channel\n", note_list[i].musician_id);
 		
 		#ifdef DEBUG
-		printf("[debug] Instrument %d set up in channel %d!\n", note_list[i].musician_id & 0xff, Channels[note_list[i].musician_id & 0xff]);
+        printf("[debug] Instrument %d set up in channel %d!\n", note_list[i].musician_id & 0xff, findMidiChannel(note_list[i].musician_id & 0xff));
 		printf("[debug] Notes for %d: {", i);
 		#endif
 		
@@ -305,6 +314,8 @@ void smorza_incosa(int fd){
 		}
 	}
 	
+    free(Channels);
+
 	/* Close the MIDI file */
 	closeFile();
 	#ifdef DEBUG

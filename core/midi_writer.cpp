@@ -29,11 +29,9 @@
 #include <improveesation/utils.h>
 #include <improveesation/const.h>
 #include <improveesation/structs.h>
-#include <improveesation/player_core.h>
 
 #include <linux/list.h>
 
-#define MIDI_CHANNELS       16
 #define BUFFER_INIT_SIZE    1024
 #define MIDI_EVENT_SIZE     3
 #define ATOM_TO_PPQN        12
@@ -61,7 +59,7 @@ int variabilize_val(unsigned int v, char **str){
         return 1;
     }
     s += 1 + (s/8);
-    *str = (char *)calloc(s, sizeof(char));
+    *str = (char *)malloc(s*sizeof(char));
 
     for(i = 0; i < s; i++){
         (*str)[(s-i-1)] = ((v >> (i*7)) & 0x7F) | (i==0 ? 0 : 0x80);
@@ -81,7 +79,7 @@ void printMap(map<int, int> *amap){
     }
 }
 
-int initFile(char *fname, map<int, int> *instruments, uint8_t bpm, int *midiDev, struct list_head *musicians, uint32_t musiciansCount){
+int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct list_head *musicians, uint32_t musiciansCount){
     char *tempoEvent;
     unsigned int i, t;
     struct subscription_s *cmusician;
@@ -102,6 +100,9 @@ int initFile(char *fname, map<int, int> *instruments, uint8_t bpm, int *midiDev,
         fclose(midifile);
     }
 
+    //disable file writing
+    midifilename = NULL;
+
     tracks = (unsigned char **)calloc(MIDI_CHANNELS, sizeof(unsigned char *));
     trackPointer = (unsigned int *)calloc(MIDI_CHANNELS, sizeof(unsigned int));
     lastAtom = (uint32_t *)calloc(MIDI_CHANNELS, sizeof(uint32_t));
@@ -117,7 +118,7 @@ int initFile(char *fname, map<int, int> *instruments, uint8_t bpm, int *midiDev,
         } else {
             t = MIDI_CHANNELS - 1;
         }
-        (*instruments)[cmusician->instrument_class] = t;
+        (*instruments)[t] = cmusician->instrument_class;
 
         mdata[0] = SELECT_INSTRUMENT(t);
         mdata[1] = cmusician->instrument_class;
@@ -165,7 +166,7 @@ int initFile(char *fname, map<int, int> *instruments, uint8_t bpm, int *midiDev,
 }
 
 int writeNote(unsigned int atom, unsigned char* event, bool fileOnly){
-    unsigned int chnum, v_size, i;
+    unsigned int chnum, v_size, i, j;
     unsigned int *pointer;
     unsigned char *track;
     char *v_time;
@@ -180,12 +181,15 @@ int writeNote(unsigned int atom, unsigned char* event, bool fileOnly){
         track = tracks[chnum];
 
         i = atom - lastAtom[chnum];
-        //FIXME add byte_size() to utils.cpp
+
         v_size = variabilize_val(i, &v_time);
+
+        if(v_size == 0)
+            fprintf(stderr, "shit happened variabilizing %d..\n", i);
 
         //check della morte da rifare
         if(((*pointer) % BUFFER_INIT_SIZE) + (MIDI_EVENT_SIZE + v_size) > BUFFER_INIT_SIZE){
-            track = (unsigned char *) realloc (track, (BUFFER_INIT_SIZE - ((*pointer)%BUFFER_INIT_SIZE))+(*pointer)+BUFFER_INIT_SIZE);
+            track = (unsigned char *) realloc (track, BUFFER_INIT_SIZE * (((*pointer) / BUFFER_INIT_SIZE) + 2));
         }
 
         memcpy(track+(*pointer), v_time, v_size);
