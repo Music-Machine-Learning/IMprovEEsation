@@ -542,9 +542,9 @@ void setupSoloers(uint32_t solocount, uint32_t *sololist, int measures_count){
             soloers_num = 2;
             soloers = (soloer_s *) calloc(soloers_num, sizeof(soloer_s));
             soloers[0].id = SOLOER_NONE;
-            soloers[0].measures_to_go = current_pattern->measures_count;
+            soloers[0].measures_to_go = measures_count / 2;
             soloers[1].id = leader;
-            soloers[1].measures_to_go = measures_count - current_pattern->measures_count;
+            soloers[1].measures_to_go = measures_count / 2 + (measures_count % 2);
         }
 
     } else {
@@ -557,7 +557,7 @@ void setupSoloers(uint32_t solocount, uint32_t *sololist, int measures_count){
     soloer = 0;
 }
 
-void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *sololist, int measures_count){
+int init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *sololist, int measures_count){
     struct rc_conf_s conf;
     genre = (char*) calloc(strlen(gen)+1, sizeof(char));
     strcpy(genre, gen);
@@ -571,21 +571,43 @@ void init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solo
 
     if(load_conf(DEFAULT_RC_PATH, &conf) < 4){
         fprintf(stderr, "error while loading configuration (%s)\n", strerror(errno));
+        return FALSE;
     }
 
     database = db_connect(conf.db_host,
                           conf.db_name,
                           conf.db_user,
                           conf.db_passwd);
+    if(database == NULL){
+        fprintf(stderr, "failed to connect to database (%s):\n"
+                "\tdb_host: %s\n"
+                "\tdb_name: %s\n"
+                "\tdb_user: %s\n"
+                "\tdb_password: %s\n", strerror(errno), conf.db_host, conf.db_name, conf.db_user, conf.db_passwd);
+        return FALSE;
+    }
 
-    get_genres(database, &genresList);
-    get_subgenres(database, genre, &subgenresList);
+    if(get_genres(database, &genresList) <= -1){
+        fprintf(stderr, "error while retrieving genres from db (%s)\n", strerror(errno));
+        return FALSE;
+    }
+
+    if(get_subgenres(database, genre, &subgenresList) <= -1){
+        fprintf(stderr, "error while retrieving subgenres from db (%s)\n", strerror(errno));
+        return FALSE;
+    }
 
     load_genre_info(genre, sub);
+    if(!current_pattern){
+        fprintf(stderr, "error while loading genre infos\n");
+        return FALSE;
+    }
 
     setupSoloers(solocount, sololist, measures_count);
 
     init_score_defs();
+
+    return TRUE;
 }
 
 void free_director_core(){

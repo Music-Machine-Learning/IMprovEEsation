@@ -134,9 +134,6 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
 {
 	
 	int i,j;
-	int chcounter = 0;
-	unsigned char mdata[3];
-	struct subscription_s *cmusician;
 	
 	*fd = open(dev, O_WRONLY);
 	//*fd = open("/dev/snd/midiC2D0", O_WRONLY); // FIXME
@@ -153,30 +150,9 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
 			data[i][j][2] = 120;
 		}
 	}
-	
-	/* Assign musicians to each channel and setup */
-	list_for_each_entry(cmusician, musicians, list) {
-		
-		/* Drums are assigned by default to channel 16 and it shouldn't be selected */
-		if(cmusician->instrument_class != DRUMS){
-			Channels[cmusician->instrument_class] = chcounter;
-			mdata[0] = SELECT_INSTRUMENT(chcounter);
-			mdata[1] = cmusician->instrument_class;
-			mdata[2] = 120; // this is useless, just for parallelism
-			/* Send the instrument setup to midi (we need just 2 params) */
-			write(*fd, mdata, 2);
-            writeNote(atom_counter, mdata); /* not properly a write NOTE */
-			
-			printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, (chcounter + 1));
-			chcounter++;
-		} else {
-			Channels[DRUMS] = 15; /* Assigning drums to channel 16 (15 starting from 0)*/
-			printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, 16);
-		}
-		
-		/* Parameters for the MIDI file */
-        initFile("output.MID", &Channels, 120, fd); // FIXME hardcode
-	}
+
+    /* Parameters for the MIDI file */
+    initFile("output.MID", &Channels, 120, fd, musicians); // FIXME hardcode
 	
 	return 1;
 }

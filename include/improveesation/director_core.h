@@ -56,7 +56,7 @@
 #define NOT_SOLO_MAX_SECTIONS           5
 
 // initialize director core with given genre and subgenre
-void init_director_core(char* gen, char* sub, uint32_t soloers_count, uint32_t *soloers_list, int measueres_count);
+int init_director_core(char* gen, char* sub, uint32_t soloers_count, uint32_t *soloers_list, int measueres_count);
 
 // free core structures and disconnect from db
 void free_director_core();

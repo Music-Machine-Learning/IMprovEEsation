@@ -34,13 +34,13 @@ char dyna_list[MAX_SAMPLE_ROW][16]; /* Fictional hash corresponding to the above
 char * trim(char *s); /* in configuration.cpp */
 
 int byte_size(unsigned int n){
-	int h = 0;
+    int h = 0;
 	int j = n;
 	while(j > 0){
 		h++;
 		j = j>>8;
 	}
-	return h;
+    return (h > 0 ? h : 1);
 }
 
 /* Arrange the N elements of ARRAY in random order. */

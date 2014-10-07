@@ -198,7 +198,10 @@ int main(int argc, char **argv)
 
     atexit(cleanup);
 
-    init_director_core("blues", "bebop", soloers_num, soloers, measures_count);
+    if(!init_director_core("blues", "bebop", soloers_num, soloers, measures_count)){
+        fprintf(stderr, "failed to initialize director core");
+        throw eoi_ex;
+    }
 
 	/* main loop */
 	printf("main loop\n");

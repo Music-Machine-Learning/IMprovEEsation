@@ -28,6 +28,10 @@
 #include <improveesation/midi_writer.h>
 #include <improveesation/utils.h>
 #include <improveesation/const.h>
+#include <improveesation/structs.h>
+#include <improveesation/player_core.h>
+
+#include <linux/list.h>
 
 #define BUFFER_INIT_SIZE    1024
 #define MIDI_EVENT_SIZE     3
@@ -63,10 +67,36 @@ int variabilize_val(unsigned int v, char *str){
     return s;
 }
 
-int initFile(char *fname, map<int, int> *instruments, uint8_t bpm, int *midiDev){
+int initFile(char *fname, map<int, int> *instruments, uint8_t bpm, int *midiDev, struct list_head *musicians){
     map<int, int>::iterator it;
     char *tempoEvent;
-    unsigned int i, s, t;
+    unsigned int i, t;
+    struct subscription_s *cmusician;
+    int chcounter = 0, s;
+    unsigned char mdata[3];
+
+    dev = midiDev;
+
+    /* Assign musicians to each channel and setup */
+    list_for_each_entry(cmusician, musicians, list) {
+
+        /* Drums are assigned by default to channel 16 and it shouldn't be selected */
+        if(cmusician->instrument_class != DRUMS){
+            (*instruments)[cmusician->instrument_class] = chcounter;
+            mdata[0] = SELECT_INSTRUMENT(chcounter);
+            mdata[1] = cmusician->instrument_class;
+            mdata[2] = 120; // this is useless, just for parallelism
+            /* Send the instrument setup to midi (we need just 2 params) */
+            write(*dev, mdata, 2);
+            writeNote(0, mdata); /* not properly a write NOTE */
+
+            printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, (chcounter + 1));
+            chcounter++;
+        } else {
+            (*instruments)[DRUMS] = 15; /* Assigning drums to channel 16 (15 starting from 0)*/
+            printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, 16);
+        }
+    }
 
     midifile = fopen(fname, "w+b");
     if(midifile == NULL){
