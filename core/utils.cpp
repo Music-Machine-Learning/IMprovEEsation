@@ -135,6 +135,7 @@ int parse_sample(const char * filename){
 		} while(1);
 	}
 	
+	dyna_list[n][0] = -1; /* Terminator */
 	printf("parse successful!\n");
 	
 	return 0;	
@@ -142,6 +143,22 @@ int parse_sample(const char * filename){
 
 /* This crawls the goal measures and gives the ones with the right dyna (output = list size) */
 int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna, int key_note){
+	int n;
+	int cnt = 0;
 	
-	return 0;
+	/* cycle on all the sample measures*/
+	for(n=0; (n<MAX_SAMPLE_ROW); n++){
+		
+		/* Break if we checked the terminator */
+		if (dyna_list[n][0] == -1)
+			break;
+		
+		/* Get in if we got the right dyna */ 	
+		if (!strcmp(dyna, dyna_list[n])){
+			*goal_ms[cnt] = glob_ideal[n];
+			cnt++;
+		}
+	}
+	
+	return cnt;
 }
