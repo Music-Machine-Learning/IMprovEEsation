@@ -152,8 +152,8 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
 	}
 
     /* Parameters for the MIDI file */
-    initFile("output.MID", &Channels, 120, fd, musicians); // FIXME hardcode
-	
+    initFile("output.MID", &Channels, 120, fd, musicians, musicians_num); // FIXME hardcode
+
 	return 1;
 }
 
@@ -185,6 +185,9 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 		note_pointer[i][3] = FALSE;
 	}
 	
+    printf("Channels:\n<%d> : %d\n<%d> : %d\n<%d> : %d\n", 0, Channels[0], 33, Channels[33], 16, Channels[16]);
+    fflush(stdout);
+
 	for(i=0; i<musicians_num; i++){
 		note_pointer[i][2] = (Channels[note_list[i].musician_id & 0xff]);
 		
@@ -231,7 +234,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 					
 					if (notes[j][note_pointer[j][0]].notes[0] != 255) { // if the note is not -1
 						for(k=0; k<MAX_CHORD_SIZE; k++){
-							write(fd, data[j][k], 3); // key up the previous set
+                            //write(fd, data[j][k], 3); // key up the previous set
                             writeNote(atom_counter, data[j][k]);
 						}
 						/* Notes may remain but they are set to keyup, so no bad things should happen */
@@ -250,7 +253,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 					
 					if(notes[j][note_pointer[j][0]].notes[0] < 128){ //actual note (skip if silence)
 						for(k=0; k<notes[j][note_pointer[j][0]].chord_size; k++){
-							write(fd, data[j][k], 3); // key down the new note set
+                            //write(fd, data[j][k], 3); // key down the new note set
                             writeNote(atom_counter, data[j][k]);
 						}
 						
@@ -297,7 +300,7 @@ void smorza_incosa(int fd){
 	int i,j;
 	for(i=0; i<16; i++){
 		for(j=0;j<MAX_CHORD_SIZE;j++){
-			write(fd, data[i][j], 3); // key up everything
+            //write(fd, data[i][j], 3); // key up everything
             writeNote(atom_counter, data[i][j]);
 		}
 	}

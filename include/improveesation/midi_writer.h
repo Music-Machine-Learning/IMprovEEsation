@@ -30,13 +30,13 @@
  * initialize midi file
  * returns TRUE if something bad happened
  */
-int initFile(char *fname, std::map<int, int> *instruments, uint8_t bpm, int *midiDev, struct list_head *musicians);
+int initFile(char *fname, std::map<int, int> *instruments, uint8_t bpm, int *midiDev, struct list_head *musicians, uint32_t musiciansCount);
 
 /*
  * write midi note to file, event represents note, meta are STM metadata infos and sysex are System Exclusive Events
  * returns TRUE if something bad happened
  */
-int writeNote(unsigned int atom, unsigned char* event);
+int writeNote(unsigned int atom, unsigned char* event, bool fileOnly=false);
 
 /*
  * close and save midi file
