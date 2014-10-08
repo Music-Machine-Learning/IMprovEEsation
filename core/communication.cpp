@@ -427,7 +427,7 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 		if (cprocessed > 0)
 			psize += cprocessed;
 		else
-			return;
+            break;
 	}
 	delete [] epevs;
 	close(efd);

@@ -71,6 +71,19 @@ static scale_list_s available_scales;
 
 static int impro_end;
 
+void free_improvariants(variant_couple_s *v){
+    variant_couple_s *t;
+    if(v != NULL){
+        while(v->next != NULL){
+            t = v->next;
+            free(v->subgenre);
+            free_db_results(v->pattern);
+            free(v);
+            v = t;
+        }
+    }
+}
+
 void load_genre_info(char* gen, char* sub){
     /*
      * initialize:
@@ -85,6 +98,9 @@ void load_genre_info(char* gen, char* sub){
     int i, j;
     char *variant;
     variant_couple_s *tmp, *last;
+
+    if(current_pattern)
+        free_db_results(current_pattern);
 
     get_pattern(database, gen, sub, &current_pattern);
 
@@ -104,7 +120,7 @@ void load_genre_info(char* gen, char* sub){
 
     available_scales.size = get_scales(database, gen, &(available_scales.list));
 
-    improvariants = NULL;
+    free_improvariants(improvariants);
 
     if(current_pattern->variants_size > 0){
         last = NULL;
@@ -565,6 +581,8 @@ int init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solol
     strcpy(subgenre, sub);
     impro_end = 0;
 
+    improvariants = NULL;
+
     available_scales.size = -1;
 
     srand(time(NULL));
@@ -586,6 +604,8 @@ int init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solol
                 "\tdb_password: %s\n", strerror(errno), conf.db_host, conf.db_name, conf.db_user, conf.db_passwd);
         return FALSE;
     }
+
+    free_conf(conf);
 
     if(get_genres(database, &genresList) <= -1){
         fprintf(stderr, "error while retrieving genres from db (%s)\n", strerror(errno));
@@ -611,16 +631,8 @@ int init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solol
 }
 
 void free_director_core(){
-    int i;
-    variant_couple_s *tmp;
 
-    tmp = improvariants;
-    while(improvariants != NULL){
-        free_db_results(improvariants->pattern);
-        tmp = improvariants->next;
-        free(improvariants);
-        improvariants = tmp;
-    }
+    free_improvariants(improvariants);
 
     if(available_scales.size > 0){
         free(available_scales.list);
