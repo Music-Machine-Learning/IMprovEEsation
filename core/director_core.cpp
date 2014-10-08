@@ -467,7 +467,6 @@ void decidePriorities(measure_s *measure, int current_measure_id){
 	/* TODO: Now this is just for testing but this function should 
 	   fill the prioargs array with some policy */
 	i = 0;
-	measure->prioargs[i++] = QUARTER_ARG_DYNA;
 	measure->prioargs[i++] = QUARTER_ARG_MOOD;
 	measure->prioargs[i++] = QUARTER_ARG_INSTR;
 	measure->prioargs[i++] = QUARTER_ARG_CNOTE;
@@ -476,6 +475,7 @@ void decidePriorities(measure_s *measure, int current_measure_id){
 	measure->prioargs[i++] = QUARTER_ARG_GENRE;
 	measure->prioargs[i++] = QUARTER_ARG_SCALE;
 	measure->prioargs[i++] = QUARTER_ARG_SOLO;
+	measure->prioargs[i++] = QUARTER_ARG_DYNA;
 
 	if (i != QUARTER_QUERY_ARGS)
 		printf("too many or not enough arguments checked\n");

@@ -50,45 +50,42 @@ int decide_note(float *pnote)
 
 int decide_octave(int octave_min, int octave_max)
 {
-	int r, oloop_iter, ojump, octave;
+	int octave;
 
-	r = rand();
-	oloop_iter = ojump = 0;
+	int ojump, i;
+	float r;
+	/* 15% 20% 30% 20% 15% */
+	/* TODO find a way to mathematically weight the array */
+	float pref[5] = {0.15, 0.35, 0.65, 0.85, 1.0};
 	
-	ojump = r % (OCTAVE_MAX_JUMP * 2) - OCTAVE_MAX_JUMP ;
-	
-	if (mfields.prev_octave == -1)
-		octave = (r % (octave_max - octave_min)) + octave_min;
-	else
+	printf("omax, omin (%d, %d)\n", octave_max, octave_min);
+
+	if (mfields.prev_octave == -1) {
+		/* Start from around the middle octave. 
+		   TODO let the user choose the start octave */
+		octave = (octave_max - octave_min) / 2 + octave_min;
+	} else {
 		octave = mfields.prev_octave;
-	
+	}
+
+	r = (float)rand() / (float)(RAND_MAX);
+	for (i = 0; r > pref[i]; i++);
+
+	/* -2, -1, 0, +1, +2*/
+	ojump = i - 2;
 	octave += ojump; 
 	
-	while (octave > octave_max) {
-		oloop_iter++;
-		octave--;
-	}
-	if (oloop_iter > OCTAVE_MAX_JUMP){
-		fprintf(stderr, "Warning: something not nice in "
-				"note_to_midi oloop_iter: %d\n", 
-				oloop_iter);
-	}
-	oloop_iter = 0;
-	while (octave < octave_min) {
-		oloop_iter++;
-		octave++;
-	}
+	printf("octave_jump %d\n", ojump);
 	
-	if (oloop_iter > OCTAVE_MAX_JUMP){
-		fprintf(stderr, "Warning: something not nice in "
-				"note_to_midi oloop_iter: %d\n", 
-				oloop_iter);
-	}
-
-	printf("octave_jump %d octave %d\n", ojump, octave);
+	if (octave > octave_max) 
+		octave = octave_max;
+	
+	if (octave < octave_min) 
+		octave = octave_min;
+	printf(" octave %d\n", octave);
 
 	mfields.prev_octave = octave;
-	
+
 	return octave;
 }
 /* Decide a chord reading the chord information from the director. */
