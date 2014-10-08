@@ -161,7 +161,7 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
     Channels = (int *)calloc(MIDI_CHANNELS, sizeof(int));
 
     /* Parameters for the MIDI file */
-    initFile("output.MID", &Channels, 120, fd, musicians, musicians_num); // FIXME hardcode
+    initFile(NULL, &Channels, 120, fd, musicians, musicians_num); // FIXME hardcode
 
 	return 1;
 }
