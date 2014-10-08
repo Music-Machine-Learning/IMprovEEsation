@@ -1,6 +1,6 @@
 /*****************************************************************************/
-/* Musician's core facilities declarations                                   */
-/* This header is a part of the IMprovEEsation suite.                        */
+/* Musician composistion genetic features.                                   */
+/* This program is a part of the IMprovEEsation suite.                       */
 /*                                                                           */
 /* Copyright (C) 2014                                                        */
 /* Federico Montori, Marco Melletti, Davide Berardi, Matteo Martelli         */
@@ -21,30 +21,47 @@
 /* USA.                                                                      */
 /*****************************************************************************/
 
-#ifndef MUSICAN_CORE_H
-#define MUSICAN_CORE_H
-
+#include <stdio.h>
 #include <improveesation/structs.h>
-#include <improveesation/db.h>
+#include <improveesation/musician_core.h>
+#include <improveesation/const.h>
 
-extern struct musician_fields_s mfields;
+struct pool_s {
+	int id;
+	struct play_measure_s measures[GENETIC_POOL_SIZE];
+};
 
-int compose_note(struct note_s *snote, int id);
+/* Initialize a popolation of measures starting from a certain measure */
+int init_pool(struct pool_s *pool, int pool_size, 
+		struct play_measure_s *start_ms, struct measure_s *info_ms)
+{
+	return 0;
+}
 
-int count_semiquavers(struct tempo_s time_signature);
+int new_generation(struct pool_s *pool, int pool_size, int n_best,
+			struct measure_s *info_ms)
+{
+	return 0;
+}
 
-int compose_measure(struct play_measure_s *pm, 
-		    struct play_measure_s *prev_pm, 
-		    struct measure_s *minfo, 
-		    int musician_id, 
-		    int soloist, 
-		    PGconn *dbh);
+int evolve_measure(struct play_measure_s *start_ms, struct measure_s *info_ms)
+{
+	int reference_size, g, goal_siz, goal_size;
+	struct pool_s gpool;
+	struct play_measure_s *reference_ms;
+	
+	goal_size = 1;//get_goal_measures(&goal_ms);
+	
+	if (goal_size < 0) {
+		fprintf(stderr, "Failed to get goal measures");
+		return -1;
+	}
 
-int musician_init(PGconn **dbh,
-		  int coupling, 
-		  int instrument, 
-		  int soloist, 
-		  int musician_id,
-		  int play_chords);
+	init_pool(&gpool, GENETIC_POOL_SIZE, start_ms, info_ms);
 
-#endif //MUSICAN_CORE_H
+	for (g = 0; g < GENETIC_ROUNDS; g++) {
+		/* TODO */	
+	}
+
+	return 0;
+}

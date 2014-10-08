@@ -129,8 +129,8 @@ int continue_last_note(struct play_measure_s *pm, struct play_measure_s *prev_pm
 /* Compose the notes of a quarter scanning the semiquavers retreived from 
  * the database. The number of notes inside the quarter is returned. */
 int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
-		struct measure_s *minfo, int q_idx, int max_sqcount,
-		struct semiquaver_s **sqs, int sq_size, int ntcount)
+		struct measure_s *minfo, int q_idx, struct semiquaver_s **sqs, 
+		int sq_size, int ntcount)
 {
 	float rnd;
 	int idx, i, s, ret, key_note;
@@ -138,27 +138,32 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 
 	key_note = minfo->tonal_zones[q_idx].note;
 	
-	printf("composing quarter. ntcount: %d\n", ntcount);
-	for (s = 0; s < sq_size; s++)
-		print_semiquaver(sqs[s]);
+	printf("composing quarter. (ntcount: %d)\n", ntcount);
+	/*for (s = 0; s < sq_size; s++)
+		print_semiquaver(sqs[s]);*/
 
 	/* Compose semiquavers until they are present in the array of semiquavers
 	 * that have chance to be played or until the maximum of semiquavers 
 	 * in the quarter is reached */
-	for (s = 0, i = 0; s < sq_size && i < max_sqcount; i++) {
+	for (s = 0, i = 0; i < SQS_IN_Q; i++) {
 		memset(&new_notes, 0, sizeof(new_notes));
 		new_notes.chord_size = 1;
 		
-		if (s >= max_sqcount) {
-			fprintf(stderr, "sq count too big\n");
-			return -1;
+		if (s >= sq_size){
+			continue_last_note(pm, prev_pm, &new_notes, &ntcount);
+			continue;
 		}
 
-		rnd = (float)rand() / ((float)(RAND_MAX) / 1.0);
-	
 		printf("sq_size: %d, ntcount %d, (i %d s %d spos %d) \n", 
 				sq_size, ntcount, i, s, sqs[s]->position);
 
+		if (s >= SQS_IN_Q) {
+			fprintf(stderr, "sq count too big\n");
+			return -1;
+		} 
+
+		rnd = (float)rand() / ((float)(RAND_MAX) / 1.0);
+	
 		/* If the current sq doesn't exists in the db for the picked 
 		 * quarter or if it exists but does not pass the changing prob, 
 		 * we increment the tempo of the previous note, 
@@ -198,13 +203,6 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 	}
 	
 	return ntcount;
-}
-
-int count_semiquavers(struct tempo_s time_signature)
-{
-	/* TODO: calculate the number of semiquavers according to the 
-	   time signature */
-	return 16;
 }
 
 /* Split the tags string into 3 strings contained in the "results" array which 
@@ -265,26 +263,30 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		struct measure_s *minfo, int myid, int soloist, PGconn *dbh)
 {
 
-	int q, i, max_sqcount, ntcount, res, q_size, sq_size, key_note, q_id;
+	int q, i, max_quarters, max_sqcount, ntcount, res, q_size, sq_size, 
+	    key_note, q_id;
 	char *qargs[QUARTER_QUERY_ARGS];
 	int *qids;
 	struct semiquaver_s **sqs;
 
 	q_size = ntcount = 0;
 
-	max_sqcount = count_semiquavers(minfo->tempo);
+	max_quarters = minfo->tempo.upper / (minfo->tempo.lower / 4);
+
+	max_sqcount = max_quarters * 4;
 	
 	/* Allocates the array of notes with the max count of notes as size.
 	 * It will be truncated later if the notes are lesser than the max. */
 	pm->measure = (struct notes_s *)calloc((size_t)max_sqcount,
 			sizeof(struct notes_s));
 	
+
 	/* First retrieve the quarters that may match what the director wants.
 	 * For each quarter look in the DB for the corrisponding semiquavers
 	 * and for each of them decide to change (or not) the note and in case
 	 * of changing decide which note to choose with the decision function 
 	 * which is based on the probabilities array scan. */
-	for (q = 0; q < max_sqcount/4; q++) {
+	for (q = 0; q < max_quarters; q++) {
 		res = fill_quarter_args(qargs, minfo, myid, soloist, q);
 		if (res == -1)
 			return -1;
@@ -305,14 +307,14 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		if (sq_size <= 0) {
 			fprintf(stderr, "No semiquavers found\n");
 			return -1;
-		} else if (sq_size > max_sqcount) {
+		} else if (sq_size > max_sqcount / SQS_IN_Q) {
 			fprintf(stderr, "Too many semiquavers in one quarter\n");
 			return -1;	
 		}
 
 		/* Be creative with the current quarter */
-		ntcount = compose_quarter(pm, prev_pm, minfo, q, max_sqcount,
-				sqs, sq_size, ntcount);
+		ntcount = compose_quarter(pm, prev_pm, minfo, q, sqs, 
+				sq_size, ntcount);
 		if (ntcount == -1) {
 			fprintf(stderr, "Error in quarter composition\n");
 			return -1;

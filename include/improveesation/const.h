@@ -37,6 +37,7 @@
 #define MAX_CHORD_SIZE 8
 #define MIN_CHORD_SIZE 2
 #define CHORD_LOOP_DECISIONS MAX_CHORD_SIZE * 3
+#define SQS_IN_Q 4
 
 #define TRUE 1
 #define FALSE 0
@@ -64,5 +65,8 @@ enum {
 
 #define DIR_DEFAULT_PORT 50000
 #define PLA_DEFAULT_PORT 50001
+
+#define GENETIC_ROUNDS 500
+#define GENETIC_POOL_SIZE 500
 
 #endif /* _CONST_H */
