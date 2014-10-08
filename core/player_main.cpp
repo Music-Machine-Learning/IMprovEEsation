@@ -306,6 +306,9 @@ int main(int argc, char **argv)
 
 		printf("\tPlaying measure %d\n ", i);
 		play_measure(note_list, &musicians, musicians_num, fd);
-	}
+    }
+
+    free(note_list);
+
 	return 0;
 }
