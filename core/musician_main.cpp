@@ -256,7 +256,8 @@ int main(int argc, char **argv)
 		prev_pm = pm;
 		
 		memset(&pm, 0, sizeof(struct play_measure_s));
-		memset(&nm, 0, sizeof(struct measure_s));
+		
+		clear_measure(&nm);
 
 		try {
 			recv_measure(director_socket, &nm);
