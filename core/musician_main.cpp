@@ -247,6 +247,7 @@ int main(int argc, char **argv)
 	
 	prev_pm.measure = pm.measure = NULL;
 	memset(&pm, 0, sizeof(struct play_measure_s));
+	memset(&nm, 0, sizeof(struct measure_s));	
 	/* main loop */
 	for (i = 0; ;i++) {
 		
@@ -254,10 +255,7 @@ int main(int argc, char **argv)
 		memset(&prev_pm, 0, sizeof(struct play_measure_s));
 		
 		prev_pm = pm;
-		
 		memset(&pm, 0, sizeof(struct play_measure_s));
-		memset(&nm, 0, sizeof(struct measure_s));	
-		//clear_measure(&nm);
 
 		try {
 			recv_measure(director_socket, &nm);
@@ -298,6 +296,8 @@ int main(int argc, char **argv)
 			fprintf(stderr, "EOI exception catched: exiting\n");
 			break;
 		}
+		
+		clear_measure(&nm);
 	}
 
 	return 0;
