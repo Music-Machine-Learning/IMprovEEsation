@@ -308,7 +308,7 @@ int main(int argc, char **argv)
 		play_measure(note_list, &musicians, musicians_num, fd);
     }
 
-    free(note_list);
+    free_play_measures(note_list, musicians_num);
 
 	return 0;
 }

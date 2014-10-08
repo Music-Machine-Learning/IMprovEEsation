@@ -42,8 +42,6 @@ int *dev;
 char *midifilename;
 FILE *midifile;
 
-using namespace std;
-
 /* maps midi channel to tracks buffer number */
 int instrumentsNumber;
 unsigned char **tracks;
@@ -65,18 +63,6 @@ int variabilize_val(unsigned int v, char str[]){
         str[(s-i-1)] = ((v >> (i*7)) & 0x7F) | (i==0 ? 0 : 0x80);
     }
     return s;
-}
-
-void printMap(map<int, int> *amap){
-    map<int, int>::iterator it;
-    int i;
-
-    printf("map size: %d\n", amap->size());
-
-    for(i = 0, it = amap->begin(); i < amap->size(); it++, i++){
-
-        printf("el: <%d> -> %d\n", it._M_node->_M_left, it._M_node->_M_right);
-    }
 }
 
 int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct list_head *musicians, uint32_t musiciansCount){
