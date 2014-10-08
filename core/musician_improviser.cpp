@@ -25,8 +25,7 @@
 #include <stdlib.h>
 #include <improveesation/structs.h>
 #include <improveesation/utils.h>
-
-extern struct musician_fields_s mfields;
+#include <improveesation/musician_core.h>
 
 /* Decide a note scanning an array of 13 probability values (one is the rest) */
 int decide_note(float *pnote)

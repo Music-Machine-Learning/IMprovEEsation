@@ -277,6 +277,7 @@ int main(int argc, char **argv)
 			printf("Measure: id: %d, size: %d, musid %d\n", 
 					pm.id, pm.size, pm.musician_id);
 			
+			int temposum = 0;	
 			printf("Note\tidx\tlength\ttripl\tch_size\tnotes\n");
 			for (j = 0; j < pm.size; j++){
 				nt = &(pm.measure[j]);
@@ -285,11 +286,12 @@ int main(int argc, char **argv)
 					nt->tempo, 
 					nt->triplets,
 					nt->chord_size);
+				temposum += nt->tempo;
 				for (k = 0; k < nt->chord_size; k++)
 					printf("%d, ", nt->notes[k]);
 				printf("]\n");
 			}
-			
+			printf("Tempo SUM: %d\n", temposum);	
 			send_to_play(player_socket, director_socket, &pm);
 		} catch (end_of_improvisation_exception e) {
 			fprintf(stderr, "EOI exception catched: exiting\n");
