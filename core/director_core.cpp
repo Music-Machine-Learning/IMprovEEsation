@@ -456,6 +456,9 @@ void decideImproScale(measure_s *measure, int current_measure_id){
         }
     }
 
+    free(list);
+    free(count);
+    free(tzones);
 }
 
 void decidePriorities(measure_s *measure, int current_measure_id){

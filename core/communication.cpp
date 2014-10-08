@@ -25,6 +25,7 @@
 #include <improveesation/communication.h>
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/uio.h>
@@ -724,3 +725,12 @@ void sync_all(struct list_head *musicians)
 	close(efd);
 }
 
+void clear_measure(struct measure_s *m){
+    if(m->tonal_zones != NULL)
+        free(m->tonal_zones);
+    if(m->chords != NULL)
+        free(m->chords);
+    if(m->tags.payload != NULL)
+        free(m->tags.payload);
+    memset(m, 0, sizeof(struct measure_s));
+}

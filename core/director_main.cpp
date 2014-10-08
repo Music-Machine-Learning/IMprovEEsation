@@ -43,8 +43,6 @@
 #include <getopt.h>
 #include <errno.h>
 
-#define  CLEAR_MEASURE(m) ({free(m.tonal_zones);free(m.chords);memset(&m, 0, sizeof(struct measure_s));})
-
 struct musician_registration_s {
     subscription_s *subscritpion;
     uint32_t id;
@@ -234,7 +232,7 @@ int main(int argc, char **argv)
 		/* sleep to see if things block properly */
 		sleep(1);
 
-        CLEAR_MEASURE(nm);
+        clear_measure(&nm);
 	}
 
     free_director_core();
