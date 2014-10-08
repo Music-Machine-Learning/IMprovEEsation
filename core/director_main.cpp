@@ -43,6 +43,8 @@
 #include <getopt.h>
 #include <errno.h>
 
+#define  CLEAR_MEASURE(m) ({free(m.tonal_zones);free(m.chords);memset(&m, 0, sizeof(struct measure_s));})
+
 struct musician_registration_s {
     subscription_s *subscritpion;
     uint32_t id;
@@ -124,12 +126,13 @@ int main(int argc, char **argv)
     uint32_t musicians_num, soloers_num = 0;
     int i, current_measure_num = 0, measures_per_section;
     musician_registration_s *registrations;
+    struct measure_s nm;
 	int c;
+    struct subscription_s *new_musician, *tmp_musician;
 	in_port_t port = DIR_DEFAULT_PORT;
 	
 	for (;;) {
-		int current_optind = (optind ? optind : 1);
-		int option_index = 0;
+        int option_index = 0;
 
 		static struct option long_options[] = {
 			{ "port", required_argument, 0, 'P' },
@@ -168,7 +171,7 @@ int main(int argc, char **argv)
 
 	/* Build musicians list */
 	for (i = 0; i < musicians_num; i++) {
-		struct subscription_s *new_musician = (struct subscription_s *) malloc(sizeof(struct subscription_s));
+        new_musician = (struct subscription_s *) malloc(sizeof(struct subscription_s));
 		printf("waiting for a musician\n");
 		recv_subscription(net_handler, new_musician);
 
@@ -210,10 +213,6 @@ int main(int argc, char **argv)
 	printf("main loop\n");
 
     for (i = 0; i < measures_count; i++) {
-		struct measure_s nm;
-
-		memset(&nm, 0, sizeof(struct measure_s));
-		
         printf("decide next measure:\n");
         measures_per_section = decide_next_measure(&nm, current_measure_num);
 
@@ -234,9 +233,15 @@ int main(int argc, char **argv)
 		printf("musicians syncronized.\n");
 		/* sleep to see if things block properly */
 		sleep(1);
+
+        CLEAR_MEASURE(nm);
 	}
 
     free_director_core();
+    list_for_each_entry_safe(new_musician, tmp_musician, &musicians, list){
+        free(new_musician);
+    }
+
     printf("we have come to an end\n");
     cleanup();
 	return 0;
