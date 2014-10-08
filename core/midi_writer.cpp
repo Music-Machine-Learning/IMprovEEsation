@@ -33,10 +33,14 @@
 #include <linux/list.h>
 
 #define BUFFER_INIT_SIZE            1024
-#define MIDI_EVENT_SIZE             3
 #define ATOM_TO_PPQN                12
 #define VARIABLE_VALUES_MAX_SIZE    6
 #define MIDI_HEADER_SIZE            14
+
+#define MIDI_WRITE_FILE(m)  (m&MIDI_WRITE_FILE_ONLY)
+#define MIDI_WRITE_DEV(m)   (m&MIDI_WRITE_DEV_ONLY)
+
+#define writetrack(t,s,n)   ({fwrite(s,sizeof(char),n,tracks[t]); trackPointer[t] += n;})
 
 int *dev;
 char *midifilename;
@@ -44,10 +48,10 @@ FILE *midifile;
 
 /* maps midi channel to tracks buffer number */
 int instrumentsNumber;
-unsigned char **tracks;
+FILE **tracks;
+char **tracksTmpNames;
 unsigned int *trackPointer;
 uint32_t *lastAtom;
-char header[MIDI_HEADER_SIZE];
 
 int variabilize_val(unsigned int v, char str[]){
     int s, i;
@@ -90,7 +94,8 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
         midifilename = NULL;
     }
 
-    tracks = (unsigned char **)calloc(MIDI_CHANNELS, sizeof(unsigned char *));
+    tracks = (FILE **)calloc(MIDI_CHANNELS, sizeof(FILE *));
+    tracksTmpNames = (char **)calloc(MIDI_CHANNELS, sizeof(char*));
     trackPointer = (unsigned int *)calloc(MIDI_CHANNELS, sizeof(unsigned int));
     lastAtom = (uint32_t *)calloc(MIDI_CHANNELS, sizeof(uint32_t));
 
@@ -112,14 +117,22 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
         mdata[2] = 120; // this is useless, just for parallelism
 
         if(midifilename != NULL){
-            tracks[t] = (unsigned char *)calloc(BUFFER_INIT_SIZE, sizeof(unsigned char));
-            memcpy(tracks[t], "MTrk", 4);
+            tracksTmpNames[t] = (char *)calloc(strlen(fname)+1, sizeof(char));
+            strcpy(tracksTmpNames[t], fname);
+            tracksTmpNames[t][strlen(fname)-1] = t & 0xFF;
+            printf("tmp file: %s\n", tracksTmpNames[t]);
+
+            tracks[t] = fopen(tracksTmpNames[t], "w+b");
+
+            writetrack(t, "MTrk", 4);
+
+            fseek(tracks[t], 4, SEEK_CUR);
 
             // move buffer pointer to the beginning of the midi event sequence
             trackPointer[t] = 8;
             lastAtom[t] = 0;
 
-            writeNote(0, mdata, true); /* not properly a write NOTE */
+            writeNote(0, mdata, MIDI_WRITE_FILE_ONLY, 2); /* not properly a write NOTE */
         }
 
         /* Send the instrument setup to midi (we need just 2 params) */
@@ -130,17 +143,6 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
     }
 
     if(midifilename != NULL){
-        memcpy(header, "MThd", 4);
-        /* header size */
-        header[7] = 6;
-        /* midi format */
-        header[9] = 1;
-        /* number of tracks */
-        header[11] = instrumentsNumber;
-        /* time division */
-        header[13] = ATOM_TO_PPQN;
-        header[4] = header[5] = header[6] = header[8] = header[10] = header[12] = 0;
-
         if(tracks[0]){
             t = 60000000 / bpm;
             s = byte_size(t);
@@ -150,7 +152,7 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
             tempoEvent[2] = s;
             for(i=0, s-=1; s >= 0; i++, s--)
                 tempoEvent[i] = (t >> (s * 8)) & 0xFF;
-            memcpy(tracks[0]+trackPointer[0], tempoEvent, MIDI_EVENT_SIZE);
+            writetrack(0, tempoEvent, MIDI_EVENT_SIZE);
             free(tempoEvent);
         }
         return TRUE;
@@ -158,62 +160,79 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
     return FALSE;
 }
 
-int writeNote(unsigned int atom, unsigned char* event, bool fileOnly){
-    unsigned int chnum, v_size, i, j;
-    unsigned int *pointer;
-    unsigned char *track;
+int writeNote(unsigned int atom, unsigned char* event, uint8_t mode, uint8_t size){
+    unsigned int chnum, v_size, i;
     char v_time[VARIABLE_VALUES_MAX_SIZE];
     /* write to midi dev */
-    if(!fileOnly)
-        write(*dev, event, MIDI_EVENT_SIZE);
+    if(MIDI_WRITE_DEV(mode))
+        write(*dev, event, size);
 
     /* write to midi buffer */
-    if(midifilename != NULL){
+    if(midifilename != NULL && MIDI_WRITE_FILE(mode)){
         chnum = event[0] & 0xF;
-        pointer = &(trackPointer[chnum]);
-        track = tracks[chnum];
 
-        i = atom - lastAtom[chnum];
+        if(tracks[chnum] != NULL){
+            i = atom - lastAtom[chnum];
 
-        v_size = variabilize_val(i, v_time);
+            v_size = variabilize_val(i, v_time);
+            if(v_size == 0)
+                fprintf(stderr, "shit happened variabilizing %d..\n", i);
 
-        if(v_size == 0)
-            fprintf(stderr, "shit happened variabilizing %d..\n", i);
+            writetrack(chnum, v_time, v_size);
 
-        //check della morte da rifare
-        if(((*pointer) % BUFFER_INIT_SIZE) + (MIDI_EVENT_SIZE + v_size) > BUFFER_INIT_SIZE){
-            track = (unsigned char *) realloc (track, BUFFER_INIT_SIZE * (((*pointer) / BUFFER_INIT_SIZE) + 2));
+            writetrack(chnum, event, size);
+
+            lastAtom[chnum] = atom;
         }
-
-        memcpy(track+(*pointer), v_time, v_size);
-        *pointer += v_size;
-
-        memcpy(track+(*pointer), event, MIDI_EVENT_SIZE);
-        *pointer += MIDI_EVENT_SIZE;
-
-        lastAtom[chnum] = atom;
     }
 }
 
 int closeFile(){
-    int i;
+    int i, c;
 
     if(midifilename != NULL){
         midifile = fopen(midifilename, "w");
         if(midifile == NULL){
             fprintf(stderr, "midi file %s is not valid\n", midifilename);
         } else {
+            char header[MIDI_HEADER_SIZE];
+            memset(header, 0, MIDI_HEADER_SIZE*sizeof(char));
+
+            memcpy(header, "MThd", 4);
+            /* header size */
+            header[7] = 6;
+            /* midi format */
+            header[9] = 1;
+            /* number of tracks */
+            header[11] = instrumentsNumber;
+            /* time division */
+            header[13] = ATOM_TO_PPQN;
+
             fwrite(header, sizeof(char), MIDI_HEADER_SIZE, midifile);
 
-            for(i = 0; i < instrumentsNumber; i++){
-                tracks[i][4] = (((uint32_t)(trackPointer[i]-8))<<24)&0xFF;
-                tracks[i][5] = (((uint32_t)(trackPointer[i]-8))<<16)&0xFF;
-                tracks[i][6] = (((uint32_t)(trackPointer[i]-8))<<8)&0xFF;
-                tracks[i][7] = ((uint32_t)(trackPointer[i]-8))&0xFF;
+            for(i = 0; i < MIDI_CHANNELS; i++){
+                if(tracks[i] != NULL){
+                    char dataLen[4];
+                    fseek(tracks[i], 4, SEEK_SET);
+                    dataLen[0] = (((uint32_t)(trackPointer[i]-8))<<24)&0xFF;
+                    dataLen[1] = (((uint32_t)(trackPointer[i]-8))<<16)&0xFF;
+                    dataLen[2] = (((uint32_t)(trackPointer[i]-8))<<8)&0xFF;
+                    dataLen[3] = ((uint32_t)(trackPointer[i]-8))&0xFF;
+                    writetrack(i,dataLen,4);
 
-                fwrite(tracks[i], sizeof(char), trackPointer[i], midifile);
+                    fseek(tracks[i], 0, SEEK_SET);
+                    while((c = getc(tracks[i])) != EOF){
+                        putc(c, midifile);
+                    }
 
-                free(tracks[i]);
+                    if(fclose(tracks[i])){
+                        fprintf(stderr, "error while closing midi tmp file for channel %d\n", i);
+                    }
+
+                    if(remove(tracksTmpNames[i])){
+                        fprintf(stderr, "error while removing midi tmp file %s\n", tracksTmpNames[i]);
+                    }
+                }
             }
 
             if(fclose(midifile)){
@@ -221,7 +240,13 @@ int closeFile(){
             }
         }
     }
+    for(i = 0; i < MIDI_CHANNELS; i++){
+        if(tracksTmpNames[i] != NULL){
+            free(tracksTmpNames[i]);
+        }
+    }
     free(tracks);
+    free(tracksTmpNames);
     free(trackPointer);
     free(lastAtom);
 }

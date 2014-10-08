@@ -26,6 +26,12 @@
 #include <stdint.h>
 #include <improveesation/player_core.h>
 
+#define MIDI_WRITE_DEV_ONLY     0b01
+#define MIDI_WRITE_FILE_ONLY    0b10
+#define MIDI_WRITE_BOTH         0b11
+
+#define MIDI_EVENT_SIZE         3
+
 /*
  * initialize midi file
  * returns TRUE if something bad happened
@@ -36,7 +42,7 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
  * write midi note to file, event represents note, meta are STM metadata infos and sysex are System Exclusive Events
  * returns TRUE if something bad happened
  */
-int writeNote(unsigned int atom, unsigned char* event, bool fileOnly=false);
+int writeNote(unsigned int atom, unsigned char* event, uint8_t mode=MIDI_WRITE_BOTH, uint8_t size=MIDI_EVENT_SIZE);
 
 /*
  * close and save midi file

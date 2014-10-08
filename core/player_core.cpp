@@ -161,7 +161,7 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
     Channels = (int *)calloc(MIDI_CHANNELS, sizeof(int));
 
     /* Parameters for the MIDI file */
-    initFile(NULL, &Channels, 120, fd, musicians, musicians_num); // FIXME hardcode
+    initFile("out.mid", &Channels, 120, fd, musicians, musicians_num); // FIXME hardcode
 
 	return 1;
 }
@@ -308,7 +308,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 void smorza_incosa(int fd){
 	int i,j;
 	for(i=0; i<16; i++){
-		for(j=0;j<MAX_CHORD_SIZE;j++){
+        for(j=0;j<MAX_CHORD_SIZE;j++){
             //write(fd, data[i][j], 3); // key up everything
             writeNote(atom_counter, data[i][j]);
 		}
