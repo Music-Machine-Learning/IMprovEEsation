@@ -334,10 +334,13 @@ int main(int argc, char **argv)
 				printf("]\n");
 			}
 			printf("Tempo SUM: %d\n", temposum);	
-			if (genetic)
+			if (genetic) {
 				store_gmeasure(&pm);
-			else 
+				send_sync_ack(director_socket);
+			}
+			else  {
 				send_to_play(player_socket, director_socket, &pm);
+			}
 
 		} catch (end_of_improvisation_exception e) {
 			fprintf(stderr, "EOI exception catched: exiting\n");

@@ -46,6 +46,9 @@ uint32_t send_subscription_fields(int director, uint32_t coupling,
 
 void recv_measure(int director, struct measure_s *newMeasure);
 
+/* offline (manual ack) */
+void send_to_play(int player, struct play_measure_s *measure);
+/* online (auto ack) */
 void send_to_play(int player, int director,
 		  struct play_measure_s *measure);
 
@@ -53,6 +56,7 @@ void send_to_play(int player, int director,
 uint32_t recv_num_of_musicians(int net_handler);
 void recv_to_play(struct play_measure_s *note_list, struct list_head *sources);
 void send_ack(int conn_socket);
+void send_sync_ack(int conn_socket);
 
 /* Director */
 uint32_t recv_player(int conn_socket);
