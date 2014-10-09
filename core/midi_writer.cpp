@@ -34,6 +34,7 @@
 
 #define BUFFER_INIT_SIZE            1024
 #define ATOM_TO_PPQN                12
+#define ATOM_LEN                    80
 #define VARIABLE_VALUES_MAX_SIZE    6
 #define MIDI_HEADER_SIZE            14
 
@@ -172,7 +173,7 @@ int writeNote(unsigned int atom, unsigned char* event, uint8_t mode, uint8_t siz
         chnum = event[0] & 0xF;
 
         if(tracks[chnum] != NULL){
-            i = atom - lastAtom[chnum];
+            i = (atom - lastAtom[chnum]) * ATOM_LEN;
 
             v_size = variabilize_val(i, v_time);
             if(v_size == 0)
@@ -189,6 +190,7 @@ int writeNote(unsigned int atom, unsigned char* event, uint8_t mode, uint8_t siz
 
 int closeFile(){
     int i, c;
+    unsigned int s;
 
     if(midifilename != NULL){
         midifile = fopen(midifilename, "w");
@@ -206,18 +208,20 @@ int closeFile(){
             /* number of tracks */
             header[11] = instrumentsNumber;
             /* time division */
-            header[13] = ATOM_TO_PPQN;
+            header[13] = ATOM_TO_PPQN * ATOM_LEN;
 
             fwrite(header, sizeof(char), MIDI_HEADER_SIZE, midifile);
 
             for(i = 0; i < MIDI_CHANNELS; i++){
                 if(tracks[i] != NULL){
                     char dataLen[4];
+                    s = trackPointer[i] - 8;
                     fseek(tracks[i], 4, SEEK_SET);
-                    dataLen[0] = (((uint32_t)(trackPointer[i]-8))<<24)&0xFF;
-                    dataLen[1] = (((uint32_t)(trackPointer[i]-8))<<16)&0xFF;
-                    dataLen[2] = (((uint32_t)(trackPointer[i]-8))<<8)&0xFF;
-                    dataLen[3] = ((uint32_t)(trackPointer[i]-8))&0xFF;
+
+                    dataLen[0] = (char) (s>>24)&0xFF;
+                    dataLen[1] = (char) (s>>16)&0xFF;
+                    dataLen[2] = (char) (s>>8)&0xFF;
+                    dataLen[3] = (char) s&0xFF;
                     writetrack(i,dataLen,4);
 
                     fseek(tracks[i], 0, SEEK_SET);
