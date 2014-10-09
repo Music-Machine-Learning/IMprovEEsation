@@ -55,23 +55,13 @@ add_library(improveesation_communication SHARED
 add_library(improveesation_db SHARED
 	"${CORE_SOURCE_PROJECT_DIR}/db.cpp")
 
-find_path(PostgreSQL_TYPE_INCLUDE_DIR
-		NAMES catalog/pg_type.h
-		PATHS
-# Look in other places.
-		${PostgreSQL_ROOT_DIRECTORIES}
-		PATH_SUFFIXES
-		postgresql
-		pgsql/server
-		postgresql/server
-		include/server
-# Help the user find it if we cannot.
-	DOC "The ${PostgreSQL_INCLUDE_DIR_MESSAGE}"
-)
+# XXX Some os configurations have some problems with the "Required" flag
+find_package(PostgreSQL)
 
-find_package(PostgreSQL REQUIRED)
-include_directories(${PostgreSQL_INCLUDE_DIR})
-set (POSTGRES_DB_LIBRARY ${PostgreSQL_LIBRARIES})
+if (POSTGRESQL_FOUND)
+	include_directories(${PostgreSQL_INCLUDE_DIR})
+	set (POSTGRES_DB_LIBRARY ${PostgreSQL_LIBRARIES})
+endif()
 
 set(EXTRA_NET_LIBRARIES improveesation_communication)
 set(EXTRA_DB_LIBRARIES improveesation_db pq)
