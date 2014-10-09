@@ -45,6 +45,7 @@ int musician_init(PGconn **dbh,
 		  int instrument, 
 		  int soloist, 
 		  int musician_id,
-		  int play_chords);
+		  int play_chords,
+		  int genetic);
 
 #endif //MUSICAN_CORE_H

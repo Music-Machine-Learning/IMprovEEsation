@@ -55,7 +55,7 @@ libimpro_db.so : $(CORE_DIR)/db.cpp
 	rm $(BUILD_DIR)/libimpro_db.o
 
 $(BUILD_DIR)/%: $(CORE_DIR)/%*.cpp
-        $(CXX) $(EXE_CXXFLAGS) $^ core/midi_writer.cpp core/utils.cpp core/configuration.cpp -o $@ $(LINK_CXX_ENDFLAGS)
+	$(CXX) $(EXE_CXXFLAGS) $^ core/midi_writer.cpp core/utils.cpp core/configuration.cpp -o $@ $(LINK_CXX_ENDFLAGS)
 
 
 clean:
