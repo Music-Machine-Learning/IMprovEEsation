@@ -1,6 +1,6 @@
 /*****************************************************************************/
-/* Musician composistion genetic features.                                   */
-/* This program is a part of the IMprovEEsation suite.                       */
+/* Musician's genetic facilities declarations                                */
+/* This header is a part of the IMprovEEsation suite.                        */
 /*                                                                           */
 /* Copyright (C) 2014                                                        */
 /* Federico Montori, Marco Melletti, Davide Berardi, Matteo Martelli         */
@@ -21,6 +21,12 @@
 /* USA.                                                                      */
 /*****************************************************************************/
 
+#ifndef MUSICAN_GENETIC_H
+#define MUSICAN_GENETIC_H
+
 #include <improveesation/structs.h>
 
-int evolve_measure(struct play_measure_s *start_ms, struct measure_s *info_ms);
+int musician_init_genetic(int genetic_mode);
+int store_gmeasure(struct play_measure_s *pm);
+
+#endif //MUSICAN_GENETIC_H

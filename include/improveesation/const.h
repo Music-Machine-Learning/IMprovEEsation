@@ -68,4 +68,6 @@ enum {
 #define GENETIC_ROUNDS 500
 #define GENETIC_POOL_SIZE 500
 
+#define PIECE_START_SIZE 32
+
 #endif /* _CONST_H */
