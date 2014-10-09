@@ -111,7 +111,7 @@
 
 void fill_test_musician(subscription_s *new_musician, int prog);
 void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musicians_num);
-int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, char * dev);
+int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, char * dev, char *fname);
 void play_measure(struct play_measure_s *note_list, struct list_head *musicians, uint32_t musicians_num, int fd);
 void smorza_incosa(int fd);
 

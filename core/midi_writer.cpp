@@ -38,6 +38,8 @@
 #define VARIABLE_VALUES_MAX_SIZE    6
 #define MIDI_HEADER_SIZE            14
 
+#define SPECIAL_TRACK_SIZE          (7+8+6+9)
+
 #define MIDI_WRITE_FILE(m)  (m&MIDI_WRITE_FILE_ONLY)
 #define MIDI_WRITE_DEV(m)   (m&MIDI_WRITE_DEV_ONLY)
 
@@ -53,6 +55,8 @@ FILE **tracks;
 char **tracksTmpNames;
 unsigned int *trackPointer;
 uint32_t *lastAtom;
+
+uint8_t timeref;
 
 int variabilize_val(unsigned int v, char str[]){
     int s, i;
@@ -70,15 +74,73 @@ int variabilize_val(unsigned int v, char str[]){
     return s;
 }
 
+void writeSpecialTrack(){
+    char data[9];
+    unsigned int t;
+
+    fwrite("MTrk", sizeof(char), 4, midifile);
+
+    data[0] = (char) (SPECIAL_TRACK_SIZE >> 24) & 0xFF;
+    data[1] = (char) (SPECIAL_TRACK_SIZE >> 16) & 0xFF;
+    data[2] = (char) (SPECIAL_TRACK_SIZE >> 8) & 0xFF;
+    data[3] = (char) SPECIAL_TRACK_SIZE & 0xFF;
+    fwrite(data, sizeof(char), 4, midifile);
+
+    /* set tempo */
+    t = 60000000 / timeref;
+    data[0] = (char) 0;
+    data[1] = (char) 0xFF;
+    data[2] = (char) 0x51;
+    data[3] = (char) 3;
+    data[4] = (char) (t>>16)&0xFF;
+    data[5] = (char) (t>>8)&0xFF;
+    data[6] = (char) t&0xFF;
+    fwrite(data, sizeof(char), 7, midifile);
+
+    /* time signature FIXME:hardcoded */
+    data[0] = (char) 0;
+    data[1] = (char) 0xFF;
+    data[2] = (char) 0x58;
+    data[3] = (char) 4;
+    data[4] = (char) 4;
+    data[5] = (char) 4;
+    data[6] = (char) 24;
+    data[7] = (char) 8;
+    fwrite(data, sizeof(char), 8, midifile);
+
+    /* sequence number */
+    data[0] = (char) 0;
+    data[1] = (char) 0xFF;
+    data[2] = (char) 0;
+    data[3] = (char) 2;
+    data[4] = (char) 0;
+    data[5] = (char) 1;
+    fwrite(data, sizeof(char), 6, midifile);
+
+    /* SMPTE offset */
+    data[0] = (char) 0;
+    data[1] = (char) 0xFF;
+    data[2] = (char) 0x54;
+    data[3] = (char) 5;
+    data[4] = (char) 0;
+    data[5] = (char) 0;
+    data[6] = (char) 0;
+    data[7] = (char) 0;
+    data[8] = (char) 0;
+    fwrite(data, sizeof(char), 9, midifile);
+
+
+}
+
 int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct list_head *musicians, uint32_t musiciansCount){
-    char *tempoEvent;
     unsigned int i, t;
     struct subscription_s *cmusician;
-    int chcounter = 0, s;
+    int chcounter = 0;
     unsigned char mdata[3];
 
     dev = midiDev;
     instrumentsNumber = musiciansCount;
+    timeref = bpm;
 
     if(fname != NULL){
         midifilename = (char*)malloc(strlen(fname)*sizeof(char));
@@ -129,8 +191,7 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
 
             fseek(tracks[t], 4, SEEK_CUR);
 
-            // move buffer pointer to the beginning of the midi event sequence
-            trackPointer[t] = 8;
+            trackPointer[t] = 0;
             lastAtom[t] = 0;
 
             writeNote(0, mdata, MIDI_WRITE_FILE_ONLY, 2); /* not properly a write NOTE */
@@ -143,22 +204,7 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
         printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, chcounter);
     }
 
-    if(midifilename != NULL){
-        if(tracks[0]){
-            t = 60000000 / bpm;
-            s = byte_size(t);
-            tempoEvent = (char *) calloc(3+s, sizeof(char));
-            tempoEvent[0] = 0xFF;
-            tempoEvent[1] = 0x51;
-            tempoEvent[2] = s;
-            for(i=0, s-=1; s >= 0; i++, s--)
-                tempoEvent[i] = (t >> (s * 8)) & 0xFF;
-            writetrack(0, tempoEvent, MIDI_EVENT_SIZE);
-            free(tempoEvent);
-        }
-        return TRUE;
-    }
-    return FALSE;
+    return(midifilename != NULL ? TRUE : FALSE);
 }
 
 int writeNote(unsigned int atom, unsigned char* event, uint8_t mode, uint8_t size){
@@ -205,19 +251,30 @@ int closeFile(){
             header[7] = 6;
             /* midi format */
             header[9] = 1;
-            /* number of tracks */
-            header[11] = instrumentsNumber;
+            /* number of tracks (plus the special track) */
+            header[11] = instrumentsNumber+1;
             /* time division */
-            header[13] = ATOM_TO_PPQN * ATOM_LEN;
+            header[12] = ((ATOM_TO_PPQN * ATOM_LEN) >> 8) & 0xFF;
+            header[13] = (ATOM_TO_PPQN * ATOM_LEN) & 0xFF;
 
             fwrite(header, sizeof(char), MIDI_HEADER_SIZE, midifile);
+
+            writeSpecialTrack();
 
             for(i = 0; i < MIDI_CHANNELS; i++){
                 if(tracks[i] != NULL){
                     char dataLen[4];
-                    s = trackPointer[i] - 8;
+
+                    /*end of track message*/
+                    dataLen[0] = (char) 0;
+                    dataLen[1] = (char) 0xFF;
+                    dataLen[2] = (char) 0x2F;
+                    dataLen[3] = (char) 0;
+                    writetrack(i,dataLen,4);
+
                     fseek(tracks[i], 4, SEEK_SET);
 
+                    s = trackPointer[i];
                     dataLen[0] = (char) (s>>24)&0xFF;
                     dataLen[1] = (char) (s>>16)&0xFF;
                     dataLen[2] = (char) (s>>8)&0xFF;
@@ -233,9 +290,9 @@ int closeFile(){
                         fprintf(stderr, "error while closing midi tmp file for channel %d\n", i);
                     }
 
-                    if(remove(tracksTmpNames[i])){
+                    /*if(remove(tracksTmpNames[i])){
                         fprintf(stderr, "error while removing midi tmp file %s\n", tracksTmpNames[i]);
-                    }
+                    }*/
                 }
             }
 

@@ -137,7 +137,7 @@ void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musi
 	
 }
 
-int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, char * dev)
+int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, char * dev, char *fname)
 {
 	
 	int i,j;
@@ -161,7 +161,7 @@ int midi_init(struct list_head *musicians, uint32_t musicians_num, int * fd, cha
     Channels = (int *)calloc(MIDI_CHANNELS, sizeof(int));
 
     /* Parameters for the MIDI file */
-    initFile("out.mid", &Channels, 120, fd, musicians, musicians_num); // FIXME hardcode
+    initFile(fname, &Channels, 120, fd, musicians, musicians_num); // FIXME hardcode
 
 	return 1;
 }
