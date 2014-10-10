@@ -38,7 +38,7 @@
 #define VARIABLE_VALUES_MAX_SIZE    6
 #define MIDI_HEADER_SIZE            14
 
-#define SPECIAL_TRACK_SIZE          (7+8+6+9)
+#define SPECIAL_TRACK_SIZE          (7+8+6+9+4)
 
 #define MIDI_WRITE_FILE(m)  (m&MIDI_WRITE_FILE_ONLY)
 #define MIDI_WRITE_DEV(m)   (m&MIDI_WRITE_DEV_ONLY)
@@ -129,6 +129,13 @@ void writeSpecialTrack(){
     data[8] = (char) 0;
     fwrite(data, sizeof(char), 9, midifile);
 
+
+    /* end of track message */
+    data[0] = (char) 0;
+    data[1] = (char) 0xFF;
+    data[2] = (char) 0x2F;
+    data[3] = (char) 0;
+    fwrite(data, sizeof(char), 4, midifile);
 
 }
 
