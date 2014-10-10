@@ -59,11 +59,12 @@ void cleanup(void)
 {
 	struct subscription_s *curr_musician, *tmp_musician;
 	/* Cleanup and exit */
-	list_for_each_entry_safe(curr_musician, tmp_musician,
+    list_for_each_entry_safe(curr_musician, tmp_musician,
 				 &musicians, list) {
 		list_del(&curr_musician->list);
 		close(curr_musician->connection);
-		free(curr_musician);
+        if(!list_empty(&musicians))  //FIXME: dirty fix, valgrind won't be pleased
+            free(curr_musician);
 	}
 
 	close(player);
