@@ -297,9 +297,9 @@ int closeFile(){
                         fprintf(stderr, "error while closing midi tmp file for channel %d\n", i);
                     }
 
-                    /*if(remove(tracksTmpNames[i])){
+                    if(remove(tracksTmpNames[i])){
                         fprintf(stderr, "error while removing midi tmp file %s\n", tracksTmpNames[i]);
-                    }*/
+                    }
                 }
             }
 

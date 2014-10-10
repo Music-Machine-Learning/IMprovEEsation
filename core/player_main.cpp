@@ -215,7 +215,7 @@ int main(int argc, char **argv)
 
 	/* Check if the test flag is active */
 	if (argc - optind + 1 <= 2){
-		printf("./player <midi_dev> <seconds-to-sleep>(-1 if we want to wait the impro to end) [--test]\nThe device's name is located is usually similar to /dev/midi1 or /dev/snd/midiC2D0.\nRemember to use -D DEBUG in compiling to obtain very verbose output.\n");
+        printf("./player <midi_dev> <seconds-to-sleep>(-1 if we want to wait the impro to end) [<filename.mid>] [--test]\nThe device's name is located is usually similar to /dev/midi1 or /dev/snd/midiC2D0.\nRemember to use -D DEBUG in compiling to obtain very verbose output.\n");
 		exit(0);
 	} else if ((argc - optind + 1 > 3) && !strcmp(argv[optind + 2], "--test")){
 		test_flag = TRUE;
@@ -276,7 +276,7 @@ int main(int argc, char **argv)
 	}
 	
 	printf("\n");
-    if (!midi_init(&musicians, musicians_num, &fd, argv[optind], "out.mid")){ //someone should get the filename from the args..
+    if (!midi_init(&musicians, musicians_num, &fd, argv[optind], argv[optind+2])){ //someone should get the filename from the args..
 		return 1;
 	};
 		
