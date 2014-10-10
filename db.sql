@@ -1,4 +1,45 @@
 --
+-- PostgreSQL database cluster dump
+--
+
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+
+--
+-- Roles
+--
+
+CREATE ROLE postgres;
+ALTER ROLE postgres WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION;
+CREATE ROLE read_only;
+ALTER ROLE read_only WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN NOREPLICATION PASSWORD 'md54c37fd589c47b3d64e69baaec73ebfa2';
+
+
+
+
+
+
+--
+-- Database creation
+--
+
+CREATE DATABASE improveesation WITH TEMPLATE = template0 OWNER = postgres;
+REVOKE ALL ON DATABASE improveesation FROM PUBLIC;
+REVOKE ALL ON DATABASE improveesation FROM postgres;
+GRANT ALL ON DATABASE improveesation TO postgres;
+GRANT CONNECT,TEMPORARY ON DATABASE improveesation TO PUBLIC;
+REVOKE ALL ON DATABASE postgres FROM PUBLIC;
+REVOKE ALL ON DATABASE postgres FROM postgres;
+GRANT ALL ON DATABASE postgres TO postgres;
+REVOKE ALL ON DATABASE template1 FROM PUBLIC;
+REVOKE ALL ON DATABASE template1 FROM postgres;
+GRANT ALL ON DATABASE template1 TO postgres;
+GRANT CONNECT ON DATABASE template1 TO PUBLIC;
+
+
+\connect improveesation
+
+--
 -- PostgreSQL database dump
 --
 
@@ -443,19 +484,19 @@ COPY instrument (id, octave_min, octave_max, name, id_class) FROM stdin;
 29	2	6	Overdrive Guitar	3
 30	2	6	Distortion Guitar	3
 31	2	6	Guitar Harmonics	3
-32	1	4	Acoustic Bass	4
-34	1	4	Electric Bass (pick)	4
-33	1	4	Electric Bass (finger)	4
-35	1	4	Fretless Bass	4
-36	1	4	Slap Bass 1	4
-37	1	4	Slap Bass 2	4
-38	1	4	Synth Bass 1	4
-39	1	4	Synth Bass 2	4
 8	4	7	Celesta	1
 9	5	7	Glockenspiel	1
 11	3	7	Vibraphone	1
 23	0	7	Tango Accordion	2
 22	3	7	Harmonica	2
+32	1	2	Acoustic Bass	4
+34	1	2	Electric Bass (pick)	4
+33	1	2	Electric Bass (finger)	4
+35	1	2	Fretless Bass	4
+36	1	2	Slap Bass 1	4
+37	1	2	Slap Bass 2	4
+38	1	2	Synth Bass 1	4
+39	1	2	Synth Bass 2	4
 \.
 
 
@@ -545,6 +586,10 @@ COPY quarter (id, pos, instrument_class, chord_note, chord_mode, tag_dyna, tag_m
 18	1	0	5	1169	groove	pushed	4	f
 19	2	0	5	1169	groove	pushed	4	f
 20	3	0	5	1169	groove	pushed	4	f
+38	0	0	5	1169	fill	slow	4	f
+39	0	4	5	1169	fill	slow	4	f
+40	1	4	5	1169	fill	slow	4	f
+41	1	0	5	1169	fill	slow	4	f
 \.
 
 
@@ -552,7 +597,7 @@ COPY quarter (id, pos, instrument_class, chord_note, chord_mode, tag_dyna, tag_m
 -- Name: quarter_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('quarter_id_seq', 37, true);
+SELECT pg_catalog.setval('quarter_id_seq', 41, true);
 
 
 --
@@ -593,6 +638,13 @@ SELECT pg_catalog.setval('scale_genre_id_seq', 8, true);
 --
 
 COPY semiquaver (id, pos, quarter, velocity_min, velocity_max, pchange, pchange_3qrt, pchange_3qvr, pchange_3smq, pnote) FROM stdin;
+97	0	38	100	200	0.800000000000000044	0	0	0	{0,0.800000000000000044,0,0,0,0,0,0,0.200000000000000011,0,0,0,0}
+98	0	39	100	200	0.800000000000000044	0	0	0	{0,0.800000000000000044,0,0,0,0,0,0,0.200000000000000011,0,0,0,0}
+99	2	38	100	200	0.800000000000000044	0	0	0	{0,0.800000000000000044,0,0,0,0,0,0,0.200000000000000011,0,0,0,0}
+100	2	40	100	200	0.800000000000000044	0	0	0	{0,0.800000000000000044,0,0,0,0,0,0,0.200000000000000011,0,0,0,0}
+101	2	41	100	200	0.800000000000000044	0	0	0	{0,0.800000000000000044,0,0,0,0,0,0,0.200000000000000011,0,0,0,0}
+102	0	41	100	200	0.800000000000000044	0	0	0	{0.800000000000000044,0.100000000000000006,0,0,0,0,0,0,0.100000000000000006,0,0,0,0}
+103	0	40	100	200	0.800000000000000044	0	0	0	{0.800000000000000044,0.100000000000000006,0,0,0,0,0,0,0.100000000000000006,0,0,0,0}
 10	0	7	100	200	0.5	0	0	0	{0.25,0.25,0,0,0,0.25,0,0,0.25,0,0,0,0}
 11	2	7	100	200	0.5	0	0	0	{0.25,0.25,0,0,0,0.25,0,0,0.25,0,0,0,0}
 12	0	8	100	200	0.5	0	0	0	{0.25,0.25,0,0,0,0.25,0,0,0.25,0,0,0,0}
@@ -682,7 +734,7 @@ COPY semiquaver (id, pos, quarter, velocity_min, velocity_max, pchange, pchange_
 -- Name: semiquaver_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('semiquaver_id_seq', 96, true);
+SELECT pg_catalog.setval('semiquaver_id_seq', 103, true);
 
 
 --
@@ -1059,5 +1111,104 @@ ALTER DEFAULT PRIVILEGES FOR ROLE read_only IN SCHEMA public GRANT USAGE ON SEQU
 
 --
 -- PostgreSQL database dump complete
+--
+
+\connect postgres
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- Name: postgres; Type: COMMENT; Schema: -; Owner: postgres
+--
+
+COMMENT ON DATABASE postgres IS 'default administrative connection database';
+
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\connect template1
+
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- Name: template1; Type: COMMENT; Schema: -; Owner: postgres
+--
+
+COMMENT ON DATABASE template1 IS 'default template for new databases';
+
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database cluster dump complete
 --
 

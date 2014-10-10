@@ -276,7 +276,7 @@ int main(int argc, char **argv)
 	}
 	
 	printf("\n");
-	if (!midi_init(&musicians, musicians_num, &fd, argv[optind])){
+    if (!midi_init(&musicians, musicians_num, &fd, argv[optind], "out.mid")){ //someone should get the filename from the args..
 		return 1;
 	};
 		

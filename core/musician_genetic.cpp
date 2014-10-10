@@ -26,42 +26,68 @@
 #include <improveesation/musician_core.h>
 #include <improveesation/const.h>
 
-struct pool_s {
-	int id;
-	struct play_measure_s measures[GENETIC_POOL_SIZE];
-};
-
-/* Initialize a popolation of measures starting from a certain measure */
-int init_pool(struct pool_s *pool, int pool_size, 
-		struct play_measure_s *start_ms, struct measure_s *info_ms)
+int musician_init_genetic(int genetic_mode)
 {
-	return 0;
-}
+	if (!genetic_mode) {
+		mfields.ginitial.notes = NULL;
+		mfields.ggoal.notes = NULL;
+		return 0;
+	}
 
-int new_generation(struct pool_s *pool, int pool_size, int n_best,
-			struct measure_s *info_ms)
-{
-	return 0;
-}
+	mfields.ginitial.notes = (struct notes_s *)malloc(PIECE_START_SIZE * 
+				  sizeof(struct notes_s));
 
-int evolve_measure(struct play_measure_s *start_ms, struct measure_s *info_ms)
-{
-	int reference_size, g, goal_siz, goal_size;
-	struct pool_s gpool;
-	struct play_measure_s *reference_ms;
+	if (mfields.ginitial.notes == NULL) {
+		fprintf(stderr, "Malloc error in init_genetic\n");
+		return -1;
+	}
 	
-	goal_size = 1;//get_goal_measures(&goal_ms);
-	
-	if (goal_size < 0) {
-		fprintf(stderr, "Failed to get goal measures");
+	mfields.ggoal.notes = (struct notes_s *)malloc(PIECE_START_SIZE * 
+				  sizeof(struct notes_s));
+
+	if (mfields.ggoal.notes == NULL) {
+		fprintf(stderr, "Malloc error in init_genetic\n");
 		return -1;
 	}
 
-	init_pool(&gpool, GENETIC_POOL_SIZE, start_ms, info_ms);
+	mfields.ggoal.size = mfields.ginitial.size = PIECE_START_SIZE;
+	mfields.ggoal.count = mfields.ginitial.count = 0;
+	return 0;
+}
 
-	for (g = 0; g < GENETIC_ROUNDS; g++) {
-		/* TODO */	
+int store_gmeasure(struct play_measure_s *pm)
+{
+	int i, s;
+	s = mfields.ginitial.count;
+
+	if (s + pm->size > mfields.ginitial.size) {
+		int newsize = mfields.ginitial.size * 2;
+		mfields.ginitial.notes = (struct notes_s *) 
+			realloc((void *)mfields.ginitial.notes, (size_t)newsize);
+		if (mfields.ginitial.notes == NULL){
+			fprintf(stderr, "Realloc error in store_measure\n");
+			return -1;
+		}
+		mfields.ginitial.size = newsize;
+		
 	}
+	
+	for (i = 0; i < pm->size; i++) {
+		mfields.ginitial.notes[s++] = pm->measure[i];
+	}
+	mfields.ginitial.count = s;
 
+	/* TODO: take the goal measure from the other array */
+	s = mfields.ggoal.count;
+	if (s + pm->size > mfields.ggoal.size) { /* TODO substitute pm->size with the goal notes size */
+		int newsize = mfields.ggoal.size * 2;
+		mfields.ggoal.notes = (struct notes_s *) 
+			realloc((void *)mfields.ggoal.notes, (size_t)newsize);
+		if (mfields.ggoal.notes == NULL){
+			fprintf(stderr, "Realloc error in store_measure\n");
+			return -1;
+		}
+		mfields.ggoal.size = newsize;
+	}
 	return 0;
 }

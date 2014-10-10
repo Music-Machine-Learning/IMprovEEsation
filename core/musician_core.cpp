@@ -22,6 +22,7 @@
 /*****************************************************************************/
 
 #include <improveesation/musician_improviser.h>
+#include <improveesation/musician_genetic.h>
 #include <improveesation/configuration.h>
 #include <improveesation/communication.h>
 #include <improveesation/structs.h>
@@ -37,8 +38,8 @@ struct musician_fields_s mfields;
 
 int print_semiquaver(struct semiquaver_s *sq);
 
-int musician_init(PGconn **dbh, int coupling, int instrument, 
-			int soloist, int musician_id, int play_chords)
+int musician_init(PGconn **dbh, int coupling, int instrument, int soloist, 
+		int musician_id, int play_chords, int genetic)
 {
 	int res;
 	struct rc_conf_s conf;
@@ -65,8 +66,9 @@ int musician_init(PGconn **dbh, int coupling, int instrument,
 
 	res = get_range(*dbh, instrument, &(mfields.octave_min), 
 			&(mfields.octave_max));
+	
 	if (res != 0 || (mfields.octave_max - mfields.octave_min) > MIDI_NOCTAVES)
-		fprintf(stderr, "initialization failed\n");
+		return -1;
 
 	return 0;
 }
