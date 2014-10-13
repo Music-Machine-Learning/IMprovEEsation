@@ -469,11 +469,11 @@ void decidePriorities(measure_s *measure, int current_measure_id){
 	i = 0;
 	measure->prioargs[i++] = QUARTER_ARG_MOOD;
 	measure->prioargs[i++] = QUARTER_ARG_INSTR;
-	measure->prioargs[i++] = QUARTER_ARG_CNOTE;
-	measure->prioargs[i++] = QUARTER_ARG_CMODE;
 	measure->prioargs[i++] = QUARTER_ARG_POS;
 	measure->prioargs[i++] = QUARTER_ARG_GENRE;
+	measure->prioargs[i++] = QUARTER_ARG_CMODE;
 	measure->prioargs[i++] = QUARTER_ARG_SCALE;
+	measure->prioargs[i++] = QUARTER_ARG_CNOTE;
 	measure->prioargs[i++] = QUARTER_ARG_SOLO;
 	measure->prioargs[i++] = QUARTER_ARG_DYNA;
 

@@ -1,5 +1,5 @@
-# dyna,fst_unchanged,note,semiq_n,note,semiq_n,note,semiq_n...
-groove,0,12,4,0,7,2,0,9,2,0,0,2,0,4,6,0
-groove,0,3,4,0,2,2,0,0,2,0,2,4,0,0,4,0
-fill,0,0,6,0,4,10,0
-fill,0,0,6,0,7,10,0
+# dyna,fst_unchanged(note,tempo,tripl)(note,tempo,tripl)
+groove,0,0,4,0,8,2,0,10,2,0,1,2,0,5,6,0
+groove,0,4,4,0,3,2,0,1,2,0,3,4,0,1,4,0
+fill,0,1,6,0,5,10,0
+fill,0,1,6,0,8,10,0

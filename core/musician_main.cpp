@@ -335,7 +335,7 @@ int main(int argc, char **argv)
 			}
 			printf("Tempo SUM: %d\n", temposum);	
 			if (genetic) {
-				store_gmeasure(&pm);
+				store_gmeasure(&pm, &nm);
 				send_sync_ack(director_socket);
 			}
 			else  {
@@ -352,5 +352,10 @@ int main(int argc, char **argv)
 		clear_measure(&nm);
 	}
 	
+	if (genetic) {
+		send_to_play(player_socket, director_socket, &pm);	
+	}
+
+
 	return 0;
 }
