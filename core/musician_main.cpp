@@ -28,6 +28,7 @@
 #include <improveesation/musician_core.h>
 #include <improveesation/db.h>
 #include <improveesation/const.h>
+#include <improveesation/musician_genetic.h>
 
 #include <sys/time.h>
 #include <unistd.h>
@@ -130,18 +131,31 @@ void exit_usage(char *usage)
 
 int main(int argc, char **argv)
 {
-	int i, j, k, coupling, midi_class, soloist, res, randfd, play_chords;
+	int i, j, k;
+	int coupling, midi_class, soloist, play_chords, genetic;
+	int res, randfd;
+	int c;
+	int digit_optind = 0;
+	int default_player = 1, default_director = 1;
 	unsigned seed;
 	struct sockaddr_in sout_director, sout_player;
 	struct notes_s *nt;
 	PGconn *dbh;
 	char *usage;
 	struct timeval tv;
-	int c;
-	int digit_optind = 0;
-	int default_player = 1, default_director = 1;
  
-	asprintf(&usage, "%s <coupling> <midi-class> <soloist> <chord_mode>\n",
+
+	coupling = soloist = play_chords = genetic = 0;
+	midi_class = -1; /* required arg */
+
+	asprintf(&usage, "Usage: %s [OPTION...] INSTRUMENT\n\n"
+		"  -h, --help                print this help\n"
+		"  -c, --coupling=COUPLING   set the coupling id\n"
+		"  -C, --chords              enable the chord playing mode\n"
+		"  -s, --soloist             enable the soloist playing mode\n"
+		"  -p, --player=hostname     specify a remote player\n"
+		"  -d, --director=hostname   specify a remote director\n\n"
+		"  -g, --genetic             enable the genetic loop mode\n",
 			argv[0]);
 	
 	for (;;) {
@@ -149,15 +163,31 @@ int main(int argc, char **argv)
 		int option_index = 0;
 
 		static struct option long_options[] = {
+			{ "help", no_argument, 0, 'h' },
+			{ "coupling", required_argument, 0, 'c' },
+			{ "chords", no_argument, 0, 'C'},
+			{ "soloist", no_argument, 0, 's' },
 			{ "player", required_argument, 0, 'p' },
 			{ "director", required_argument, 0, 'd' },
+			{ "genetic", no_argument, 0, 'g' },
 			{ 0, 0, 0, 0 },
 		};
-		c = getopt_long(argc, argv, "p:d:",
+		c = getopt_long(argc, argv, "hc:Csp:d:g",
 				long_options, &option_index);
 		if (c == -1)
 			break;
 		switch(c) {
+			case 'h':
+				exit_usage(usage);
+			case 'c':
+				coupling = atoi(optarg);
+				break;
+			case 'C':
+				play_chords = 1;
+				break;
+			case 's':
+				soloist = 1;
+				break;
 			case 'p':
 				default_player = 0;
 				dns_query(optarg, &sout_player,
@@ -170,8 +200,12 @@ int main(int argc, char **argv)
 					  DIR_DEFAULT_PORT);
 				printf("director: %s\n", optarg);
 				break;
+			case 'g':
+				genetic = 1;
+				printf("Genetic mode activated\n");
+				break;
 			default:
-				printf("option not recognized\n");
+				exit_usage(usage);
 		}
 	}
 
@@ -182,15 +216,17 @@ int main(int argc, char **argv)
 		dns_query(NULL, &sout_player,
 			  PLA_DEFAULT_PORT);
 
-
-	if (argc - optind + 1 < 5){
+	printf("optind: %d\n", optind);
+	if (argc - optind < 1) {
+		printf("Which instrument do you want to play?\n");
 		exit_usage(usage);
 	} else {
-		coupling = atoi(argv[optind]);
-		midi_class = atoi(argv[optind + 1]);
-		soloist = atoi(argv[optind + 2]);
-		play_chords = atoi(argv[optind + 3]);
+		midi_class = atoi(argv[optind]);
 	}
+
+
+	printf("coup inst solo chords\n");
+	printf("%d    %d     %d    %d\n", coupling, midi_class, soloist, play_chords);
 
 	randfd = open("/dev/urandom", O_RDONLY);
 	if (read(randfd, &seed, sizeof(seed)) < sizeof(seed)) {
@@ -235,18 +271,26 @@ int main(int argc, char **argv)
 			fcntl(player_socket, F_GETFL, 0) | O_NONBLOCK);
 
 	printf("connected to player\n");
-
+	
 	if (musician_init(&dbh, coupling, midi_class, soloist, 
-					myid, play_chords) == -1){
+					myid, play_chords, genetic) == -1) {
 		fprintf(stderr, "Initialization failed\n");
 		exit(EXIT_FAILURE);
 	}
+
+	/* Initialize the genetic world if the genetic mode is enabled */
+	if (musician_init_genetic(genetic) == -1) {
+		fprintf(stderr, "Initialization failed\n");
+		exit(EXIT_FAILURE);
+	}
+
 
 	struct measure_s nm;
 	struct play_measure_s pm, prev_pm;
 	
 	prev_pm.measure = pm.measure = NULL;
 	memset(&pm, 0, sizeof(struct play_measure_s));
+	memset(&nm, 0, sizeof(struct measure_s));	
 	/* main loop */
 	for (i = 0; ;i++) {
 		
@@ -254,9 +298,7 @@ int main(int argc, char **argv)
 		memset(&prev_pm, 0, sizeof(struct play_measure_s));
 		
 		prev_pm = pm;
-		
 		memset(&pm, 0, sizeof(struct play_measure_s));
-		memset(&nm, 0, sizeof(struct measure_s));
 
 		try {
 			recv_measure(director_socket, &nm);
@@ -292,12 +334,23 @@ int main(int argc, char **argv)
 				printf("]\n");
 			}
 			printf("Tempo SUM: %d\n", temposum);	
-			send_to_play(player_socket, director_socket, &pm);
+			if (genetic) {
+				store_gmeasure(&pm);
+				send_sync_ack(director_socket);
+			}
+			else  {
+				send_to_play(player_socket, director_socket, &pm);
+			}
+
 		} catch (end_of_improvisation_exception e) {
 			fprintf(stderr, "EOI exception catched: exiting\n");
+			free(mfields.ginitial.notes);
+			free(mfields.ggoal.notes);
 			break;
 		}
+		
+		clear_measure(&nm);
 	}
-
+	
 	return 0;
 }

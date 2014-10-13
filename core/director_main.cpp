@@ -43,8 +43,6 @@
 #include <getopt.h>
 #include <errno.h>
 
-#define  CLEAR_MEASURE(m) ({free(m.tonal_zones);free(m.chords);memset(&m, 0, sizeof(struct measure_s));})
-
 struct musician_registration_s {
     subscription_s *subscritpion;
     uint32_t id;
@@ -61,11 +59,12 @@ void cleanup(void)
 {
 	struct subscription_s *curr_musician, *tmp_musician;
 	/* Cleanup and exit */
-	list_for_each_entry_safe(curr_musician, tmp_musician,
+    list_for_each_entry_safe(curr_musician, tmp_musician,
 				 &musicians, list) {
 		list_del(&curr_musician->list);
 		close(curr_musician->connection);
-		free(curr_musician);
+        if(!list_empty(&musicians))  //FIXME: dirty fix, valgrind won't be pleased
+            free(curr_musician);
 	}
 
 	close(player);
@@ -234,7 +233,7 @@ int main(int argc, char **argv)
 		/* sleep to see if things block properly */
 		sleep(1);
 
-        CLEAR_MEASURE(nm);
+        clear_measure(&nm);
 	}
 
     free_director_core();

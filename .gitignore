@@ -34,3 +34,6 @@ tags
 
 # crappy qtcreator files
 *.user
+
+# generated midi files
+*.mid

@@ -25,6 +25,7 @@
 #include <improveesation/communication.h>
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/uio.h>
@@ -245,11 +246,19 @@ void recv_measure(int director, struct measure_s *new_measure)
 	delete []tmp_iov;
 }
 
-void send_to_play(int player, int director,
-		struct play_measure_s *measure)
+void send_sync_ack(int director)
+{
+	uint8_t sack = SYNC_ACK;
+	if (write(director, &sack, sizeof(sack)) <= 0) {
+		perror("write");
+		throw net_ex;
+		return;
+	}
+}
+
+void send_to_play(int player, struct play_measure_s *measure)
 {
 	int j;
-	uint8_t sack = SYNC_ACK;
 	struct iovec iov[measure->size * 5 + 4];
 	uint32_t measure_size_bck = measure->size;
 
@@ -277,13 +286,15 @@ void send_to_play(int player, int director,
 
 
 	IOVEC_NTOHL(iov, 3);
+}
+
+/* auto ack version */
+void send_to_play(int player, int director, struct play_measure_s *measure)
+{
+	send_to_play(player, measure);
 
 	/* director ack */
-	if (write(director, &sack, sizeof(sack)) <= 0) {
-		perror("write");
-		throw net_ex;
-		return;
-	}
+	send_sync_ack(director);
 }
 
 /* Midi player */
@@ -724,3 +735,12 @@ void sync_all(struct list_head *musicians)
 	close(efd);
 }
 
+void clear_measure(struct measure_s *m){
+    if(m->tonal_zones != NULL)
+        free(m->tonal_zones);
+    if(m->chords != NULL)
+        free(m->chords);
+    if(m->tags.payload != NULL)
+        free(m->tags.payload);
+    memset(m, 0, sizeof(struct measure_s));
+}

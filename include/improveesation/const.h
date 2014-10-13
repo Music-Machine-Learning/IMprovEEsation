@@ -29,15 +29,14 @@
 #define PROB_ARR_SIZE NSEMITONES + 1
 #define OCTAVE_MAX_JUMP 2
 #define MIDI_NOCTAVES  8 /* From A0 to C8 */
-#define MIDI_FIRST_NOTE 21 /* A0 */
+#define MIDI_FIRST_NOTE 12 /* C0 */
 #define MIDI_LAST_NOTE 108 /* C8 */
 #define MIDI_REST_NOTE	128
 
 #define NO_COUPLING 0
 #define MAX_CHORD_SIZE 8
 #define MIN_CHORD_SIZE 2
-#define CHORD_LOOP_DECISIONS MAX_CHORD_SIZE * 3
-#define SQS_IN_Q 4
+#define SQS_IN_Q 4 /* number of semiquavers in one quarter */
 
 #define TRUE 1
 #define FALSE 0
@@ -68,5 +67,7 @@ enum {
 
 #define GENETIC_ROUNDS 500
 #define GENETIC_POOL_SIZE 500
+
+#define PIECE_START_SIZE 32
 
 #endif /* _CONST_H */
