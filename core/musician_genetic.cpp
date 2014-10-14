@@ -25,13 +25,20 @@
 #include <improveesation/structs.h>
 #include <improveesation/musician_core.h>
 #include <improveesation/const.h>
+#include <improveesation/utils.h>
 
-int musician_init_genetic(int genetic_mode)
+int musician_init_genetic(int genetic_mode, const char *samplesfile)
 {
 	if (!genetic_mode) {
 		mfields.ginitial.notes = NULL;
 		mfields.ggoal.notes = NULL;
 		return 0;
+	}
+
+	printf("samplefile: %s\n");
+	if (parse_sample(samplesfile) == -1) {
+		fprintf(stderr, "Failed to parse samples file\n");
+		return -1;
 	}
 
 	mfields.ginitial.notes = (struct notes_s *)malloc(PIECE_START_SIZE * 
@@ -55,9 +62,12 @@ int musician_init_genetic(int genetic_mode)
 	return 0;
 }
 
-int store_gmeasure(struct play_measure_s *pm)
+int store_gmeasure(struct play_measure_s *pm, struct measure_s *minfo)
 {
-	int i, s;
+	int i, s, ngoal, r_idx, idx, size, 
+	    max_quarters, max_sqs, q, sq_count, key_note;
+	struct play_measure_s *goal_ms, goal_m;
+	char *tags[N_TAGS];
 	s = mfields.ginitial.count;
 
 	if (s + pm->size > mfields.ginitial.size) {
@@ -73,13 +83,30 @@ int store_gmeasure(struct play_measure_s *pm)
 	}
 	
 	for (i = 0; i < pm->size; i++) {
+
 		mfields.ginitial.notes[s++] = pm->measure[i];
 	}
 	mfields.ginitial.count = s;
 
-	/* TODO: take the goal measure from the other array */
+
+
+	if (split_tags(minfo->tags.payload, tags) == -1){
+		fprintf(stderr, "%s\n", "Error in split_tags");
+		return -1;
+	}
+
+	/* Retrieve a set of goal measure from the list of samples */
+	ngoal = get_goal_measures(&goal_ms, tags[0]);
+	if (ngoal == -1)
+		return -1;
+
+	r_idx = rand() % ngoal;
+	goal_m = goal_ms[r_idx];
+
+	/* Check if the size of the goal piece note container is enough
+	 * for the new goal measure. If it's not, realloc it (double size) */
 	s = mfields.ggoal.count;
-	if (s + pm->size > mfields.ggoal.size) { /* TODO substitute pm->size with the goal notes size */
+	if (s + goal_m.size > mfields.ggoal.size) { 
 		int newsize = mfields.ggoal.size * 2;
 		mfields.ggoal.notes = (struct notes_s *) 
 			realloc((void *)mfields.ggoal.notes, (size_t)newsize);
@@ -89,5 +116,26 @@ int store_gmeasure(struct play_measure_s *pm)
 		}
 		mfields.ggoal.size = newsize;
 	}
+	
+	max_quarters = minfo->tempo.upper / (minfo->tempo.lower / SQS_IN_Q);
+	max_sqs = max_quarters * SQS_IN_Q;
+	q = sq_count = key_note = 0;
+	
+	/* Copy each note of a goal measure into the global goal piece */
+	for (i = 0; i < goal_m.size && sq_count < max_sqs; i++) {
+		mfields.ggoal.notes[s++] = goal_m.measure[i];
+		q = sq_count / SQS_IN_Q;
+		key_note = minfo->tonal_zones[q].note;
+
+		sq_count += goal_m.measure[i].tempo;
+	}
+	
+	if (sq_count != max_sqs) {
+		fprintf(stderr, "Sqs wrong count in the goal samples\n");
+		return -1;
+	}
+
+	free(goal_ms);
+
 	return 0;
 }

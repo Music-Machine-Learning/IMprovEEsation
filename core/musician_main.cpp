@@ -141,12 +141,13 @@ int main(int argc, char **argv)
 	struct sockaddr_in sout_director, sout_player;
 	struct notes_s *nt;
 	PGconn *dbh;
-	char *usage;
+	char *usage, *samples_file_path;
 	struct timeval tv;
  
 
 	coupling = soloist = play_chords = genetic = 0;
 	midi_class = -1; /* required arg */
+	samples_file_path = NULL;
 
 	asprintf(&usage, "Usage: %s [OPTION...] INSTRUMENT\n\n"
 		"  -h, --help                print this help\n"
@@ -155,7 +156,7 @@ int main(int argc, char **argv)
 		"  -s, --soloist             enable the soloist playing mode\n"
 		"  -p, --player=hostname     specify a remote player\n"
 		"  -d, --director=hostname   specify a remote director\n\n"
-		"  -g, --genetic             enable the genetic loop mode\n",
+		"  -g, --genetic=samplefile  enable the genetic loop mode\n",
 			argv[0]);
 	
 	for (;;) {
@@ -169,10 +170,10 @@ int main(int argc, char **argv)
 			{ "soloist", no_argument, 0, 's' },
 			{ "player", required_argument, 0, 'p' },
 			{ "director", required_argument, 0, 'd' },
-			{ "genetic", no_argument, 0, 'g' },
+			{ "genetic", required_argument, 0, 'g' },
 			{ 0, 0, 0, 0 },
 		};
-		c = getopt_long(argc, argv, "hc:Csp:d:g",
+		c = getopt_long(argc, argv, "hc:Csp:d:g:",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -201,7 +202,8 @@ int main(int argc, char **argv)
 				printf("director: %s\n", optarg);
 				break;
 			case 'g':
-				genetic = 1;
+				genetic = 1;		
+				asprintf(&samples_file_path, "%s", optarg);
 				printf("Genetic mode activated\n");
 				break;
 			default:
@@ -279,7 +281,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Initialize the genetic world if the genetic mode is enabled */
-	if (musician_init_genetic(genetic) == -1) {
+	if (musician_init_genetic(genetic, samples_file_path) == -1) {
 		fprintf(stderr, "Initialization failed\n");
 		exit(EXIT_FAILURE);
 	}
@@ -335,7 +337,7 @@ int main(int argc, char **argv)
 			}
 			printf("Tempo SUM: %d\n", temposum);	
 			if (genetic) {
-				store_gmeasure(&pm);
+				store_gmeasure(&pm, &nm);
 				send_sync_ack(director_socket);
 			}
 			else  {
@@ -352,5 +354,10 @@ int main(int argc, char **argv)
 		clear_measure(&nm);
 	}
 	
+	if (genetic) {
+		send_to_play(player_socket, director_socket, &pm);	
+	}
+
+
 	return 0;
 }

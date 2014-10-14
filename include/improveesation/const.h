@@ -38,6 +38,8 @@
 #define MIN_CHORD_SIZE 2
 #define SQS_IN_Q 4 /* number of semiquavers in one quarter */
 
+#define N_TAGS 3
+
 #define TRUE 1
 #define FALSE 0
 

@@ -83,7 +83,7 @@ int note_to_midi(int note_idx, int key_note)
 	} else {
 		octave = decide_octave(mfields.octave_min, mfields.octave_max);
 		midi = (MIDI_FIRST_NOTE + (NSEMITONES * octave)) + 
-				key_note + note_idx;
+				key_note + (note_idx - 1);
 		if (midi < MIDI_FIRST_NOTE)
 			midi += NSEMITONES;
 		else if (midi > MIDI_LAST_NOTE)
@@ -207,36 +207,13 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 	return ntcount;
 }
 
-/* Split the tags string into 3 strings contained in the "results" array which 
- * should be already allocated */
-int split_tags(char *tags_str, char **tags)
-{
-
-	char *tmp;
-	const char *del = ";";	
-	int i = 0;
-
-	asprintf(&tmp, "%s", tags_str);
-
-	tags[0] = strtok(tmp, del);
-	tags[1] = strtok(NULL, del);
-	tags[2] = strtok(NULL, del);
-	
-	if (!tags[0] || !tags[1] || !tags[2]){
-		fprintf(stderr, "%s\n", "NULL pointer after strtok");
-		return -1;
-	}
-
-	return 0;
-}
-
 int fill_quarter_args(char **args, struct measure_s *minfo, int myid,
 			int soloist, int q_idx)
 {
 	int quarter_solo;
 	char *qpos, *qinstr, *qchord_note, *qchorde_mode, *qdyna, *qmood,
 		*qgenre, *qscale;
-	char *qtags[3]; //TODO check for real how many tags are there
+	char *qtags[N_TAGS];
 
 	if (split_tags(minfo->tags.payload, qtags) == -1){
 		fprintf(stderr, "%s\n", "Error in split_tags");
@@ -273,9 +250,9 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 
 	q_size = ntcount = 0;
 
-	max_quarters = minfo->tempo.upper / (minfo->tempo.lower / 4);
+	max_quarters = minfo->tempo.upper / (minfo->tempo.lower / SQS_IN_Q);
 
-	max_sqcount = max_quarters * 4;
+	max_sqcount = max_quarters * SQS_IN_Q;
 	
 	/* Allocates the array of notes with the max count of notes as size.
 	 * It will be truncated later if the notes are lesser than the max. */

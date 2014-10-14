@@ -29,6 +29,7 @@
 #include <improveesation/utils.h>
 
 struct play_measure_s glob_ideal[MAX_SAMPLE_ROW];
+/* TODO: Come on man! What's this 16 here? Clean and explain it */
 char dyna_list[MAX_SAMPLE_ROW][16]; /* Fictional hash corresponding to the above array */
 
 char * trim(char *s); /* in configuration.cpp */
@@ -41,6 +42,29 @@ int byte_size(unsigned int n){
 		j = j>>8;
 	}
     return (h > 0 ? h : 1);
+}
+
+/* Split the tags string into 3 strings contained in the "results" array which 
+ * should be already allocated */
+int split_tags(char *tags_str, char **tags)
+{
+
+	char *tmp;
+	const char *del = ";";	
+	int i = 0;
+
+	asprintf(&tmp, "%s", tags_str);
+
+	tags[0] = strtok(tmp, del);
+	tags[1] = strtok(NULL, del);
+	tags[2] = strtok(NULL, del);
+	
+	if (!tags[0] || !tags[1] || !tags[2]){
+		fprintf(stderr, "%s\n", "NULL pointer after strtok");
+		return -1;
+	}
+
+	return 0;
 }
 
 /* Arrange the N elements of ARRAY in random order. */
@@ -61,7 +85,8 @@ void shuffle_array(int *array, size_t n)
 
 /* This allocs a list of "ideal" patterns */
 /* the list is extracted from the file given in input selecting the dynamics also given */
-int parse_sample(const char * filename){
+int parse_sample(const char * filename)
+{
 	int res = 0;
 	FILE* file = fopen(filename, "r");
 	if (!file){
@@ -79,13 +104,13 @@ int parse_sample(const char * filename){
 	for (n = 0; (csize = getline(&line, &size, file)) > 0; n++) {
 		/* avoid comments */
 		strcpy(line, trim(line));
-		if (line[0] == '#' || size <= 1){
+		if (line[0] == '#' || size <= 1) {
 			n--;
 			#ifdef DEBUG
 			printf("Found comment\n");
 			#endif
 			continue;
-			}
+		}
 		
 		/* Parse the CSV string */
 
@@ -100,7 +125,8 @@ int parse_sample(const char * filename){
 		glob_ideal[n].unchanged_fst = atoi(strtok(NULL, ","));
 		glob_ideal[n].size = 0;
 		/* For now we allocate the max size of a play_measure */
-		glob_ideal[n].measure = (struct notes_s *) malloc(sizeof(struct notes_s) * 48);
+		/* TODO: again? 48?!! Check the malloc return too */
+		glob_ideal[n].measure = (struct notes_s *)malloc(sizeof(struct notes_s) * 48);
 		
 		do {
 			/* Read in this weird way three by three the parameters (note,time,triplet flag) */
@@ -142,23 +168,43 @@ int parse_sample(const char * filename){
 }
 
 /* This crawls the goal measures and gives the ones with the right dyna (output = list size) */
-int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna, int key_note){
+int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna)
+{
 	int n;
 	int cnt = 0;
-	
+
+	(*goal_ms) = (struct play_measure_s *)calloc(MAX_SAMPLE_ROW, 
+			sizeof(struct play_measure_s));
+
+	if (*goal_ms == NULL) {
+		fprintf(stderr, "Malloc error in get_goal_measures\n");
+		return -1;
+	}
+
+
 	/* cycle on all the sample measures*/
-	for(n=0; (n<MAX_SAMPLE_ROW); n++){
+	for (n=0; n < MAX_SAMPLE_ROW; n++) {
 		
 		/* Break if we checked the terminator */
 		if (dyna_list[n][0] == -1)
 			break;
 		
 		/* Get in if we got the right dyna */ 	
-		if (!strcmp(dyna, dyna_list[n])){
+		if (!strcmp(dyna, dyna_list[n])) {
 			*goal_ms[cnt] = glob_ideal[n];
 			cnt++;
 		}
 	}
 	
+	if (cnt < MAX_SAMPLE_ROW) {
+		(*goal_ms) = (struct play_measure_s *)realloc((*goal_ms),
+				cnt * sizeof(struct play_measure_s));
+		
+		if (*goal_ms == NULL) {
+			fprintf(stderr, "Malloc error in get_goal_measures\n");
+			return -1;
+		}
+	}
+
 	return cnt;
 }
