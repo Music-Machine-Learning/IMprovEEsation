@@ -27,12 +27,18 @@
 #include <improveesation/const.h>
 #include <improveesation/utils.h>
 
-int musician_init_genetic(int genetic_mode)
+int musician_init_genetic(int genetic_mode, const char *samplesfile)
 {
 	if (!genetic_mode) {
 		mfields.ginitial.notes = NULL;
 		mfields.ggoal.notes = NULL;
 		return 0;
+	}
+
+	printf("samplefile: %s\n");
+	if (parse_sample(samplesfile) == -1) {
+		fprintf(stderr, "Failed to parse samples file\n");
+		return -1;
 	}
 
 	mfields.ginitial.notes = (struct notes_s *)malloc(PIECE_START_SIZE * 
@@ -114,6 +120,7 @@ int store_gmeasure(struct play_measure_s *pm, struct measure_s *minfo)
 	max_quarters = minfo->tempo.upper / (minfo->tempo.lower / SQS_IN_Q);
 	max_sqs = max_quarters * SQS_IN_Q;
 	q = sq_count = key_note = 0;
+	
 	/* Copy each note of a goal measure into the global goal piece */
 	for (i = 0; i < goal_m.size && sq_count < max_sqs; i++) {
 		mfields.ggoal.notes[s++] = goal_m.measure[i];

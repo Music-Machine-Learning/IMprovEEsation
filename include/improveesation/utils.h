@@ -32,7 +32,7 @@
 
 void shuffle_array(int *array, size_t n);
 int split_tags(char *tags_str, char **tags);
-int parse_sample(char * filename);
+int parse_sample(const char * filename);
 int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna);
 int byte_size(unsigned int n);
 

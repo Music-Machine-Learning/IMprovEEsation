@@ -26,7 +26,7 @@
 
 #include <improveesation/structs.h>
 
-int musician_init_genetic(int genetic_mode);
+int musician_init_genetic(int genetic_mode, const char *samplesfile);
 int store_gmeasure(struct play_measure_s *pm, struct measure_s *minfo);
 
 #endif //MUSICAN_GENETIC_H
