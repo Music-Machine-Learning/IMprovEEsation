@@ -31,13 +31,13 @@
 #define GENRE_CHANGE_THRESHOLD			0
 #define GENRE_CHANGE_ON_ONE_THRESHOLD	30
 
-#define MOOD_CHANGE_THRESHOLD			30  //testing purpose only, needs to be dropped to at most 1
+#define MOOD_CHANGE_THRESHOLD			1
 #define MOOD_CHANGE_ON_ONE_THRESHOLD	10
 
 #define CHORD_CHANGE_THRESHOLD			5
 #define CHORD_CHANGE_ON_ONE_THRESHOLD	0
 
-#define RANDOM_MULTI_CHORD_THRESHOLD    40  //FIXME: probably tends to lead to ugly results...
+#define RANDOM_MULTI_CHORD_THRESHOLD    5
 
 #define CHORD_MINOR						0b000010001001
 #define CHORD_MAJOR						0b000010010001
