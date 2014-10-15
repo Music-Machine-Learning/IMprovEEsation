@@ -26,6 +26,7 @@
 #include <improveesation/structs.h>
 #include <improveesation/utils.h>
 #include <improveesation/musician_core.h>
+#include <improveesation/const.h>
 
 /* Decide a note scanning an array of 13 probability values (one is the rest) */
 int decide_note(float *pnote)
@@ -177,8 +178,23 @@ int decide_chord(struct notes_s *chord, struct measure_s *minfo, int q_idx)
 	mfields.prev_octave = octave;
 
 	if (n_done > MAX_CHORD_SIZE || chord->chord_size > MAX_CHORD_SIZE || 
-			n_done < MIN_CHORD_SIZE || chord->chord_size < MIN_CHORD_SIZE) {
+	    n_done < MIN_CHORD_SIZE || chord->chord_size < MIN_CHORD_SIZE) {
 		fprintf(stderr, "Something wrong in decide_chord\n");
 		return -1;
 	}
+}
+
+/* Decide the velocity value between the range limits */
+int decide_velocity(int vmin, int vmax)
+{
+	int velocity;
+
+	velocity = (rand() % (vmax - vmin)) + vmin;
+
+	if (velocity > MIDI_MAX_VELOCITY || velocity < 0) {
+		fprintf(stderr, "Velocity out of range\n");
+	 	return -1;
+	}
+
+	return velocity;
 }

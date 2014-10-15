@@ -32,6 +32,7 @@
 #define MIDI_FIRST_NOTE 12 /* C0 */
 #define MIDI_LAST_NOTE 108 /* C8 */
 #define MIDI_REST_NOTE	128
+#define MIDI_MAX_VELOCITY 127
 
 #define NO_COUPLING 0
 #define MAX_CHORD_SIZE 8

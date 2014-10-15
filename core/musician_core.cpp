@@ -181,7 +181,13 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		} else {
 		
 			idx = decide_note(sqs[s]->pnote);
+
+			new_notes.velocity = decide_velocity(sqs[s]->velocity_min,
+					sqs[s]->velocity_max);
 			
+			if (new_notes.velocity == -1)
+				return -1;
+
 			if (!mfields.play_chords) {
 				new_notes.notes[0] = note_to_midi(idx, key_note);
 				if (new_notes.notes[0] == -1)
