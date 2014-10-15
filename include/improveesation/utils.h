@@ -36,4 +36,10 @@ int parse_sample(const char * filename);
 int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna);
 int byte_size(unsigned int n);
 
+#ifdef DEBUG
+	int print_debug(const char *f, ...);
+#else
+	#define print_debug(f, ...) ({})
+#endif
+
 #endif /* improveesation/utils.h */

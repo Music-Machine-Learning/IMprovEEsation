@@ -23,10 +23,21 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 
 #include <improveesation/structs.h>
 #include <improveesation/utils.h>
+
+#ifdef DEBUG
+int print_debug(const char *f, ...)
+{
+	va_list parms;
+	va_start(parms, f);
+	vfprintf(stderr, f, parms);
+	va_end(parms);
+}
+#endif
 
 struct play_measure_s glob_ideal[MAX_SAMPLE_ROW];
 /* TODO: Come on man! What's this 16 here? Clean and explain it */
@@ -106,17 +117,13 @@ int parse_sample(const char * filename)
 		strcpy(line, trim(line));
 		if (line[0] == '#' || size <= 1) {
 			n--;
-			#ifdef DEBUG
-			printf("Found comment\n");
-			#endif
+			print_debug("Found comment\n");
 			continue;
 		}
 		
 		/* Parse the CSV string */
 
-		#ifdef DEBUG
-		printf("Parsing line%n:\n", n);
-		#endif
+		print_debug("Parsing line%n:\n", n);
 		
 		/* Set the basic fields of the play_measure */
 		glob_ideal[n].id = 0;
@@ -155,9 +162,7 @@ int parse_sample(const char * filename)
 			glob_ideal[n].measure[glob_ideal[n].size].chord_size = 1;
 			glob_ideal[n].measure[glob_ideal[n].size].notes[0] = cnote; 
 			glob_ideal[n].size++; // We're using the measure size as a counter.... risky?
-			#ifdef DEBUG
-			printf("\tGot note %n duration %n triplet %n\n", cnote, ctime, ctriplet);
-			#endif
+			print_debug("\tGot note %n duration %n triplet %n\n", cnote, ctime, ctriplet);
 		} while(1);
 	}
 	

@@ -27,6 +27,7 @@
 #include <improveesation/structs.h>
 
 #include <improveesation/player_core.h>
+#include <improveesation/utils.h>
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -230,6 +231,8 @@ int main(int argc, char **argv)
 	director_socket = socket(AF_INET, SOCK_STREAM, 0);
 	
 	if (!test_flag){
+		print_debug("Initializing Networking on port %d %d\n", port, director_socket);
+
 		/* Obtain the listener socket for musicians */
 		net_handler = net_init(port, "0.0.0.0");
 
