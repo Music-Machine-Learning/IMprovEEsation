@@ -29,6 +29,7 @@
 #include <improveesation/db.h>
 #include <improveesation/const.h>
 #include <improveesation/musician_genetic.h>
+#include <improveesation/musician_evolution.h>
 
 #include <sys/time.h>
 #include <unistd.h>
@@ -356,7 +357,8 @@ int main(int argc, char **argv)
 	}
 	
 	if (genetic) {
-		send_to_play(player_socket, director_socket, &pm);	
+		genetic_loop(&(mfields.ginitial), &(mfields.ggoal));
+		//send_to_play(player_socket, director_socket, &pm);	
 	}
 
 
