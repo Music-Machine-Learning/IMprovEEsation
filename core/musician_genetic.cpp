@@ -96,7 +96,7 @@ int store_gmeasure(struct play_measure_s *pm, struct measure_s *minfo)
 	}
 
 	/* Retrieve a set of goal measure from the list of samples */
-	ngoal = get_goal_measures(&goal_ms, tags[0]);
+	ngoal = get_goal_measures(&goal_ms, tags[1]);
 	if (ngoal == -1)
 		return -1;
 

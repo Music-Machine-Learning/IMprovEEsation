@@ -29,6 +29,8 @@
 
 #define BPM_TO_ATOM(bpm) ((15 / bpm) * (1000000 / 3))
 #define MAX_SAMPLE_ROW 32 /* Maximum samples in the file */
+#define DYNA_SIZE 16 /* Max characters for the name of a dyna */
+#define MAX_NOTES_MEASURE 24 /* Max notes in measure */
 
 void shuffle_array(int *array, size_t n);
 int split_tags(char *tags_str, char **tags);

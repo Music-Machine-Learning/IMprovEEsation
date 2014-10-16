@@ -26,6 +26,7 @@
 
 #define MEASURE_NUM 32
 #define MELODY_LENGTH (MEASURE_NUM * 24) /* FIXME MEASURE_NUM is temporary, it shouldn't be hardcoded */
+#define NUM_CHANGE(size) (size/20)
 
 int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal);
 

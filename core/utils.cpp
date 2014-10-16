@@ -40,8 +40,8 @@ int print_debug(const char *f, ...)
 #endif
 
 struct play_measure_s glob_ideal[MAX_SAMPLE_ROW];
-/* TODO: Come on man! What's this 16 here? Clean and explain it */
-char dyna_list[MAX_SAMPLE_ROW][16]; /* Fictional hash corresponding to the above array */
+/* TODO: Come on man! What's this 16 here? Clean and explain it -> DONE*/
+char dyna_list[MAX_SAMPLE_ROW][DYNA_SIZE]; /* Fictional hash corresponding to the above array */
 
 char * trim(char *s); /* in configuration.cpp */
 
@@ -105,22 +105,22 @@ int parse_sample(const char * filename)
 		return -1;
 	}
 		
-	char * line = NULL;
-	char temp[16];
-	size_t size = 0;
-	int n, csize, cnote, ctime, ctriplet;	
+	char * line = NULL; // line read from file
+	char * temp = (char *)malloc(sizeof(char) * DYNA_SIZE); // temporary string to store dyna
+	size_t size = 0; 
+	int n, csize, cnote, ctime, ctriplet; // current line params	
 	
-	printf("Paring the sample file...\n");
+	printf("Parsing the sample file...\n");
 		
 	for (n = 0; (csize = getline(&line, &size, file)) > 0; n++) {
 		/* avoid comments */
 		strcpy(line, trim(line));
 		if (line[0] == '#' || size <= 1) {
 			n--;
-			print_debug("Found comment\n");
+			print_debug("Found comment.\n");
 			continue;
 		}
-		
+				
 		/* Parse the CSV string */
 
 		print_debug("Parsing line%n:\n", n);
@@ -128,29 +128,32 @@ int parse_sample(const char * filename)
 		/* Set the basic fields of the play_measure */
 		glob_ideal[n].id = 0;
 		glob_ideal[n].musician_id = 0;
+		
+		print_debug("%s\n",line);
+			
 		strcpy(dyna_list[n], strtok(line, ",")); //TODO control
 		glob_ideal[n].unchanged_fst = atoi(strtok(NULL, ","));
 		glob_ideal[n].size = 0;
 		/* For now we allocate the max size of a play_measure */
 		/* TODO: again? 48?!! Check the malloc return too */
-		glob_ideal[n].measure = (struct notes_s *)malloc(sizeof(struct notes_s) * 48);
+		glob_ideal[n].measure = (struct notes_s *)malloc(sizeof(struct notes_s) * MAX_NOTES_MEASURE);
 		
 		do {
 			/* Read in this weird way three by three the parameters (note,time,triplet flag) */
-			strcpy(temp, strtok(NULL, ","));
-			if(!temp){
+			printf("begin loop\n");
+			if(temp = strtok(NULL, ",")){
 				break;
 			} else {
 				cnote = atoi(temp);
 			}
-			strcpy(temp, strtok(NULL, ","));
-			if(!temp){
+			
+			if(temp = strtok(NULL, ",")){
 				break;
 			} else {
 				ctime = atoi(temp);
 			}
-			strcpy(temp, strtok(NULL, ","));
-			if(!temp){
+			
+			if(temp = strtok(NULL, ",")){
 				break;
 			} else {
 				ctriplet = atoi(temp);
@@ -167,8 +170,7 @@ int parse_sample(const char * filename)
 	}
 	
 	dyna_list[n][0] = -1; /* Terminator */
-	printf("parse successful!\n");
-	
+	printf("parse successful for %d lines!\n", n);
 	return 0;	
 }
 
@@ -196,7 +198,8 @@ int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna)
 		
 		/* Get in if we got the right dyna */ 	
 		if (!strcmp(dyna, dyna_list[n])) {
-			*goal_ms[cnt] = glob_ideal[n];
+			
+			(*goal_ms)[cnt] = glob_ideal[n];
 			cnt++;
 		}
 	}
@@ -206,10 +209,10 @@ int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna)
 				cnt * sizeof(struct play_measure_s));
 		
 		if (*goal_ms == NULL) {
-			fprintf(stderr, "Malloc error in get_goal_measures\n");
+			fprintf(stderr, "realloc error in get_goal_measures\n");
 			return -1;
 		}
 	}
-
+	
 	return cnt;
 }

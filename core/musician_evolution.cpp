@@ -123,6 +123,16 @@ int sort_pool(struct piece_s **pool, uint8_t * sim)
 	return 0;
 }
 
+/* TODO ensure about the length which has to be the same as the initial */
+int change_random_note(struct piece_s *piece){
+	int i,r;
+	for(i=0; i<NUM_CHANGE(piece->size); i++){
+		r = rand()%NUM_CHANGE(piece->size);
+		piece->notes[r].notes[0] += (rand()%23 - 11);
+		piece->notes[r].tempo += (rand()%9 - 4);
+	}
+}
+
 int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 {
 
@@ -153,12 +163,18 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 	for (i = 0; i < GENETIC_ROUNDS; i++) {
 
 		/* Recombination and transposon propagation (skip on the first iteration) */
+		//~ if(i > 0){
+			//~ for(j=0; j<GENETIC_POOL_SIZE/4; j++)
+				//~ //reco
+		//~ }
 
 		/* First we change a number (according to the length) of notes at random */
-
+		for(j=0; j<GENETIC_POOL_SIZE; j++)
+			change_random_note(&genetic_pool[j]);
+		
 		/* Then we need to compute similarity and sort the array according to it */
-		for(i=0; i<GENETIC_POOL_SIZE; i++)
-			compute_similarity(ggoal, &genetic_pool[i], &sim[i]);
+		for(j=0; j<GENETIC_POOL_SIZE; j++)
+			compute_similarity(ggoal, &genetic_pool[j], &sim[j]);
 
 		sort_pool((struct piece_s**)&genetic_pool, sim);
 	}

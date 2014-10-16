@@ -180,14 +180,15 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	/* This is an array which stores the pointers for every execution, the countdown to the end, the channel and the triplet flag */
 	int note_pointer[musicians_num][4];
 	/* NULL NOTE */
-	struct notes_s nullnote = {
-		.tempo = 0,
-		.id = 0,
-		.triplets = 0,
-		.velocity = 0,
-		.chord_size = 1,
-		.notes = {-1,0,0,0,0,0,0,0}
-	};
+	struct notes_s nullnote = {0,0,0,0,1,{-1,0,0,0,0,0,0,0}};
+	//~ struct notes_s nullnote = {
+		//~ .tempo = 0,
+		//~ .id = 0,
+		//~ .triplets = 0,
+		//~ .velocity = 0,
+		//~ .chord_size = 1,
+		//~ .notes = {-1,0,0,0,0,0,0,0}
+	//~ };
 	
 	/* FIXME bpm are set to 120 by default. I can't obtain them. bpms is the duration of half a semiquiver triplet unit in mus */
 	double bpm = 120;
@@ -253,6 +254,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 						for(k=0; k<notes[j][note_pointer[j][0]].chord_size; k++){
 							data[j][k][0] = KEY_DOWN(note_pointer[j][2]);
 							data[j][k][1] = notes[j][note_pointer[j][0]].notes[k];
+							data[j][k][2] = notes[j][note_pointer[j][0]].velocity;
 						} 
 						
 					} else { // or enter in the depths of hell (execution terminated for the instrument)
