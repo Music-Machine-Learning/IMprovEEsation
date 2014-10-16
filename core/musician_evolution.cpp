@@ -36,11 +36,14 @@
 #include <arpa/inet.h>
 #include <time.h>
 
-void swap_pieces(struct piece_s * fst, struct piece_s * snd){
-	struct piece_s temp;
-	temp = *fst;
-	*fst = *snd;
-	*snd = temp;
+void swap_pieces(struct notes_s * fst, struct notes_s * snd, int cross){
+	struct notes_s temp[cross];
+	int x;
+	for (x=0; x<cross; x++){
+		temp[x] = fst[x];
+		fst[x] = snd[x];
+		snd[x] = temp[x];
+	}
 }
 
 /* Function that checks how much the array trial is similar to goal and stores the similarity in the 3array */
@@ -133,6 +136,31 @@ int change_random_note(struct piece_s *piece){
 	}
 }
 
+/** Function used to recombine pieces in the genetic pool.
+ * Every piece gets a replacement 
+ * Currently we use the upper 25% and we put the recombined in the
+ * lower 25% */
+int transrecombine(struct piece_s **genetic_pool, int index){
+	int j, crossover;
+	
+	for(j=0; j<GENETIC_POOL_SIZE/4; j+=2){
+		/* Choose the crossover point */
+		if ((*genetic_pool)[index].size < (*genetic_pool)[index+1].size){
+			crossover = rand()%((*genetic_pool)[index].size);
+		} else {
+			crossover = rand()%((*genetic_pool)[index+1].size);
+		}
+		swap_pieces((*genetic_pool)[index].notes, (*genetic_pool)[index+1].notes, crossover);
+		
+		/* TODO add here transposon propagation */
+		
+		/* Here's the replacement on the lower 25% */
+		(*genetic_pool)[GENETIC_POOL_SIZE - index - 1] = (*genetic_pool)[index];
+		(*genetic_pool)[GENETIC_POOL_SIZE - index - 2] = (*genetic_pool)[index + 1];
+			
+	}
+}
+
 int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 {
 
@@ -163,10 +191,10 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 	for (i = 0; i < GENETIC_ROUNDS; i++) {
 
 		/* Recombination and transposon propagation (skip on the first iteration) */
-		//~ if(i > 0){
-			//~ for(j=0; j<GENETIC_POOL_SIZE/4; j++)
-				//~ //reco
-		//~ }
+		/* This function automatically replaces the upper 25% with the lower */
+		if(i > 0){
+			transrecombine((struct piece_s **)&genetic_pool, j);
+		}
 
 		/* First we change a number (according to the length) of notes at random */
 		for(j=0; j<GENETIC_POOL_SIZE; j++)

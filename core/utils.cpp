@@ -132,31 +132,35 @@ int parse_sample(const char * filename)
 		print_debug("%s\n",line);
 			
 		strcpy(dyna_list[n], strtok(line, ",")); //TODO control
+		
 		glob_ideal[n].unchanged_fst = atoi(strtok(NULL, ","));
 		glob_ideal[n].size = 0;
 		/* For now we allocate the max size of a play_measure */
-		/* TODO: again? 48?!! Check the malloc return too */
+		/* again? 48?!! Check the malloc return too -> done */
 		glob_ideal[n].measure = (struct notes_s *)malloc(sizeof(struct notes_s) * MAX_NOTES_MEASURE);
 		
 		do {
 			/* Read in this weird way three by three the parameters (note,time,triplet flag) */
 			printf("begin loop\n");
 			if(temp = strtok(NULL, ",")){
-				break;
-			} else {
 				cnote = atoi(temp);
+				printf("note: %d ", cnote);
+			} else {
+				break;
 			}
 			
 			if(temp = strtok(NULL, ",")){
-				break;
-			} else {
 				ctime = atoi(temp);
+				printf("time: %d ", ctime);
+			} else {
+				break;				
 			}
 			
 			if(temp = strtok(NULL, ",")){
-				break;
-			} else {
 				ctriplet = atoi(temp);
+				printf("trip: %d\n", ctriplet);
+			} else {
+				break;
 			}
 		    /* Set the note values (always just one note) */
 			glob_ideal[n].measure[glob_ideal[n].size].tempo = ctime;

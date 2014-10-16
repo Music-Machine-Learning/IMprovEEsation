@@ -131,7 +131,8 @@ int store_gmeasure(struct play_measure_s *pm, struct measure_s *minfo)
 	}
 	
 	if (sq_count != max_sqs) {
-		fprintf(stderr, "Sqs wrong count in the goal samples\n");
+		fprintf(stderr, "Sqs wrong count in the goal samples: %d %d\n", 
+			    sq_count, max_sqs);
 		return -1;
 	}
 
