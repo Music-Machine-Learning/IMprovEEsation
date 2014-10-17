@@ -259,7 +259,7 @@ void send_sync_ack(int director)
 void send_to_play(int player, struct play_measure_s *measure)
 {
 	int j;
-	struct iovec iov[measure->size * 5 + 4];
+	struct iovec iov[measure->size * 6 + 4];
 	uint32_t measure_size_bck = measure->size;
 
 	/* player send */
@@ -269,16 +269,17 @@ void send_to_play(int player, struct play_measure_s *measure)
 	LOAD_IOVEC(iov, 3, measure->unchanged_fst);
 
 	for (j = 0; j < measure->size; j++) {
-		LOAD_IOVEC(iov, j * 5 + 4, measure->measure[j].tempo);
-		LOAD_IOVEC(iov, j * 5 + 5, measure->measure[j].id);
-		LOAD_IOVEC(iov, j * 5 + 6, measure->measure[j].triplets);
-		LOAD_IOVEC(iov, j * 5 + 7, measure->measure[j].chord_size);
-		LOAD_IOVEC(iov, j * 5 + 8, measure->measure[j].notes);
+		LOAD_IOVEC(iov, j * 6 + 4, measure->measure[j].tempo);
+		LOAD_IOVEC(iov, j * 6 + 5, measure->measure[j].id);
+		LOAD_IOVEC(iov, j * 6 + 6, measure->measure[j].triplets);
+		LOAD_IOVEC(iov, j * 6 + 7, measure->measure[j].velocity);
+		LOAD_IOVEC(iov, j * 6 + 8, measure->measure[j].chord_size);
+		LOAD_IOVEC(iov, j * 6 + 9, measure->measure[j].notes);
 	}
 
 	IOVEC_HTONL(iov, 3);
 
-	if (writev(player, iov, measure_size_bck * 5 + 4) < 0) {
+	if (writev(player, iov, measure_size_bck * 6 + 4) < 0) {
 		perror("writev2");
 		throw net_ex;
 		return;
@@ -380,10 +381,6 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 
 			IOVEC_NTOHL(safe_iov, 3);
 
-			printf("DEBUG size: %d, musician_id %d\n", 
-					note_list[pm_count].size,
-					note_list[pm_count].musician_id);
-			
 			note_list[pm_count].measure = (struct notes_s*) realloc(
 					note_list[pm_count].measure,
 					sizeof(struct notes_s) *
@@ -395,22 +392,24 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 				return;
 			}
 
-			iov = new struct iovec[note_list[pm_count].size * 5];
+			iov = new struct iovec[note_list[pm_count].size * 6];
 			for (j = 0; j < note_list[pm_count].size; j++) {
-				LOAD_IOVEC(iov, j * 5,
+				LOAD_IOVEC(iov, j * 6,
 				   note_list[pm_count].measure[j].tempo);
-				LOAD_IOVEC(iov, j * 5 + 1,
+				LOAD_IOVEC(iov, j * 6 + 1,
 				   note_list[pm_count].measure[j].id);
-				LOAD_IOVEC(iov, j * 5 + 2,
+				LOAD_IOVEC(iov, j * 6 + 2,
 				   note_list[pm_count].measure[j].triplets);
-				LOAD_IOVEC(iov, j * 5 + 3,
+				LOAD_IOVEC(iov, j * 6 + 3,
+				   note_list[pm_count].measure[j].velocity);
+				LOAD_IOVEC(iov, j * 6 + 4,
 				   note_list[pm_count].measure[j].chord_size);
-				LOAD_IOVEC(iov, j * 5 + 4,
+				LOAD_IOVEC(iov, j * 6 + 5,
 				   note_list[pm_count].measure[j].notes);
 			}
 
 			retval = readv(epevs[i].data.fd, iov,
-					note_list[pm_count].size * 5);
+					note_list[pm_count].size * 6);
 
 			delete[] iov;
 

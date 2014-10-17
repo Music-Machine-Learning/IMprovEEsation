@@ -109,6 +109,8 @@ struct notes_s {
 	uint8_t id;
 	/* boolean: is this note a part of a triplet? */
 	uint8_t triplets;
+	/* MIDI velocity information */
+	uint8_t velocity;
 	/* how many notes the chord contains */
 	uint8_t chord_size;
 	/* the notes array that should be played simultaneously */

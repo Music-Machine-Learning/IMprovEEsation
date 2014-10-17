@@ -29,6 +29,7 @@
 #include <improveesation/db.h>
 #include <improveesation/const.h>
 #include <improveesation/musician_genetic.h>
+#include <improveesation/musician_evolution.h>
 
 #include <sys/time.h>
 #include <unistd.h>
@@ -322,13 +323,14 @@ int main(int argc, char **argv)
 					pm.id, pm.size, pm.musician_id);
 			
 			int temposum = 0;	
-			printf("Note\tidx\tlength\ttripl\tch_size\tnotes\n");
+			printf("Note\tidx\tlength\ttripl\tvelocity\tch_size\tnotes\n");
 			for (j = 0; j < pm.size; j++){
 				nt = &(pm.measure[j]);
-				printf("\t%d\t%d\t%d\t%d\t[",
+				printf("\t%d\t%d\t%d\t%d\t%d\t[",
 					nt->id, 
 					nt->tempo, 
 					nt->triplets,
+					nt->velocity,
 					nt->chord_size);
 				temposum += nt->tempo;
 				for (k = 0; k < nt->chord_size; k++)
@@ -355,7 +357,8 @@ int main(int argc, char **argv)
 	}
 	
 	if (genetic) {
-		send_to_play(player_socket, director_socket, &pm);	
+		genetic_loop(&(mfields.ginitial), &(mfields.ggoal));
+		//send_to_play(player_socket, director_socket, &pm);	
 	}
 
 

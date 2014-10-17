@@ -1,7 +1,6 @@
-
 /*****************************************************************************/
-/* Utilities functions header                                                */
-/* This header is a part of the IMprovEEsation suite.                       */
+/* Genetic loop to evolve an improvised melody                               */
+/* This program is a part of the IMprovEEsation suite.                       */
 /*                                                                           */
 /* Copyright (C) 2014                                                        */
 /* Federico Montori, Marco Melletti, Davide Berardi, Matteo Martelli         */
@@ -22,26 +21,13 @@
 /* USA.                                                                      */
 /*****************************************************************************/
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef MUSICIAN_EVOLUTION_H
+#define MUSICIAN_EVOLUTION_H
 
-#include <stdio.h>
+#define MEASURE_NUM 32
+#define MELODY_LENGTH (MEASURE_NUM * 24) /* FIXME MEASURE_NUM is temporary, it shouldn't be hardcoded */
+#define NUM_CHANGE(size) (size/20)
 
-#define BPM_TO_ATOM(bpm) ((15 / bpm) * (1000000 / 3))
-#define MAX_SAMPLE_ROW 32 /* Maximum samples in the file */
-#define DYNA_SIZE 16 /* Max characters for the name of a dyna */
-#define MAX_NOTES_MEASURE 24 /* Max notes in measure */
+int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal);
 
-void shuffle_array(int *array, size_t n);
-int split_tags(char *tags_str, char **tags);
-int parse_sample(const char * filename);
-int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna);
-int byte_size(unsigned int n);
-
-#ifdef DEBUG
-	int print_debug(const char *f, ...);
-#else
-	#define print_debug(f, ...) ({})
 #endif
-
-#endif /* improveesation/utils.h */

@@ -180,7 +180,15 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	/* This is an array which stores the pointers for every execution, the countdown to the end, the channel and the triplet flag */
 	int note_pointer[musicians_num][4];
 	/* NULL NOTE */
-	struct notes_s nullnote = {0,0,0,1,{-1,0,0,0,0,0,0,0}};
+	struct notes_s nullnote = {0,0,0,0,1,{-1,0,0,0,0,0,0,0}};
+	//~ struct notes_s nullnote = {
+		//~ .tempo = 0,
+		//~ .id = 0,
+		//~ .triplets = 0,
+		//~ .velocity = 0,
+		//~ .chord_size = 1,
+		//~ .notes = {-1,0,0,0,0,0,0,0}
+	//~ };
 	
 	/* FIXME bpm are set to 120 by default. I can't obtain them. bpms is the duration of half a semiquiver triplet unit in mus */
 	double bpm = 120;
@@ -200,10 +208,8 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
         if(note_pointer[i][2] < 0)
             fprintf(stderr, "shit happened, unable to find musician %d midi channel\n", note_list[i].musician_id);
 		
-		#ifdef DEBUG
-        printf("[debug] Instrument %d set up in channel %d!\n", note_list[i].musician_id & 0xff, findMidiChannel(note_list[i].musician_id & 0xff));
-		printf("[debug] Notes for %d: {", i);
-		#endif
+        print_debug("[debug] Instrument %d set up in channel %d!\n", note_list[i].musician_id & 0xff, findMidiChannel(note_list[i].musician_id & 0xff));
+		print_debug("[debug] Notes for %d: {", i);
 		
 		/* Fill the arrays of notes and make them -1 terminated */
 		for(j=0; j<25; j++){
@@ -214,24 +220,20 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 				notes[i][j] = nullnote;
 			
 			#ifdef DEBUG
-			printf(" [", i);
+			print_debug(" [", i);
 			for(k=0;k<notes[i][j].chord_size;k++){
-				printf(" %d",notes[i][j].notes[k]);
+				print_debug(" %d",notes[i][j].notes[k]);
 			}
-			printf(" ]");
+			print_debug(" ]");
 			#endif
 			
 		} 
-		#ifdef DEBUG
-		printf(" }\n");
-		#endif
+		print_debug(" }\n");
 	}
 	
 	/* For every note step (limit is max value + 1 like there would be all smallest triplets) */
 	for(i=0; i<49; i++){
-		#ifdef DEBUG
-		printf("[debug] Loop %d\n",i);
-		#endif
+		print_debug("[debug] Loop %d\n",i);
 		/* For every instrument */
 		for(j=0; j<musicians_num; j++){
 			
@@ -252,6 +254,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 						for(k=0; k<notes[j][note_pointer[j][0]].chord_size; k++){
 							data[j][k][0] = KEY_DOWN(note_pointer[j][2]);
 							data[j][k][1] = notes[j][note_pointer[j][0]].notes[k];
+							data[j][k][2] = notes[j][note_pointer[j][0]].velocity;
 						} 
 						
 					} else { // or enter in the depths of hell (execution terminated for the instrument)
@@ -266,23 +269,15 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
                             writeNote(atom_counter, data[j][k]);
 						}
 						
-						#ifdef DEBUG
-						printf("\tMusician id %d playing [", j);
-						#endif
+						print_debug("\tMusician id %d playing [", j);
 						
 						for(k=0; k<notes[j][note_pointer[j][0]].chord_size; k++){ // set a key up for the next step
 							data[j][k][0] = KEY_UP(note_pointer[j][2]);
-							#ifdef DEBUG
-							printf(" %d ", notes[j][note_pointer[j][0]].notes[k]);
-							#endif
+							print_debug(" %d ", notes[j][note_pointer[j][0]].notes[k]);
 						}
-						#ifdef DEBUG
-						printf("] on channel %d\n", note_pointer[j][2]);
-						#endif
+						print_debug("] on channel %d\n", note_pointer[j][2]);
 					} else {
-						#ifdef DEBUG
-						printf("\tMusician id %d playing silence on channel %d\n", j, note_pointer[j][2]);
-						#endif
+						print_debug("\tMusician id %d playing silence on channel %d\n", j, note_pointer[j][2]);
 						data[j][0][0] = KEY_UP(note_pointer[j][2]);// set a key up for the next step (not cycled because we used only the first)
 					}
 					
@@ -318,9 +313,6 @@ void smorza_incosa(int fd){
 
 	/* Close the MIDI file */
 	closeFile();
-	#ifdef DEBUG
-	printf("[debug] Smorzat!\n");
-	#else
+	print_debug("[debug] Smorzat!\n");
 	printf("End Of Improvisation exception reached!\n");
-	#endif
 }
