@@ -39,15 +39,16 @@
 
 #define RANDOM_MULTI_CHORD_THRESHOLD    5
 
-#define CHORD_MINOR						0b000010001001
-#define CHORD_MAJOR						0b000010010001
-#define CHORD_SEVENTH					0b010000000000
-#define CHORD_DELTA						0b100000000000
-
 // chord change thresholds should be genre-dependant
 #define CHORD_CHANGE_TRITONE			30
 #define CHORD_CHANGE_CADENZA			60
 #define CHORD_CHANGE_TONAL_ZONE			80
+
+
+#define CHORD_MINOR						0b000010001001
+#define CHORD_MAJOR						0b000010010001
+#define CHORD_SEVENTH					0b010000000000
+#define CHORD_DELTA						0b100000000000
 
 #define BLUES_SCALE                     0b010011101001
 

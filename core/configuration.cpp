@@ -33,6 +33,11 @@
 	strcpy(r->f, p);\
 })
 
+#define SET_INT_FIELD(r,f,p) ({\
+    r->f = (int *) malloc(sizeof(int));\
+    *(r->f) = atoi(p);\
+})
+
 /* parse options and put in the right field in the struct */
 int option_dispatcher(char *n, char *p, struct rc_conf_s *r)
 {
@@ -44,7 +49,29 @@ int option_dispatcher(char *n, char *p, struct rc_conf_s *r)
 		SET_STRING_FIELD(r, db_user, p);
 	else if (!strcmp(n, "db_passwd"))
 		SET_STRING_FIELD(r, db_passwd, p);
-	else
+    else if (!strcmp(n, "dir_change_subgenre"))
+        SET_INT_FIELD(r, dir_change_subgenre, p);
+    else if (!strcmp(n, "dir_change_genre_on_one"))
+        SET_INT_FIELD(r, dir_change_genre_on_one, p);
+    else if (!strcmp(n, "dir_change_genre_on_any"))
+        SET_INT_FIELD(r, dir_change_genre_on_any, p);
+    else if (!strcmp(n, "dir_change_mood_on_one"))
+        SET_INT_FIELD(r, dir_change_mood_on_one, p);
+    else if (!strcmp(n, "dir_change_mood_on_any"))
+        SET_INT_FIELD(r, dir_change_mood_on_any, p);
+    else if (!strcmp(n, "dir_change_chord_on_one"))
+        SET_INT_FIELD(r, dir_change_chord_on_one, p);
+    else if (!strcmp(n, "dir_change_chord_on_any"))
+        SET_INT_FIELD(r, dir_change_chord_on_any, p);
+    else if (!strcmp(n, "dir_random_mutli_chord"))
+        SET_INT_FIELD(r, dir_random_mutli_chord, p);
+    else if (!strcmp(n, "dir_chord_tritone"))
+        SET_INT_FIELD(r, dir_chord_tritone, p);
+    else if (!strcmp(n, "dir_chord_cadenza"))
+        SET_INT_FIELD(r, dir_chord_cadenza, p);
+    else if (!strcmp(n, "dir_chord_tonal_zone"))
+        SET_INT_FIELD(r, dir_chord_tonal_zone, p);
+    else
 		return 1;
 
 	return 0;
@@ -131,4 +158,26 @@ void free_conf(struct rc_conf_s r)
 		free(r.db_passwd);
 	if (r.db_user)
 		free(r.db_user);
+    if(r.dir_change_subgenre)
+        free(r.dir_change_subgenre);
+    if(r.dir_change_genre_on_one)
+        free(r.dir_change_genre_on_one);
+    if(r.dir_change_genre_on_any)
+        free(r.dir_change_genre_on_any);
+    if(r.dir_change_mood_on_one)
+        free(r.dir_change_mood_on_one);
+    if(r.dir_change_mood_on_any)
+        free(r.dir_change_mood_on_any);
+    if(r.dir_change_chord_on_one)
+        free(r.dir_change_chord_on_one);
+    if(r.dir_change_chord_on_any)
+        free(r.dir_change_chord_on_any);
+    if(r.dir_random_mutli_chord)
+        free(r.dir_random_mutli_chord);
+    if(r.dir_chord_tritone)
+        free(r.dir_chord_tritone);
+    if(r.dir_chord_cadenza)
+        free(r.dir_chord_cadenza);
+    if(r.dir_chord_tonal_zone)
+        free(r.dir_chord_tonal_zone);
 }

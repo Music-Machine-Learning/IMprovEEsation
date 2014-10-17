@@ -28,6 +28,17 @@ struct rc_conf_s {
 	char *db_name;
 	char *db_user;
 	char *db_passwd;
+    int *dir_change_subgenre;
+    int *dir_change_genre_on_one;
+    int *dir_change_genre_on_any;
+    int *dir_change_mood_on_one;
+    int *dir_change_mood_on_any;
+    int *dir_change_chord_on_one;
+    int *dir_change_chord_on_any;
+    int *dir_random_mutli_chord;
+    int *dir_chord_tritone;
+    int *dir_chord_cadenza;
+    int *dir_chord_tonal_zone;
 };
 
 int load_conf(const char *path, struct rc_conf_s *r);

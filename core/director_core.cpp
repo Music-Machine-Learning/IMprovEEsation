@@ -30,6 +30,11 @@
 #include <improveesation/configuration.h>
 #include <stdio.h>
 
+#define SET_INT_FIELD(r,f,v) ({\
+    r.f = (int *) malloc(sizeof(int));\
+    *(r.f) = v;\
+})
+
 struct variant_couple_s {
     char *subgenre;
     pattern_s *pattern;
@@ -51,6 +56,8 @@ static char* genre;
 static char* subgenre;
 static char** genresList;
 static char** subgenresList;
+
+static struct rc_conf_s conf;
 
 static tempo_s tempo;
 static uint16_t tonality;
@@ -82,6 +89,31 @@ void free_improvariants(variant_couple_s *v){
             v = t;
         }
     }
+}
+
+void confCheck(struct rc_conf_s r){
+    if(!r.dir_change_subgenre)
+        SET_INT_FIELD(r,dir_change_subgenre,CHANGE_TO_SUBGENRE);
+    if(!r.dir_change_genre_on_one)
+        SET_INT_FIELD(r,dir_change_genre_on_one,GENRE_CHANGE_ON_ONE_THRESHOLD);
+    if(!r.dir_change_genre_on_any)
+        SET_INT_FIELD(r,dir_change_genre_on_any,GENRE_CHANGE_THRESHOLD);
+    if(!r.dir_change_mood_on_one)
+        SET_INT_FIELD(r,dir_change_mood_on_one, MOOD_CHANGE_ON_ONE_THRESHOLD);
+    if(!r.dir_change_mood_on_any)
+        SET_INT_FIELD(r,dir_change_mood_on_any, MOOD_CHANGE_THRESHOLD);
+    if(!r.dir_change_chord_on_one)
+        SET_INT_FIELD(r,dir_change_chord_on_one, CHORD_CHANGE_ON_ONE_THRESHOLD);
+    if(!r.dir_change_chord_on_any)
+        SET_INT_FIELD(r,dir_change_chord_on_any, CHORD_CHANGE_THRESHOLD);
+    if(!r.dir_random_mutli_chord)
+        SET_INT_FIELD(r,dir_random_mutli_chord, RANDOM_MULTI_CHORD_THRESHOLD);
+    if(!r.dir_chord_tritone)
+        SET_INT_FIELD(r,dir_chord_tritone, CHORD_CHANGE_TRITONE);
+    if(!r.dir_chord_cadenza)
+        SET_INT_FIELD(r,dir_chord_cadenza, CHORD_CHANGE_CADENZA);
+    if(!r.dir_chord_tonal_zone)
+        SET_INT_FIELD(r,dir_chord_tonal_zone, CHORD_CHANGE_TONAL_ZONE);
 }
 
 void load_genre_info(char* gen, char* sub){
@@ -316,7 +348,7 @@ RANDOM_CHORD_IS_RANDOM:
     for(; i < tempo.upper; i++){
         chords[i].note = note;
         chords[i].mode = mode;
-        if(rand() % 100 < RANDOM_MULTI_CHORD_THRESHOLD){
+        if(rand() % 100 < *(conf.dir_random_mutli_chord)){
             i++;
             goto RANDOM_CHORD_IS_RANDOM;
         }
@@ -329,17 +361,17 @@ void decideChord(measure_s *measure, int current_measure_id){
 
     //we can change chord when the actual measure chord is clear (eg: single chord / cadenza)
     if(current_pattern->measures[current_measure_id].stepnumber == 1 || (step = checkCadenza(&(current_pattern->measures[current_measure_id]))) >= 0){
-        if(rand() % 100 < (current_measure_id == 0 ? CHORD_CHANGE_ON_ONE_THRESHOLD : CHORD_CHANGE_THRESHOLD))
+        if(rand() % 100 < (current_measure_id == 0 ? *(conf.dir_change_chord_on_one) : *(conf.dir_change_chord_on_any)))
         {	// go to an unexpected chord
             printf("\tgo to unexpected chord, use ");
             if(step < 0)
                 step = current_pattern->measures[current_measure_id].steps[0];
             trand = rand() % 100;
-            if(trand < CHORD_CHANGE_TRITONE){
+            if(trand < *(conf.dir_chord_tritone)){
                 measure->chords = getTritone(step);
-            } else if (trand < CHORD_CHANGE_CADENZA){
+            } else if (trand < *(conf.dir_chord_cadenza)){
                 measure->chords = getCadenza(step);
-            } else if (trand < CHORD_CHANGE_TONAL_ZONE){
+            } else if (trand < *(conf.dir_chord_tonal_zone)){
                 measure->chords = getTonalZoneChord(step);
             } else {
                 measure->chords = getRandomChord();
@@ -360,7 +392,7 @@ void decideChord(measure_s *measure, int current_measure_id){
 void setupTags(measure_s *measure, int current_measure_id){
     char *mood, *dyn;
     int genLen, moodLen, dynLen, i;
-    if(rand() % 100 < (current_measure_id == 0 ? MOOD_CHANGE_ON_ONE_THRESHOLD : MOOD_CHANGE_THRESHOLD)){
+    if(rand() % 100 < (current_measure_id == 0 ? *(conf.dir_change_mood_on_one) : *(conf.dir_change_mood_on_any))){
         printf("\tchange mood\n");
         prev_mood = rand() % moods_num;
     }
@@ -577,7 +609,6 @@ void setupSoloers(uint32_t solocount, uint32_t *sololist, int measures_count){
 }
 
 int init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *sololist, int measures_count){
-    struct rc_conf_s conf;
     genre = (char*) calloc(strlen(gen)+1, sizeof(char));
     strcpy(genre, gen);
     subgenre = (char*) calloc(strlen(sub)+1, sizeof(char));
@@ -595,6 +626,8 @@ int init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solol
         return FALSE;
     }
 
+    confCheck(conf);
+
     database = db_connect(conf.db_host,
                           conf.db_name,
                           conf.db_user,
@@ -607,8 +640,6 @@ int init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solol
                 "\tdb_password: %s\n", strerror(errno), conf.db_host, conf.db_name, conf.db_user, conf.db_passwd);
         return FALSE;
     }
-
-    free_conf(conf);
 
     if(get_genres(database, &genresList) <= -1){
         fprintf(stderr, "error while retrieving genres from db (%s)\n", strerror(errno));
@@ -641,6 +672,8 @@ void free_director_core(){
         free(available_scales.list);
     }
 
+    free_conf(conf);
+
     free_db_results(current_pattern);
 
     db_close(database);
@@ -649,9 +682,9 @@ void free_director_core(){
 int decide_next_measure(measure_s *measure, int current_measure_id){
     int i;
 
-    if(rand() % 100 < (current_measure_id == 0 ? GENRE_CHANGE_ON_ONE_THRESHOLD : GENRE_CHANGE_THRESHOLD)){
+    if(rand() % 100 < (current_measure_id == 0 ? *(conf.dir_change_genre_on_one) : *(conf.dir_change_genre_on_any))){
         printf("\tchanged ");
-        if(rand() % 100 < CHANGE_TO_SUBGENRE){
+        if(rand() % 100 < *(conf.dir_change_subgenre)){
             pickSubgenre();
             printf("subgenre: %s\n", subgenre);
         } else {

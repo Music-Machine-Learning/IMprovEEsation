@@ -1,7 +1,7 @@
 # Copy this file to ~/.improveesation.rc
 
 # database Host
-db_host griffin.dberardi.eu
+db_host localhost
 
 # Name of the database
 db_name improveesation
@@ -11,3 +11,36 @@ db_user read_only
 
 # Password for the user for the database
 db_passwd testiamo123
+
+# Probability of changing to subgenre instead of changing to another genre (now we only have one genre, so this should be 100)
+dir_change_subgenre 100
+
+# Probability of changing genre on the first measure of a section
+dir_change_genre_on_one 30
+
+# Probability of changing genre on any other measure of a section
+dir_change_genre_on_any 0
+
+# Probability of changing mood on the first measure of a section
+dir_change_mood_on_one 10
+
+# Probability of changing mood on any other measure of a section
+dir_change_mood_on_any 1
+
+# Probability of changing standard chord on the first measure of a section
+dir_change_chord_on_one 0
+
+# Probability of changing standard chord on any other measure of a section
+dir_change_chord_on_any 5
+
+# Probability to have more than one random chord in a measure with completely random chords
+dir_random_mutli_chord 5
+
+# Probability range to play a tritone if standard chord is not chosen
+dir_chord_tritone 30
+
+# Probability range to play a cadenza if standard chord is not chosen
+dir_chord_cadenza 60
+
+# Probability range to do a tonal zone-wise change if standard chord is not chosen
+dir_chord_tonal_zone 80
