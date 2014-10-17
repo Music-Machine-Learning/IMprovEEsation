@@ -208,6 +208,9 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 	}
 
 	/* Need to sort once again */
+	
+	/* Finally we keep the most similar */
+	*ginitial = genetic_pool[0];
 
-	return 0;
+	return sim[0];
 }
