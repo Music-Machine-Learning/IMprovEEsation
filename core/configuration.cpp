@@ -63,8 +63,8 @@ int option_dispatcher(char *n, char *p, struct rc_conf_s *r)
         SET_INT_FIELD(r, dir_change_chord_on_one, p);
     else if (!strcmp(n, "dir_change_chord_on_any"))
         SET_INT_FIELD(r, dir_change_chord_on_any, p);
-    else if (!strcmp(n, "dir_random_mutli_chord"))
-        SET_INT_FIELD(r, dir_random_mutli_chord, p);
+    else if (!strcmp(n, "dir_random_multi_chord"))
+        SET_INT_FIELD(r, dir_random_multi_chord, p);
     else if (!strcmp(n, "dir_chord_tritone"))
         SET_INT_FIELD(r, dir_chord_tritone, p);
     else if (!strcmp(n, "dir_chord_cadenza"))
@@ -139,7 +139,13 @@ int load_conf(const char *path, struct rc_conf_s *r)
 	fclose(f);
 
 	/* check required fields */
-	if (!r->db_name || !r->db_host || !r->db_passwd || !r->db_user) {
+	if (!r->db_name || !r->db_host || !r->db_passwd || !r->db_user ||
+	    !r->dir_change_subgenre || 
+	    !r->dir_change_genre_on_one || !r->dir_change_genre_on_any || 
+	    !r->dir_change_mood_on_one || !r->dir_change_mood_on_any || 
+	    !r->dir_change_chord_on_one || !r->dir_change_chord_on_any ||
+	    !r->dir_random_multi_chord || !r->dir_chord_tritone ||
+	    !r->dir_chord_cadenza || !r->dir_chord_tonal_zone) {
 		fprintf(stderr,
 		        "some of the required fields (db_name,db_host,db_passwd,db_user) were missing\n");
 		return -1;
@@ -172,8 +178,8 @@ void free_conf(struct rc_conf_s r)
         free(r.dir_change_chord_on_one);
     if(r.dir_change_chord_on_any)
         free(r.dir_change_chord_on_any);
-    if(r.dir_random_mutli_chord)
-        free(r.dir_random_mutli_chord);
+    if(r.dir_random_multi_chord)
+        free(r.dir_random_multi_chord);
     if(r.dir_chord_tritone)
         free(r.dir_chord_tritone);
     if(r.dir_chord_cadenza)

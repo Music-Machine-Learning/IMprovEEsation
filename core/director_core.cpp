@@ -106,8 +106,8 @@ void confCheck(struct rc_conf_s r){
         SET_INT_FIELD(r,dir_change_chord_on_one, CHORD_CHANGE_ON_ONE_THRESHOLD);
     if(!r.dir_change_chord_on_any)
         SET_INT_FIELD(r,dir_change_chord_on_any, CHORD_CHANGE_THRESHOLD);
-    if(!r.dir_random_mutli_chord)
-        SET_INT_FIELD(r,dir_random_mutli_chord, RANDOM_MULTI_CHORD_THRESHOLD);
+    if(!r.dir_random_multi_chord)
+        SET_INT_FIELD(r,dir_random_multi_chord, RANDOM_MULTI_CHORD_THRESHOLD);
     if(!r.dir_chord_tritone)
         SET_INT_FIELD(r,dir_chord_tritone, CHORD_CHANGE_TRITONE);
     if(!r.dir_chord_cadenza)
@@ -348,7 +348,7 @@ RANDOM_CHORD_IS_RANDOM:
     for(; i < tempo.upper; i++){
         chords[i].note = note;
         chords[i].mode = mode;
-        if(rand() % 100 < *(conf.dir_random_mutli_chord)){
+        if(rand() % 100 < *(conf.dir_random_multi_chord)){
             i++;
             goto RANDOM_CHORD_IS_RANDOM;
         }

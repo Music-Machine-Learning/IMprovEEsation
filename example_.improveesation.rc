@@ -34,7 +34,7 @@ dir_change_chord_on_one 0
 dir_change_chord_on_any 5
 
 # Probability to have more than one random chord in a measure with completely random chords
-dir_random_mutli_chord 5
+dir_random_multi_chord 5
 
 # Probability range to play a tritone if standard chord is not chosen
 dir_chord_tritone 30

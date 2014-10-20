@@ -188,7 +188,7 @@ int decide_chord(struct notes_s *chord, struct measure_s *minfo, int q_idx)
 int decide_velocity(int vmin, int vmax)
 {
 	int velocity;
-
+	printf("VELOCITY %d %d\n", vmin, vmax);
 	velocity = (rand() % (vmax - vmin)) + vmin;
 
 	if (velocity > MIDI_MAX_VELOCITY || velocity < 0) {

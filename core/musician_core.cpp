@@ -98,19 +98,32 @@ int note_to_midi(int note_idx, int key_note)
 	return midi;
 }
 
-inline void assign_new_notes(struct play_measure_s *pm, struct notes_s *new_notes,  
-		int *ntcount)
+int assign_new_notes(struct play_measure_s *pm, 
+                     struct notes_s *new_notes,
+                     int *ntcount,
+		     struct semiquaver_s *sq)
 {
 	printf("new notes assignment\n");
 	new_notes->id = *ntcount;
 	new_notes->triplets = 0;
 	new_notes->tempo = 1;
+	new_notes->velocity = decide_velocity(sq->velocity_min, 
+	                                      sq->velocity_max);
+	
+	if ((int8_t)new_notes->velocity == -1)
+		return -1;
+	
 	pm->measure[*ntcount] = *new_notes;
 	(*ntcount)++;
+	
+	return 0;
 }
 
-int continue_last_note(struct play_measure_s *pm, struct play_measure_s *prev_pm, 
-		struct notes_s *new_notes,  int *ntcount)
+int continue_last_note(struct play_measure_s *pm, 
+                       struct play_measure_s *prev_pm, 
+                       struct notes_s *new_notes,  
+		       int *ntcount,
+                       struct semiquaver_s *sq)	
 {
 	if (*ntcount == 0) {
 		memcpy(new_notes->notes, prev_pm->measure[prev_pm->size - 1].notes, 
@@ -118,7 +131,9 @@ int continue_last_note(struct play_measure_s *pm, struct play_measure_s *prev_pm
 			
 		pm->unchanged_fst = 1; 
 		printf("fisrt note is unchanged\n");
-		assign_new_notes(pm, new_notes, ntcount);
+		if (assign_new_notes(pm, new_notes, ntcount, sq))
+			return -1;
+
 	} else if (*ntcount > 0) {
 		pm->measure[(*ntcount)-1].tempo++;
 	} else {
@@ -152,7 +167,11 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		new_notes.chord_size = 1;
 		
 		if (s >= sq_size){
-			continue_last_note(pm, prev_pm, &new_notes, &ntcount);
+			continue_last_note(pm, 
+			                   prev_pm, 
+			                   &new_notes, 
+			                   &ntcount, 
+			                   sqs[s]);
 			continue;
 		}
 
@@ -173,7 +192,8 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		if ((sqs[s]->position != i || sqs[s]->pchange < rnd) &&
 				(prev_pm->measure != NULL || ntcount > 0)) {
 			printf("continuing last note\n");
-			ret = continue_last_note(pm, prev_pm, &new_notes, &ntcount);
+			ret = continue_last_note(pm, prev_pm, &new_notes, 
+			                         &ntcount, sqs[s]);
 			if (ret == -1){
 				fprintf(stderr, "error in continue_last_note\n");
 				return -1;
@@ -182,11 +202,6 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		
 			idx = decide_note(sqs[s]->pnote);
 
-			new_notes.velocity = decide_velocity(sqs[s]->velocity_min,
-					sqs[s]->velocity_max);
-			
-			if (new_notes.velocity == -1)
-				return -1;
 
 			if (!mfields.play_chords) {
 				new_notes.notes[0] = note_to_midi(idx, key_note);
@@ -201,7 +216,9 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 					decide_chord(&new_notes, minfo, q_idx); 
 				printf("chord added.\n");
 			}
-			assign_new_notes(pm, &new_notes, &ntcount);
+			if (assign_new_notes(pm, &new_notes, &ntcount, sqs[s]) == -1)
+				return -1;
+			
 		} 	
 
 		/* Increment the s counter only if the current sq position
