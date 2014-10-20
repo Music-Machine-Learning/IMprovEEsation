@@ -35,12 +35,6 @@
     *(r.f) = v;\
 })
 
-#define COUNT_ONES(n,r)({\
-    int i=1;\
-    for(i;i<n;i<<1)\
-        (*r)+=(i&n?1:0);\
-})
-
 struct variant_couple_s {
     char *subgenre;
     pattern_s *pattern;
@@ -220,6 +214,13 @@ uint16_t rotateMask(uint16_t mask, int rotation){
         return mask;
 }
 
+int count_ones(uint16_t mask){
+    int i, r = 0;
+    for(i=1;i<mask;i<<=1)
+        r+=(i&mask?1:0);
+    return r;
+}
+
 //returns a list of matching scales referred to chord and based on reference note
 int getMatchingScales(uint16_t **list, uint16_t chord_step, uint16_t chord_mode, uint16_t reference_note){
     int i, s, ref, old;
@@ -251,7 +252,7 @@ int getMatchingScales(uint16_t **list, uint16_t chord_step, uint16_t chord_mode,
         for(i = 0, ref = 0, old = 0; i < available_scales.size; i++){
             scale = rotateMask(available_scales.list[i], reference_note);
             chord = rotateMask(chord_mode, chord_step);
-            COUNT_ONES((chord & scale), &ref);
+            ref = count_ones(chord & scale);
             if(ref > old){
                 old = ref;
                 (*list)[0] = scale;
