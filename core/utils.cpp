@@ -40,7 +40,6 @@ int print_debug(const char *f, ...)
 #endif
 
 struct play_measure_s glob_ideal[MAX_SAMPLE_ROW];
-/* TODO: Come on man! What's this 16 here? Clean and explain it -> DONE*/
 char dyna_list[MAX_SAMPLE_ROW][DYNA_SIZE]; /* Fictional hash corresponding to the above array */
 
 char * trim(char *s); /* in configuration.cpp */
@@ -123,7 +122,7 @@ int parse_sample(const char * filename)
 				
 		/* Parse the CSV string */
 
-		print_debug("Parsing line%n:\n", n);
+		print_debug("Parsing line%d:\n", n);
 		
 		/* Set the basic fields of the play_measure */
 		glob_ideal[n].id = 0;
@@ -169,7 +168,7 @@ int parse_sample(const char * filename)
 			glob_ideal[n].measure[glob_ideal[n].size].chord_size = 1;
 			glob_ideal[n].measure[glob_ideal[n].size].notes[0] = cnote; 
 			glob_ideal[n].size++; // We're using the measure size as a counter.... risky?
-			print_debug("\tGot note %n duration %n triplet %n\n", cnote, ctime, ctriplet);
+			print_debug("\tGot note %d duration %d triplet %d\n", cnote, ctime, ctriplet);
 		} while(1);
 	}
 	
@@ -179,7 +178,7 @@ int parse_sample(const char * filename)
 }
 
 /* This crawls the goal measures and gives the ones with the right dyna (output = list size) */
-int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna)
+int get_goal_measures(struct play_measure_s **goal_ms, char *dyna)
 {
 	int n;
 	int cnt = 0;
@@ -207,7 +206,7 @@ int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna)
 			cnt++;
 		}
 	}
-	
+	print_debug("cnt %d\n", cnt);
 	if (cnt < MAX_SAMPLE_ROW) {
 		(*goal_ms) = (struct play_measure_s *)realloc((*goal_ms),
 				cnt * sizeof(struct play_measure_s));
