@@ -35,6 +35,12 @@
     *(r.f) = v;\
 })
 
+#define COUNT_ONES(n,r)({\
+    int i=1;\
+    for(i;i<n;i<<1)\
+        (*r)+=(i&n?1:0);\
+})
+
 struct variant_couple_s {
     char *subgenre;
     pattern_s *pattern;
@@ -203,7 +209,7 @@ uint16_t modeToChord(char* mode){
     return ret;
 }
 
-// performs a rotation of the lowest 12 bits of mask by rot places (positive numbers rotate left, negatives rotate right)
+// performs a rotation of the lowest 12 bits of mask by rotation places (positive numbers rotate left, negatives rotate right)
 uint16_t rotateMask(uint16_t mask, int rotation){
     int rot = rotation % 12;
     if(rot > 0){    //left rotation
@@ -216,22 +222,23 @@ uint16_t rotateMask(uint16_t mask, int rotation){
 
 //returns a list of matching scales referred to chord and based on reference note
 int getMatchingScales(uint16_t **list, uint16_t chord_step, uint16_t chord_mode, uint16_t reference_note){
-    int i, s;
-    uint16_t scale, chord, ref;
+    int i, s, ref, old;
+    uint16_t scale, chord;
     *list = (uint16_t *) calloc(available_scales.size, sizeof(uint16_t));
     for(i = 0, s = 0; i < available_scales.size; i++){
         if(available_scales.list[i] == BLUES_SCALE){
             //if it's a standard blues chord we have special rules (be ready for a deadly conditional branch)
-            if(chord_step == tonality || chord_step == tonality + 5 || chord_step == tonality + 7){
-                if((chord_step == tonality + 5 && reference_note == tonality + 5) ||
-                   (chord_step == tonality + 7 && (reference_note == tonality + 7 || reference_note == tonality + 4)) ||
-                   (reference_note == tonality || reference_note == tonality + 2 || reference_note == tonality + 9)){
-                    (*list)[s] = BLUES_SCALE;
-                    s++;
-                    continue;
-                }
+            if((chord_step == tonality || chord_step == tonality + 5 || chord_step == tonality + 7) &&
+               ((chord_step == tonality + 5 && reference_note == tonality + 5) ||
+                (chord_step == tonality + 7 && (reference_note == tonality + 7 || reference_note == tonality + 4)) ||
+                (reference_note == tonality || reference_note == tonality + 2 || reference_note == tonality + 9))){
+
+                (*list)[s] = BLUES_SCALE;
+                s++;
+                continue;
             }
         }
+        //if it's not a blues scale, check if chord notes are all covered by scale
         scale = rotateMask(available_scales.list[i], reference_note);
         chord = rotateMask(chord_mode, chord_step);
         ref = scale & chord;
@@ -241,11 +248,12 @@ int getMatchingScales(uint16_t **list, uint16_t chord_step, uint16_t chord_mode,
         }
     }
     if(!s){
-        for(i = 0, ref = 0; i < available_scales.size; i++){
+        for(i = 0, ref = 0, old = 0; i < available_scales.size; i++){
             scale = rotateMask(available_scales.list[i], reference_note);
             chord = rotateMask(chord_mode, chord_step);
-            if(ref < chord & scale){
-                ref = chord & scale;
+            COUNT_ONES((chord & scale), &ref);
+            if(ref > old){
+                old = ref;
                 (*list)[0] = scale;
             }
         }
