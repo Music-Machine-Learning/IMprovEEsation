@@ -78,16 +78,14 @@ static scale_list_s available_scales;
 
 static int impro_end;
 
-void free_improvariants(variant_couple_s *v){
+void free_improvariants(variant_couple_s **v){
     variant_couple_s *t;
-    if(v != NULL){
-        while(v->next != NULL){
-            t = v->next;
-            free(v->subgenre);
-            free_db_results(v->pattern);
-            free(v);
-            v = t;
-        }
+    for(; *v != NULL; *v=t){
+        t=(*v)->next;
+        if((*v)->subgenre)
+            free((*v)->subgenre);
+        free_db_results((*v)->pattern);
+        free(*v);
     }
 }
 
@@ -152,7 +150,7 @@ void load_genre_info(char* gen, char* sub){
 
     available_scales.size = get_scales(database, gen, &(available_scales.list));
 
-    free_improvariants(improvariants);
+    free_improvariants(&improvariants);
 
     if(current_pattern->variants_size > 0){
         last = NULL;
@@ -488,7 +486,8 @@ void decideImproScale(measure_s *measure, int current_measure_id){
         }
     }
 
-    free(list);
+    if(list)
+        free(list);
     free(count);
     free(tzones);
 }
@@ -525,7 +524,8 @@ void pickSubgenre(){
             pick = &(subgenresList[rand()%i]);
         }
 
-        free(subgenre);
+        if(subgenre)
+            free(subgenre);
         subgenre = (char*)calloc(strlen(*pick)+1, sizeof(char));
         strcpy(subgenre, *pick);
     }
@@ -542,7 +542,8 @@ void pickGenre(){
         pick = &(genresList[rand()%i]);
     }
 
-    free(genre);
+    if(genre)
+        free(genre);
     genre = (char*)calloc(strlen(*pick)+1, sizeof(char));
     strcpy(genre, *pick);
 
@@ -666,9 +667,9 @@ int init_director_core(char* gen, char *sub, uint32_t solocount, uint32_t *solol
 
 void free_director_core(){
 
-    free_improvariants(improvariants);
+    free_improvariants(&improvariants);
 
-    if(available_scales.size > 0){
+    if(available_scales.size > 0 && available_scales.list){
         free(available_scales.list);
     }
 
