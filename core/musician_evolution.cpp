@@ -66,7 +66,11 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 		ctot += 3;
 	}
 
-	*sim = ((csim * 100) / ctot);
+	/* FLOATING POINT EXCEPTION */
+	if (!ggoal->count)
+		*sim = 0;
+	else
+		*sim = ((csim * 100) / ctot);
 	return *sim; //AHAHAHAHAAh --> ((csim * 100) / ctot);
 }
 
@@ -80,11 +84,11 @@ void merge_pool(struct piece_s **pool, uint8_t *sim, int fst, int q, int end)
 	while (lw <= q && hh <= end) {
 		if (sim[lw] <= sim[hh]) {
 			B[k] = sim[lw];
-			sandbox[k] = *pool[lw];
+			sandbox[k] = (*pool)[lw];
 			lw++;
 		} else {
 			B[k] = sim[hh];
-			sandbox[k] = *pool[hh];
+			sandbox[k] = (*pool)[hh];
 			hh++;
 		}
 		k++;
@@ -93,7 +97,7 @@ void merge_pool(struct piece_s **pool, uint8_t *sim, int fst, int q, int end)
 	if (lw > q) {
 		for(j = hh; j <= end; j++) {
 			B[k] = sim[j];
-			sandbox[k] = *pool[j];
+			sandbox[k] = (*pool)[j];
 			k++;
 		}
 	} else {
@@ -107,7 +111,7 @@ void merge_pool(struct piece_s **pool, uint8_t *sim, int fst, int q, int end)
 	for (j = fst; j <= end; j++)
 		sim[j] = B[j];
 
-	*pool[j] = sandbox[j];
+	(*pool)[j] = sandbox[j];
 }
 
 void mergesort_pool(struct piece_s **pool, uint8_t * sim, int fst, int end){
@@ -148,7 +152,11 @@ int transrecombine(struct piece_s **genetic_pool, int index){
 		if ((*genetic_pool)[index].size < (*genetic_pool)[index+1].size){
 			crossover = rand()%((*genetic_pool)[index].size);
 		} else {
-			crossover = rand()%((*genetic_pool)[index+1].size);
+			/* XXX check that! */
+			if ((*genetic_pool)[index+1].size)
+				crossover = rand()%((*genetic_pool)[index+1].size);
+			else
+				crossover = 0;
 		}
 		swap_pieces((*genetic_pool)[index].notes, (*genetic_pool)[index+1].notes, crossover);
 		
@@ -175,9 +183,19 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 
 	/* Initialize the genetic pool with copies of the original (and the similarities with 0 */
 	for (i = 0; i < GENETIC_POOL_SIZE; i++) {
+		/* XXX FREE */
+		genetic_pool[i].notes = (struct notes_s *) calloc(ginitial->count,
+						sizeof(struct notes_s));
+		if (!genetic_pool[i].notes) {
+			perror("calloc");
+			return -1;
+		}
+		/* XXX FREE */
 		for (j = 0; j < ginitial->count; j++) {
 			genetic_pool[i].notes[j] = ginitial->notes[j];
 		}
+
+		genetic_pool[i].size = ginitial->count;
 
 		/* FIXME to remove when the similarity is complete */
 		similarity[i][0] = 0;
