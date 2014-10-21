@@ -164,6 +164,7 @@ int parse_sample(const char * filename)
 		    /* Set the note values (always just one note) */
 			glob_ideal[n].measure[glob_ideal[n].size].tempo = ctime;
 			glob_ideal[n].measure[glob_ideal[n].size].id = 0;
+			glob_ideal[n].measure[glob_ideal[n].size].velocity = 100;
 			glob_ideal[n].measure[glob_ideal[n].size].triplets = ctriplet;
 			glob_ideal[n].measure[glob_ideal[n].size].chord_size = 1;
 			glob_ideal[n].measure[glob_ideal[n].size].notes[0] = cnote; 

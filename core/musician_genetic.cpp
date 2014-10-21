@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <improveesation/structs.h>
 #include <improveesation/musician_core.h>
+#include <improveesation/musician_improviser.h>
 #include <improveesation/const.h>
 #include <improveesation/utils.h>
 
@@ -110,7 +111,7 @@ int store_gmeasure(struct play_measure_s *pm, struct measure_s *minfo)
 		int newsize = mfields.ggoal.size * 2;
 		mfields.ggoal.notes = (struct notes_s *) 
 			realloc((void *)mfields.ggoal.notes, (size_t)newsize);
-		if (mfields.ggoal.notes == NULL){
+		if (mfields.ggoal.notes == NULL) {
 			fprintf(stderr, "Realloc error in store_measure\n");
 			return -1;
 		}
@@ -122,14 +123,32 @@ int store_gmeasure(struct play_measure_s *pm, struct measure_s *minfo)
 	q = sq_count = key_note = 0;
 	
 	/* Copy each note of a goal measure into the global goal piece */
-	for (i = 0; i < goal_m.size && sq_count < max_sqs; i++) {
-		mfields.ggoal.notes[s++] = goal_m.measure[i];
+	for (i = 0; i < goal_m.size && sq_count < max_sqs; i++, s++) {
+
+		mfields.ggoal.notes[s] = goal_m.measure[i];
+		
+		if (mfields.ggoal.notes[s].chord_size > 1) {
+			fprintf(stderr, "Error: found chords in genetic mode.\n");
+			return -1;
+		}	
+
+		/* Retrieve the key_note from the director information */
 		q = sq_count / SQS_IN_Q;
 		key_note = minfo->tonal_zones[q].note;
 
+		if (mfields.prev_octave == -1) {
+			fprintf(stderr, "something wrong with prev_octave in "
+			                "store_gmeasure\n");
+			return -1;
+		}
+
+		mfields.ggoal.notes[s].notes[0] += MIDI_FIRST_NOTE + 
+			(NSEMITONES * mfields.prev_octave) + key_note - 1;
+		
 		sq_count += goal_m.measure[i].tempo;
 	}
-	
+	mfields.ggoal.count = s;
+
 	if (sq_count != max_sqs) {
 		fprintf(stderr, "Sqs wrong count in the goal samples: %d %d\n", 
 			    sq_count, max_sqs);
