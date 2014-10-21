@@ -367,6 +367,13 @@ int main(int argc, char **argv)
 		pm.id = 0;
 		pm.size = mfields.ggoal.count;
 		pm.musician_id = myid;
+		pm.measure = (struct notes_s *)malloc(sizeof(struct notes_s) * 
+			     mfields.ggoal.count);
+
+		if (pm.measure == NULL) {
+			fprintf(stderr, "Malloc error in main loop\n");
+			exit(EXIT_FAILURE);
+		}
 		memcpy(pm.measure, mfields.ggoal.notes, 
 		       sizeof(struct notes_s) * mfields.ggoal.count);
 

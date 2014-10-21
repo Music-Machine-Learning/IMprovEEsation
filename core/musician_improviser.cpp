@@ -96,7 +96,6 @@ int decide_chord(struct notes_s *chord, struct measure_s *minfo, int q_idx)
 	chord_mode = minfo->chords[q_idx].mode;	
 	chord_width = 1;
 
-
 	/* Convert the chord mask into an array, each value of the array 
 	   corresponds to a possible note that can be present in the chord */
 	for (i = 0, n_done = 0; i < NSEMITONES; i++) {

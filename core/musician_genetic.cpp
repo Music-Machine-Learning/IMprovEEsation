@@ -66,7 +66,7 @@ int musician_init_genetic(int genetic_mode, const char *samplesfile)
 int store_gmeasure(struct play_measure_s *pm, struct measure_s *minfo)
 {
 	int i, s, ngoal, r_idx, idx, size, 
-	    max_quarters, max_sqs, q, sq_count, key_note, octave;
+	    max_quarters, max_sqs, q, sq_count, key_note;
 	struct play_measure_s *goal_ms, goal_m;
 	char *tags[N_TAGS];
 	s = mfields.ginitial.count;
@@ -136,10 +136,14 @@ int store_gmeasure(struct play_measure_s *pm, struct measure_s *minfo)
 		q = sq_count / SQS_IN_Q;
 		key_note = minfo->tonal_zones[q].note;
 
-		/* Add the offset to the notes */
-		octave = decide_octave(mfields.octave_min, mfields.octave_max);
+		if (mfields.prev_octave == -1) {
+			fprintf(stderr, "something wrong with prev_octave in "
+			                "store_gmeasure\n");
+			return -1;
+		}
+
 		mfields.ggoal.notes[s].notes[0] += MIDI_FIRST_NOTE + 
-			(NSEMITONES * octave) + key_note - 1;
+			(NSEMITONES * mfields.prev_octave) + key_note - 1;
 		
 		sq_count += goal_m.measure[i].tempo;
 	}
