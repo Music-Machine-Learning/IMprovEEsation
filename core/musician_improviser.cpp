@@ -58,8 +58,6 @@ int decide_octave(int octave_min, int octave_max)
 	/* 15% 20% 30% 20% 15% */
 	/* TODO find a way to mathematically weight the array */
 	float pref[5] = {0.15, 0.35, 0.65, 0.85, 1.0};
-	
-	printf("omax, omin (%d, %d)\n", octave_max, octave_min);
 
 	if (mfields.prev_octave == -1) {
 		/* Start from around the middle octave. 
@@ -76,14 +74,11 @@ int decide_octave(int octave_min, int octave_max)
 	ojump = i - 2;
 	octave += ojump; 
 	
-	printf("octave_jump %d\n", ojump);
-	
 	if (octave > octave_max) 
 		octave = octave_max;
 	
 	if (octave < octave_min) 
 		octave = octave_min;
-	printf(" octave %d\n", octave);
 
 	mfields.prev_octave = octave;
 

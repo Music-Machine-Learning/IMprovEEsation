@@ -348,8 +348,6 @@ int main(int argc, char **argv)
 
 		} catch (end_of_improvisation_exception e) {
 			fprintf(stderr, "EOI exception catched: exiting\n");
-			free(mfields.ginitial.notes);
-			free(mfields.ggoal.notes);
 			break;
 		}
 		
@@ -357,8 +355,25 @@ int main(int argc, char **argv)
 	}
 	
 	if (genetic) {
-		genetic_loop(&(mfields.ginitial), &(mfields.ggoal));
-		//send_to_play(player_socket, director_socket, &pm);	
+		if (genetic_loop(&(mfields.ginitial), &(mfields.ggoal)) == -1) {
+			fprintf(stderr, "Genetic loop failed\n");
+			//exit(EXIT_FAILURE);
+		}
+		/* Clean the measure structure and re-fill it  
+		 * with the new genetic stuff */
+		free(pm.measure);	
+		memset(&pm, 0, sizeof(struct play_measure_s));
+		
+		pm.id = 0;
+		pm.size = mfields.ggoal.count;
+		pm.musician_id = myid;
+		memcpy(pm.measure, mfields.ggoal.notes, 
+		       sizeof(struct notes_s) * mfields.ggoal.count);
+
+		/* TODO: send ggoal.notes to the player */
+		send_to_play(player_socket, director_socket, &pm);	
+		free(mfields.ginitial.notes);
+		free(mfields.ggoal.notes);
 	}
 
 
