@@ -61,10 +61,10 @@ void cleanup(void)
 {
 	struct subscription_s *curr_musician, *tmp_musician;
 	/* Cleanup and exit */
-	
+
 	smorza_incosa(fd);
 	list_for_each_entry_safe(curr_musician, tmp_musician,
-				 &musicians, list) {
+			&musicians, list) {
 		list_del(&curr_musician->list);
 		close(curr_musician->connection);
 		free(curr_musician);
@@ -156,7 +156,7 @@ void dns_query(char *dns_string, struct sockaddr_in *out,
 
 	} else {
 		fprintf(stderr, "Error in main getaddrinfo (%s)",
-			strerror(errno));
+				strerror(errno));
 	}
 
 	if (port_string) {
@@ -173,7 +173,7 @@ void dns_query(char *dns_string, struct sockaddr_in *out,
 /* Main Flow */
 int main(int argc, char **argv)
 {
-	
+
 	struct sockaddr_in sout;
 	int i = 0; // gp counter
 	struct play_measure_s *note_list = NULL;
@@ -181,7 +181,8 @@ int main(int argc, char **argv)
 	uint32_t musicians_num;
 	in_port_t port = PLA_DEFAULT_PORT;
 	int c, default_director = 1;
-	
+	int genetic = 0;
+
 	for (;;) {
 		int current_optind = (optind ? optind : 1);
 		int option_index = 0;
@@ -191,18 +192,21 @@ int main(int argc, char **argv)
 			{ "director", required_argument, 0, 'd' },
 			{ 0, 0, 0, 0 },
 		};
-		c = getopt_long(argc, argv, "P:d:",
+		c = getopt_long(argc, argv, "P:d:g",
 				long_options, &option_index);
 		if (c == -1)
 			break;
 		switch(c) {
+			case 'g':
+				genetic = 1;
+				break;
 			case 'P':
 				port = atoi(optarg);
 				break;
 			case 'd':
 				default_director = 0;
 				dns_query(optarg, &sout,
-					  DIR_DEFAULT_PORT);
+						DIR_DEFAULT_PORT);
 				printf("director: %s\n", optarg);
 				break;
 			default:
@@ -212,12 +216,12 @@ int main(int argc, char **argv)
 
 	if (default_director)
 		dns_query(NULL, &sout,
-			  DIR_DEFAULT_PORT);
+				DIR_DEFAULT_PORT);
 
 	/* Check if the test flag is active */
 	if (argc - optind + 1 <= 2){
-        printf("./player <midi_dev> <seconds-to-sleep>(-1 if we want to wait the impro to end) [<filename.mid>] [--test]\nThe device's name is located is usually similar to /dev/midi1 or /dev/snd/midiC2D0.\nRemember to use -D DEBUG in compiling to obtain very verbose output.\n");
-		exit(0);
+		printf("./player <midi_dev> <seconds-to-sleep> [filename.mid] [--test]\n");
+		exit(1);
 	} else if ((argc - optind + 1 > 3) && !strcmp(argv[optind + 2], "--test")){
 		test_flag = TRUE;
 		printf("Starting testset...\n");
@@ -229,7 +233,7 @@ int main(int argc, char **argv)
 	/* Configure the parameters for the socket player-director */
 
 	director_socket = socket(AF_INET, SOCK_STREAM, 0);
-	
+
 	if (!test_flag){
 		print_debug("Initializing Networking on port %d %d\n", port, director_socket);
 
@@ -238,11 +242,11 @@ int main(int argc, char **argv)
 
 		/* Connect the socket to the director */
 		if (connect(director_socket, (struct sockaddr *) &sout,
-					  sizeof(struct sockaddr_in))) {
+					sizeof(struct sockaddr_in))) {
 			perror("connect");
 			return 1;
 		}
-		
+
 		/* PROTOCOL: send the subscription to the director */
 		send_subscription(director_socket, PLAYER_ID, 0, 0);
 		printf("Connected to director!\n");
@@ -259,36 +263,36 @@ int main(int argc, char **argv)
 	for (i = 0; i < musicians_num; i++) {
 		struct subscription_s *new_musician = (struct subscription_s *) malloc(sizeof(struct subscription_s));
 		printf("Waiting for a musician... ");
-		
+
 		if (!test_flag){
 			/* PROTOCOL: from the listener socket wait for musicians subscriptions */
 			recv_subscription(net_handler, new_musician);
 		} else {
 			fill_test_musician(new_musician, i);
 		}
-		
-		
+
+
 		printf("got a new musician!\n\tcoupling: %d\n\tinstrument_class: %d\n\tsoloer: %d\n\tconnection :%d\n",
-		       new_musician->coupling, new_musician->instrument_class,
-		       new_musician->soloer, new_musician->connection);
+				new_musician->coupling, new_musician->instrument_class,
+				new_musician->soloer, new_musician->connection);
 		list_add_tail(&new_musician->list, &musicians);
-		
+
 		if (!test_flag){
 			send_ack(new_musician->connection);
 		}
 	}
-	
+
 	printf("\n");
-    if (!midi_init(&musicians, musicians_num, &fd, argv[optind], argv[optind+2])){ //someone should get the filename from the args..
+	if (!midi_init(&musicians, musicians_num, &fd, argv[optind], argv[optind+2])){ //someone should get the filename from the args..
 		return 1;
 	};
-		
+
 
 	/* Execute a cleanup of the structures at the exit */
 	atexit(cleanup);
 	if(argv[optind + 1] >= 0)
 		usleep(atoi(argv[optind + 1])*1000000);
-	
+
 	/* Main loop */
 	printf("Main loop initiated!\n");
 	for (i = 0;; i++) {
@@ -301,17 +305,23 @@ int main(int argc, char **argv)
 				if (i > 100){
 					class end_of_improvisation_exception eoi_ex;
 					throw eoi_ex;
-					}
+				}
 			}
 		} catch (end_of_improvisation_exception e) {
+			/* XXX TODO: Server Mode infinite loop */
 			break;
 		}
 
 		printf("\tPlaying measure %d\n ", i);
 		play_measure(note_list, &musicians, musicians_num, fd);
-    }
+	}
 
-    free_play_measures(note_list, musicians_num);
+	if (genetic) {
+		printf("\tPlaying measure %d\n ", i);
+		play_measure(note_list, &musicians, musicians_num, fd);
+	}
+
+	free_play_measures(note_list, musicians_num);
 
 	return 0;
 }
