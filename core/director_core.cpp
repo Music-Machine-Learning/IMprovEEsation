@@ -327,6 +327,24 @@ chord_s *getTonalZoneChord(int step){
     return chords;
 }
 
+void randomChordIsRandom(uint16_t *note, uint16_t *chord){
+    *note = rand() % 12;
+    switch(rand() % 6){
+        case 0:
+            *chord = CHORD_MAJOR; break;
+        case 1:
+            *chord = CHORD_MAJOR | CHORD_SEVENTH; break;
+        case 2:
+            *chord = CHORD_MAJOR | CHORD_DELTA; break;
+        case 3:
+            *chord = CHORD_MINOR; break;
+        case 4:
+            *chord = CHORD_MINOR | CHORD_SEVENTH; break;
+        case 5:
+            *chord = CHORD_MINOR | CHORD_DELTA; break;
+    }
+}
+
 chord_s *getRandomChord(){
     int i;
     uint16_t note, mode;
@@ -335,29 +353,13 @@ chord_s *getRandomChord(){
     chords = (chord_s*) calloc(tempo.upper, sizeof(chord_s));
     printf("random pick:\n");
 
-RANDOM_CHORD_IS_RANDOM:
-    note = rand() % 12;
-    switch(rand() % 6){
-        case 0:
-            mode = CHORD_MAJOR; break;
-        case 1:
-            mode = CHORD_MAJOR | CHORD_SEVENTH; break;
-        case 2:
-            mode = CHORD_MAJOR | CHORD_DELTA; break;
-        case 3:
-            mode = CHORD_MINOR; break;
-        case 4:
-            mode = CHORD_MINOR | CHORD_SEVENTH; break;
-        case 5:
-            mode = CHORD_MINOR | CHORD_DELTA; break;
-    }
+    randomChordIsRandom(&note, &mode);
 
     for(; i < tempo.upper; i++){
         chords[i].note = note;
         chords[i].mode = mode;
         if(rand() % 100 < *(conf.dir_random_multi_chord)){
-            i++;
-            goto RANDOM_CHORD_IS_RANDOM;
+            randomChordIsRandom(&note, &mode);
         }
     }
     return chords;
