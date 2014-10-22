@@ -103,7 +103,7 @@ void merge_pool(struct piece_s **pool, uint8_t *sim, int fst, int q, int end)
 	} else {
 		for (j = lw; j <= q; j++) {
 			B[k] = sim[j];
-			sandbox[k] = *pool[j];
+			sandbox[k] = (*pool)[j];
 			k++;
 		}
 	}

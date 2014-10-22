@@ -368,14 +368,14 @@ int main(int argc, char **argv)
 		pm.size = mfields.ggoal.count;
 		pm.musician_id = myid;
 		pm.measure = (struct notes_s *)malloc(sizeof(struct notes_s) * 
-			     mfields.ggoal.count);
+			     pm.size);
 
 		if (pm.measure == NULL) {
 			fprintf(stderr, "Malloc error in main loop\n");
 			exit(EXIT_FAILURE);
 		}
 		memcpy(pm.measure, mfields.ggoal.notes, 
-		       sizeof(struct notes_s) * mfields.ggoal.count);
+		       sizeof(struct notes_s) * pm.size);
 
 		/* TODO: send ggoal.notes to the player */
 		send_to_play(player_socket, director_socket, &pm);	
