@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <improveesation/communication.h>
 #include <improveesation/structs.h>
+#include <improveesation/utils.h>
 
 #include <improveesation/musician_evolution.h>
 
@@ -46,6 +47,19 @@ void swap_pieces(struct notes_s *fst, struct notes_s *snd, int cross){
 	}
 }
 
+/* This function prints in a user-friendly way a piece in input 
+ * FIXME change to print_debug */
+void print_piece(struct piece_s piece, char * name, uint8_t sim){
+	int i;
+	
+	printf("Piece %s sz:%d cnt:%d sim:%d [",
+				name, piece.size, piece.count, sim);
+	for (i=1; i<piece.count; i++){
+		printf("%d/%d ", piece.notes[i].notes[0], piece.notes[i].tempo);
+	}
+	printf("]\n");
+}
+
 /* Function that checks how much the array trial is similar to goal and stores the similarity in the 3array */
 int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial, 
 		       uint8_t *sim)
@@ -65,13 +79,12 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 			csim++;
 		ctot += 3;
 	}
-
-	/* FLOATING POINT EXCEPTION */
+	
 	if (!ggoal->count)
 		*sim = 0;
 	else
 		*sim = ((csim * 100) / ctot);
-	return *sim; //AHAHAHAHAAh --> ((csim * 100) / ctot);
+	return *sim;
 }
 
 /* Functions which sort the pool according to similarity (with mergesort) */
@@ -131,13 +144,30 @@ int sort_pool(struct piece_s **pool, uint8_t * sim)
 }
 
 /* TODO ensure about the length which has to be the same as the initial */
+/* Change a random number of notes according to the piece length */
 int change_random_note(struct piece_s *piece){
 	int i,r;
-	for(i=0; i<NUM_CHANGE(piece->size); i++){
-		r = rand()%NUM_CHANGE(piece->size);
-		piece->notes[r].notes[0] += (rand()%23 - 11);
-		piece->notes[r].tempo += (rand()%9 - 4);
+	
+	printf("Changing positions: ");
+	for(i=0; i<NUM_CHANGE(piece->count); i++){
+		r = rand()%piece->count; /* Establish which note to change */
+		
+		/* Change the pitch */
+		if(piece->notes[r].notes[0] != 128)
+			piece->notes[r].notes[0] = 
+				(piece->notes[r].notes[0] + 
+				(rand()%NOTES_CHANGE_RANGE - NOTES_CHANGE_DIST))%128;
+		else
+			piece->notes[r].notes[0] = (MIDDLE_NOTE +
+				(rand()%NOTES_CHANGE_RANGE - NOTES_CHANGE_DIST))%128;
+				
+		/* Change the tempo */		
+		piece->notes[r].tempo = (piece->notes[r].tempo + 
+			(rand()%TEMPO_CHANGE_RANGE - TEMPO_CHANGE_DIST))%MAX_TEMPO;
+
+		printf("%d ", r);
 	}
+	printf("\n");
 }
 
 /** Function used to recombine pieces in the genetic pool.
@@ -148,6 +178,9 @@ int transrecombine(struct piece_s **genetic_pool){
 	int j, crossover;
 	
 	for (j = 0; j < GENETIC_POOL_SIZE/4; j += 2) {
+		
+		print_piece((*genetic_pool)[j], "genetic", 0);
+		
 		if ((*genetic_pool)[j].size == 0) {
 			fprintf(stderr, "Zero size error in transrecombine\n");
 			return -1;
@@ -185,8 +218,12 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 	uint8_t sim[GENETIC_POOL_SIZE];
 
 	int i,j;
+	
+	/* Print the initial arrays in debug mode */
+	print_piece(*ginitial, "initial", 0);
+	print_piece(*ggoal, "goal", 0);
 
-	/* Initialize the genetic pool with copies of the original (and the similarities with 0 */
+	/* Initialize the genetic pool with copies of the original (and the similarities with 0) */
 	for (i = 0; i < GENETIC_POOL_SIZE; i++) {
 		/* XXX FREE */
 		genetic_pool[i].notes = (struct notes_s *)calloc(ginitial->size,
@@ -199,19 +236,17 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		/* XXX FREE */
 		memcpy(genetic_pool[i].notes, ginitial->notes, 
 		       sizeof(struct notes_s) * ginitial->count);
-		/*	
-		for (j = 0; j < ginitial->count; j++) {
-			genetic_pool[i].notes[j] = ginitial->notes[j];
-		} */
-
-		genetic_pool[i].size = ginitial->count;
-
-		/* FIXME to remove when the similarity is complete */
+			
+		genetic_pool[i].size = ginitial->size;
+		genetic_pool[i].count = ginitial->count;
+	
+		/* FIXME to remove when the similarity is complete 
 		similarity[i][0] = 0;
 		similarity[i][1] = 0;
-		similarity[i][2] = 0;
+		similarity[i][2] = 0; */
 
 		compute_similarity(ggoal, &genetic_pool[i], &sim[i]);	
+		// FIXME print_piece(genetic_pool[i], "genetic", sim[i]);
 	}
 
 	/* Now we have everything set, let's get started with the loop! */
@@ -228,6 +263,7 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		for(j=0; j<GENETIC_POOL_SIZE; j++) {
 			change_random_note(&genetic_pool[j]);
 			compute_similarity(ggoal, &genetic_pool[j], &sim[j]);
+			print_piece(genetic_pool[j], "genetic", sim[j]);
 		}
 		sort_pool((struct piece_s**)&genetic_pool, sim);
 	}

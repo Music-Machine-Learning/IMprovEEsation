@@ -26,7 +26,13 @@
 
 #define MEASURE_NUM 32
 #define MELODY_LENGTH (MEASURE_NUM * 24) /* FIXME MEASURE_NUM is temporary, it shouldn't be hardcoded */
-#define NUM_CHANGE(size) (size/20)
+#define NUM_CHANGE(size) (size/20 + 1)
+#define NOTES_CHANGE_DIST 11 /* How a note can change in distance during an evolutionary step */
+#define NOTES_CHANGE_RANGE (NOTES_CHANGE_DIST * 2 + 1)
+#define TEMPO_CHANGE_DIST 4 /* How many semiquavers we can add or sutract during an evolutionary step */
+#define TEMPO_CHANGE_RANGE (TEMPO_CHANGE_DIST * 2 + 1)
+#define MIDDLE_NOTE 64 /* FIXME characterize instrument */
+#define MAX_TEMPO 16 /* More is too much */
 
 int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal);
 
