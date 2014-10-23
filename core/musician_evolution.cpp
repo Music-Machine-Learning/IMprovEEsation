@@ -263,9 +263,10 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		for(j=0; j<GENETIC_POOL_SIZE; j++) {
 			change_random_note(&genetic_pool[j]);
 			compute_similarity(ggoal, &genetic_pool[j], &sim[j]);
-			print_piece(genetic_pool[j], "genetic", sim[j]);
 		}
 		sort_pool((struct piece_s**)&genetic_pool, sim);
+		//print_piece(genetic_pool[j], "genetic", sim[j]);
+		printf("mergesort?");
 	}
 
 	/* TODO:Need to sort once again */
