@@ -107,7 +107,6 @@ void merge_pool(struct piece_s *pool, uint8_t *sim, int fst, int q, int end)
 		}
 		k++;
 	}
-
 	if (lw > q) {
 		for(j = hh; j <= end; j++) {
 			B[k] = sim[j];
@@ -121,10 +120,10 @@ void merge_pool(struct piece_s *pool, uint8_t *sim, int fst, int q, int end)
 			k++;
 		}
 	}
-	for (j = fst; j <= end; j++)
+	for (j = fst; j <= end; j++){
 		sim[j] = B[j];
-
-	pool[j] = sandbox[j];
+		pool[j] = sandbox[j];
+	}
 }
 
 void mergesort_pool(struct piece_s * pool, uint8_t * sim, int fst, int end){
@@ -140,6 +139,7 @@ void mergesort_pool(struct piece_s * pool, uint8_t * sim, int fst, int end){
 	}
 }
 
+/* This sorts the pool in INCREASING order */
 int sort_pool(struct piece_s * pool, uint8_t * sim)
 {
 	mergesort_pool(pool, sim, 0, GENETIC_POOL_SIZE - 1);
@@ -179,37 +179,38 @@ int change_random_note(struct piece_s *piece){
  * Every piece gets a replacement 
  * Currently we use the upper 25% and we put the recombined in the
  * lower 25% */
-int transrecombine(struct piece_s **genetic_pool){
+int transrecombine(struct piece_s * genetic_pool){
 	int j, crossover;
 	
 	for (j = 0; j < GENETIC_POOL_SIZE/4; j += 2) {
 		
-		print_piece((*genetic_pool)[j], "genetic", 0);
+		print_piece(genetic_pool[j], "genetic", 0);
 		
-		if ((*genetic_pool)[j].size == 0) {
+		if (genetic_pool[j].size == 0) {
 			fprintf(stderr, "Zero size error in transrecombine\n");
 			return -1;
 		}
 		/* Choose the crossover point */
-		if ((*genetic_pool)[j].size < (*genetic_pool)[j + 1].size) {
-			crossover = rand()%((*genetic_pool)[j].size);
+		if (genetic_pool[j].size < genetic_pool[j + 1].size) {
+			crossover = rand()%(genetic_pool[j].size);
 		} else {
 			/* XXX check that! */
-			if ((*genetic_pool)[j + 1].size)
-				crossover = rand()%((*genetic_pool)[j + 1].size);
+			if (genetic_pool[j + 1].size)
+				crossover = rand()%(genetic_pool[j + 1].size);
 			else
 				crossover = 0;
 		}
-		swap_pieces((*genetic_pool)[j].notes, 
-			    (*genetic_pool)[j + 1].notes, crossover);
+		swap_pieces(genetic_pool[j].notes, 
+			    genetic_pool[j + 1].notes, crossover);
 		
 		/* TODO add here transposon propagation */
 		
 		/* Here's the replacement on the lower 25% */
-		(*genetic_pool)[GENETIC_POOL_SIZE - j - 1] = (*genetic_pool)[j];
-		(*genetic_pool)[GENETIC_POOL_SIZE - j - 2] = (*genetic_pool)[j + 1];
-			
+		genetic_pool[GENETIC_POOL_SIZE - j - 1] = genetic_pool[j];
+		genetic_pool[GENETIC_POOL_SIZE - j - 2] = genetic_pool[j + 1];	
 	}
+	
+	return 0;
 }
 
 int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
@@ -260,7 +261,7 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		/* Recombination and transposon propagation (skip on the first iteration) */
 		/* This function automatically replaces the upper 25% with the lower */
 		if(i > 0)
-			if(transrecombine((struct piece_s **)&genetic_pool) == -1)
+			if(transrecombine(genetic_pool) == -1)
 				return -1;
 
 		/* First we change a number (according to the length) of notes at random */
@@ -268,14 +269,9 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		for(j=0; j<GENETIC_POOL_SIZE; j++) {
 			change_random_note(&genetic_pool[j]);
 			compute_similarity(ggoal, &genetic_pool[j], &sim[j]);
-			// print_piece(genetic_pool[j], "genetic", sim[j]);
+			print_piece(genetic_pool[j], "genetic", sim[j]);
 		}
 		sort_pool(genetic_pool, sim);
-		//~ print_piece(genetic_pool[0], "genetic", sim[j]);
-		//~ print_piece(genetic_pool[1], "genetic", sim[j]);
-		//~ print_piece(genetic_pool[2], "genetic", sim[j]);
-		//~ print_piece(*ginitial, "initial", 0);
-
 	}
 
 	/* TODO:Need to sort once again */
