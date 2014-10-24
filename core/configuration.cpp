@@ -20,6 +20,12 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,*/
 /* USA.                                                                      */
 /*****************************************************************************/
+
+/* Note:
+ * Unfortunately C/C++ doesn't support reflection out of the box.
+ * So this parser is merely a big mess of ifs.
+ */
+
 #include <pwd.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,50 +40,89 @@
 })
 
 #define SET_INT_FIELD(r,f,p) ({\
-    r->f = (int *) malloc(sizeof(int));\
-    *(r->f) = atoi(p);\
+	r->f = (int *) malloc(sizeof(int));\
+	*(r->f) = atoi(p);\
 })
 
-/* parse options and put in the right field in the struct */
+/* Check required fields */
+#define CHECK_FIELD(r, m, f) ({\
+	if (!r->f) {\
+		fprintf(stderr, "Required Field " #f " were missing\n");\
+		m = 1;\
+	}\
+})
+
+/* Parse options and put in the right field in the struct */
 int option_dispatcher(char *n, char *p, struct rc_conf_s *r)
 {
+	/* Database Hostname */
 	if (!strcmp(n, "db_host"))
 		SET_STRING_FIELD(r, db_host, p);
+
+	/* Database Name */
 	else if (!strcmp(n, "db_name"))
 		SET_STRING_FIELD(r, db_name, p);
+
+	/* Database User */
 	else if (!strcmp(n, "db_user"))
 		SET_STRING_FIELD(r, db_user, p);
+
+	/* Database password */
 	else if (!strcmp(n, "db_passwd"))
 		SET_STRING_FIELD(r, db_passwd, p);
-    else if (!strcmp(n, "dir_change_subgenre"))
-        SET_INT_FIELD(r, dir_change_subgenre, p);
-    else if (!strcmp(n, "dir_change_genre_on_one"))
-        SET_INT_FIELD(r, dir_change_genre_on_one, p);
-    else if (!strcmp(n, "dir_change_genre_on_any"))
-        SET_INT_FIELD(r, dir_change_genre_on_any, p);
-    else if (!strcmp(n, "dir_change_mood_on_one"))
-        SET_INT_FIELD(r, dir_change_mood_on_one, p);
-    else if (!strcmp(n, "dir_change_mood_on_any"))
-        SET_INT_FIELD(r, dir_change_mood_on_any, p);
-    else if (!strcmp(n, "dir_change_chord_on_one"))
-        SET_INT_FIELD(r, dir_change_chord_on_one, p);
-    else if (!strcmp(n, "dir_change_chord_on_any"))
-        SET_INT_FIELD(r, dir_change_chord_on_any, p);
-    else if (!strcmp(n, "dir_random_multi_chord"))
-        SET_INT_FIELD(r, dir_random_multi_chord, p);
-    else if (!strcmp(n, "dir_chord_tritone"))
-        SET_INT_FIELD(r, dir_chord_tritone, p);
-    else if (!strcmp(n, "dir_chord_cadenza"))
-        SET_INT_FIELD(r, dir_chord_cadenza, p);
-    else if (!strcmp(n, "dir_chord_tonal_zone"))
-        SET_INT_FIELD(r, dir_chord_tonal_zone, p);
-    else
+
+	/* Director subgenre change rate */
+	else if (!strcmp(n, "dir_change_subgenre"))
+		SET_INT_FIELD(r, dir_change_subgenre, p);
+	
+	/* Director genre change rate on a measure */
+	else if (!strcmp(n, "dir_change_genre_on_one"))
+		SET_INT_FIELD(r, dir_change_genre_on_one, p);
+
+	/* Director genre change rate on any measure */
+	else if (!strcmp(n, "dir_change_genre_on_any"))
+		SET_INT_FIELD(r, dir_change_genre_on_any, p);
+
+	/* Director mood change rate on a measure */
+	else if (!strcmp(n, "dir_change_mood_on_one"))
+		SET_INT_FIELD(r, dir_change_mood_on_one, p);
+
+	/* Director mood change rate on any measure */
+	else if (!strcmp(n, "dir_change_mood_on_any"))
+		SET_INT_FIELD(r, dir_change_mood_on_any, p);
+
+	/* Director chord change rate on a measure */
+	else if (!strcmp(n, "dir_change_chord_on_one"))
+		SET_INT_FIELD(r, dir_change_chord_on_one, p);
+
+	/* Director chord change rate on any measure */
+	else if (!strcmp(n, "dir_change_chord_on_any"))
+		SET_INT_FIELD(r, dir_change_chord_on_any, p);
+
+	/* Director multi chord rate */
+	else if (!strcmp(n, "dir_random_multi_chord"))
+		SET_INT_FIELD(r, dir_random_multi_chord, p);
+
+	/* Director tritone rate */
+	else if (!strcmp(n, "dir_chord_tritone"))
+		SET_INT_FIELD(r, dir_chord_tritone, p);
+
+	/* Director "cadenza" of chords. */
+	else if (!strcmp(n, "dir_chord_cadenza"))
+		SET_INT_FIELD(r, dir_chord_cadenza, p);
+
+	/* Director tonal zone */
+	else if (!strcmp(n, "dir_chord_tonal_zone"))
+		SET_INT_FIELD(r, dir_chord_tonal_zone, p);
+	
+	/* Option not implemented */
+	else
 		return 1;
 
 	return 0;
 }
 
-/* remove spaces from start of a string */
+/* Remove spaces and tabs from start of a string */
 char *trim(char *s)
 {
 	int i;
@@ -89,6 +134,7 @@ char *trim(char *s)
 int load_conf(const char *path, struct rc_conf_s *r)
 {
 	int n;
+	int missing_field = 0;
 	size_t size = 0;
 	ssize_t csize = 0;
 
@@ -115,41 +161,47 @@ int load_conf(const char *path, struct rc_conf_s *r)
 	if (!f)
 		return -1;
 
-	/* avoid buffer overflows */
+	/* Avoid buffer overflows */
 	asprintf(&par_string, "%%%ds %%%ds",
-		 MAX_CONFIGURATION_SIZE, MAX_CONFIGURATION_SIZE);
+			MAX_CONFIGURATION_SIZE, MAX_CONFIGURATION_SIZE);
 
-	for (n = 0; 
-	     (csize = getline(&line, &size, f)) > 0;
+	for (n = 0;
+	    (csize = getline(&line, &size, f)) > 0;
 	     n++) {
 
 		size = csize;
 
 		/* comment */
 		if (trim(line)[0] == '#' || size <= 1)
-		     continue;
+			continue;
 
 		sscanf(trim(line), par_string, conf_name, conf_value);
 		if (option_dispatcher(conf_name, conf_value, r))
-		fprintf(stderr, "warning, unknown conf: %s\n", conf_name);
+			fprintf(stderr, "warning, unknown conf: %s\n", conf_name);
 	}
 
 	free(line);
 
 	fclose(f);
 
-	/* check required fields */
-	if (!r->db_name || !r->db_host || !r->db_passwd || !r->db_user ||
-	    !r->dir_change_subgenre || 
-	    !r->dir_change_genre_on_one || !r->dir_change_genre_on_any || 
-	    !r->dir_change_mood_on_one || !r->dir_change_mood_on_any || 
-	    !r->dir_change_chord_on_one || !r->dir_change_chord_on_any ||
-	    !r->dir_random_multi_chord || !r->dir_chord_tritone ||
-	    !r->dir_chord_cadenza || !r->dir_chord_tonal_zone) {
-		fprintf(stderr,
-		        "some of the required fields (db_name,db_host,db_passwd,db_user) were missing\n");
-		return -1;
-	}
+	/* With that we have some granularity on the error printf. */
+	CHECK_FIELD(r, missing_field, db_name);
+	CHECK_FIELD(r, missing_field, db_host);
+	CHECK_FIELD(r, missing_field, db_user);
+	CHECK_FIELD(r, missing_field, dir_change_subgenre);
+	CHECK_FIELD(r, missing_field, dir_change_genre_on_one);
+	CHECK_FIELD(r, missing_field, dir_change_genre_on_any);
+	CHECK_FIELD(r, missing_field, dir_change_mood_on_one);
+	CHECK_FIELD(r, missing_field, dir_change_mood_on_any);
+	CHECK_FIELD(r, missing_field, dir_change_chord_on_one);
+	CHECK_FIELD(r, missing_field, dir_change_chord_on_any);
+	CHECK_FIELD(r, missing_field, dir_random_multi_chord);
+	CHECK_FIELD(r, missing_field, dir_chord_tritone);
+	CHECK_FIELD(r, missing_field, dir_chord_cadenza);
+	CHECK_FIELD(r, missing_field, dir_chord_tonal_zone);
+
+	if (missing_field)
+		n = -1;
 
 	return n;
 }
@@ -164,26 +216,26 @@ void free_conf(struct rc_conf_s r)
 		free(r.db_passwd);
 	if (r.db_user)
 		free(r.db_user);
-    if(r.dir_change_subgenre)
-        free(r.dir_change_subgenre);
-    if(r.dir_change_genre_on_one)
-        free(r.dir_change_genre_on_one);
-    if(r.dir_change_genre_on_any)
-        free(r.dir_change_genre_on_any);
-    if(r.dir_change_mood_on_one)
-        free(r.dir_change_mood_on_one);
-    if(r.dir_change_mood_on_any)
-        free(r.dir_change_mood_on_any);
-    if(r.dir_change_chord_on_one)
-        free(r.dir_change_chord_on_one);
-    if(r.dir_change_chord_on_any)
-        free(r.dir_change_chord_on_any);
-    if(r.dir_random_multi_chord)
-        free(r.dir_random_multi_chord);
-    if(r.dir_chord_tritone)
-        free(r.dir_chord_tritone);
-    if(r.dir_chord_cadenza)
-        free(r.dir_chord_cadenza);
-    if(r.dir_chord_tonal_zone)
-        free(r.dir_chord_tonal_zone);
+	if(r.dir_change_subgenre)
+		free(r.dir_change_subgenre);
+	if(r.dir_change_genre_on_one)
+		free(r.dir_change_genre_on_one);
+	if(r.dir_change_genre_on_any)
+		free(r.dir_change_genre_on_any);
+	if(r.dir_change_mood_on_one)
+		free(r.dir_change_mood_on_one);
+	if(r.dir_change_mood_on_any)
+		free(r.dir_change_mood_on_any);
+	if(r.dir_change_chord_on_one)
+		free(r.dir_change_chord_on_one);
+	if(r.dir_change_chord_on_any)
+		free(r.dir_change_chord_on_any);
+	if(r.dir_random_multi_chord)
+		free(r.dir_random_multi_chord);
+	if(r.dir_chord_tritone)
+		free(r.dir_chord_tritone);
+	if(r.dir_chord_cadenza)
+		free(r.dir_chord_cadenza);
+	if(r.dir_chord_tonal_zone)
+		free(r.dir_chord_tonal_zone);
 }

@@ -36,25 +36,35 @@
 
 #include <arpa/inet.h>
 
+/* ACKs, standard and sync */
 #define SYNC_ACK 0x42
 #define ACK 0x0
 
 #define isSACK(payload) (payload == SYNC_ACK)
 #define isACK(payload) (payload == ACK)
 
+/* Communication error */
 class network_exception net_ex;
+
+/* Someone intentionally closed the communication. */
 class end_of_improvisation_exception eoi_ex;
 
+/* Load the iovec. */
 #define LOAD_IOVEC(iov, i, field)\
 	({iov[i].iov_base = &field;\
 	 iov[i].iov_len = sizeof(field);})
 
+/*** Endianess ***/
+
+/* Launch htons on the firsts s fields of the iovec. */
 #define IOVEC_HTONS(b, s) ({\
 	struct iovec *a = (b);\
 	int i;\
 	for (i = 0; i < (s); i++)\
 		*((uint16_t *)a[i].iov_base) = htons(*((uint16_t *)a[i].iov_base));\
 })
+
+/* Launch ntohs on the firsts s fields of the iovec. */
 #define IOVEC_NTOHS(b, s) ({\
 	struct iovec *a = (b);\
 	int i;\
@@ -62,12 +72,15 @@ class end_of_improvisation_exception eoi_ex;
 		*((uint16_t *)a[i].iov_base) = ntohs(*((uint16_t *)a[i].iov_base));\
 })
 
+/* Launch htonl on the firsts s fields of the iovec. */
 #define IOVEC_HTONL(b, s) ({\
 	struct iovec *a = (b);\
 	int i;\
 	for (i = 0; i < (s); i++)\
 		*((uint32_t *)a[i].iov_base) = htonl(*((uint32_t *)a[i].iov_base));\
 })
+
+/* Launch ntohl on the firsts s fields of the iovec. */
 #define IOVEC_NTOHL(b, s) ({\
 	struct iovec *a = (b);\
 	int i;\
@@ -75,7 +88,8 @@ class end_of_improvisation_exception eoi_ex;
 		*((uint32_t *)a[i].iov_base) = ntohl(*((uint32_t *)a[i].iov_base));\
 })
 
-/* Musician */
+/*** Musician ***/
+/* Send a subscription to the director */
 uint32_t send_subscription(int director, uint32_t coupling,
 		uint8_t instrument_class, uint8_t soloer)
 {
@@ -89,7 +103,7 @@ uint32_t send_subscription(int director, uint32_t coupling,
 	IOVEC_HTONL(comm_vec, 1);
 
 	if (writev(director, comm_vec, 3) <= 0) {
-		perror("writev1");
+		perror("send subscription write");
 		throw net_ex;
 		return -1;
 	}
@@ -97,7 +111,7 @@ uint32_t send_subscription(int director, uint32_t coupling,
 	IOVEC_NTOHL(comm_vec, 1);
 
 	if (read(director, &id, sizeof(id)) <= 0) {
-		perror("read");
+		perror("send subscription read");
 		throw net_ex;
 		return -1;
 	}
@@ -107,6 +121,7 @@ uint32_t send_subscription(int director, uint32_t coupling,
 	return id;
 }
 
+/* Send a subscription struct to the director */
 #ifdef __cplusplus
 uint32_t send_subscription(int director, struct subscription_s *s)
 #else /* C retrocompatibilty */
@@ -117,6 +132,7 @@ uint32_t send_subscription_struct(int director, struct subscription_s *s)
 			s->soloer);
 }
 
+/* Receive a measure from the director */
 void recv_measure(int director, struct measure_s *new_measure)
 {
 	int i, retval;
@@ -161,7 +177,7 @@ void recv_measure(int director, struct measure_s *new_measure)
 	tmp_iov = new struct iovec[new_measure->tempo.upper * 2]();
 
 	if (!new_measure || !tmp_iov) {
-		perror("calloc");
+		perror("malloc");
 		throw net_ex;
 		return;
 	}
@@ -176,7 +192,7 @@ void recv_measure(int director, struct measure_s *new_measure)
 	retval = readv(director, tmp_iov, new_measure->tempo.upper * 2);
 
 	if(retval < 0) {
-		perror("readv");
+		perror("recv measure readv (1)");
 		throw net_ex;
 		return;
 	} else if(retval == 0 && new_measure->tempo.upper > 0) {
@@ -198,7 +214,7 @@ void recv_measure(int director, struct measure_s *new_measure)
 	retval = readv(director, tmp_iov, new_measure->tempo.upper * 2);
 
 	if(retval < 0) {
-		perror("readv");
+		perror("recv measure readv (2)");
 		throw net_ex;
 		return;
 	} else if(retval == 0 && new_measure->tempo.upper > 0) {
@@ -212,7 +228,7 @@ void recv_measure(int director, struct measure_s *new_measure)
 	retval = read(director, &new_measure->tags.size,
 			sizeof(new_measure->tags.size));
 	if(retval < 0) {
-		perror("readv");
+		perror("recv measure readv (3)");
 		throw net_ex;
 		return;
 	} else if(retval == 0) {
@@ -246,16 +262,20 @@ void recv_measure(int director, struct measure_s *new_measure)
 	delete []tmp_iov;
 }
 
+/* Send syncronization ack to the director
+ * (End of composing the current measure!)
+ */
 void send_sync_ack(int director)
 {
 	uint8_t sack = SYNC_ACK;
 	if (write(director, &sack, sizeof(sack)) <= 0) {
-		perror("write");
+		perror("send sync ack write");
 		throw net_ex;
 		return;
 	}
 }
 
+/* Send the composed measure to the player */
 void send_to_play(int player, struct play_measure_s *measure)
 {
 	int j;
@@ -280,7 +300,7 @@ void send_to_play(int player, struct play_measure_s *measure)
 	IOVEC_HTONL(iov, 3);
 
 	if (writev(player, iov, measure_size_bck * 6 + 4) < 0) {
-		perror("writev2");
+		perror("send to play writev");
 		throw net_ex;
 		return;
 	}
@@ -289,7 +309,7 @@ void send_to_play(int player, struct play_measure_s *measure)
 	IOVEC_NTOHL(iov, 3);
 }
 
-/* auto ack version */
+/* Send the composed measure to the player (auto ack version) */
 void send_to_play(int player, int director, struct play_measure_s *measure)
 {
 	send_to_play(player, measure);
@@ -300,18 +320,20 @@ void send_to_play(int player, int director, struct play_measure_s *measure)
 
 /* Midi player */
 
+/* Receive the number of musicians from the director */
 uint32_t recv_num_of_musicians(int net_handler)
 {
 	uint32_t retval = 0;
 	if (read(net_handler, &retval, sizeof(retval)) < 0) {
-		perror("read");
-		retval = -1;
+		perror("recv num of musicians read");
 		throw net_ex;
+		return -1;
 	}
 
 	return ntohl(retval);
 }
 
+/* Receive a list of notes to play */
 void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 {
 	struct subscription_s *cmusician;
@@ -321,8 +343,10 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 		pm_count = 0,
 		retval;
 
+	/* Create an epoll to wait every musician (network ordering) */
 	int efd = epoll_create1(0);
 
+	/* Add every musician to the epoll watcher */
 	list_for_each_entry(cmusician, musicians, list) {
 		struct epoll_event epev;
 
@@ -348,6 +372,8 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 
 	while (psize < size) {
 		int i;
+		
+		/* Wait some musicians */
 		int cprocessed = epoll_wait(efd, epevs, size, -1);
 
 		if (epoll_wait < 0) {
@@ -355,6 +381,8 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 			throw net_ex;
 			return;
 		}
+
+		/* Load the structs from the net. */
 		for(i = 0; i < cprocessed; i++) {
 			int j;
 			struct iovec safe_iov[4], *iov = NULL;
@@ -364,14 +392,18 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 			}
 
 			/* player send */
-			LOAD_IOVEC(safe_iov, 0, note_list[pm_count].id);
-			LOAD_IOVEC(safe_iov, 1, note_list[pm_count].size);
-			LOAD_IOVEC(safe_iov, 2, note_list[pm_count].musician_id);
-			LOAD_IOVEC(safe_iov, 3, note_list[pm_count].unchanged_fst);
+			LOAD_IOVEC(safe_iov, 0,
+				   note_list[pm_count].id);
+			LOAD_IOVEC(safe_iov, 1,
+				   note_list[pm_count].size);
+			LOAD_IOVEC(safe_iov, 2,
+				   note_list[pm_count].musician_id);
+			LOAD_IOVEC(safe_iov, 3,
+				   note_list[pm_count].unchanged_fst);
 
 			retval = readv(epevs[i].data.fd, safe_iov, 4);
 			if (retval < 0) {
-				perror("readv");
+				perror("recv to play readv (1)");
 				throw net_ex;
 				return;
 			} else if (retval == 0) {
@@ -392,6 +424,7 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 				return;
 			}
 
+			/* Dynamic fields */
 			iov = new struct iovec[note_list[pm_count].size * 6];
 			for (j = 0; j < note_list[pm_count].size; j++) {
 				LOAD_IOVEC(iov, j * 6,
@@ -414,16 +447,19 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 			delete[] iov;
 
 			if (retval < 0) {
-				perror("readv");
+				perror("recv to play readv (2)");
 				throw net_ex;
 				return;
 			} else if (retval == 0 &&
-					note_list[pm_count].size != 0) {
+				   note_list[pm_count].size != 0) {
 				throw eoi_ex;
 				return;
 			}
 
-			retval = epoll_ctl(efd, EPOLL_CTL_DEL, epevs[i].data.fd, NULL);
+			/* Eventually delete the musician
+			 * from the waiting queue */
+			retval = epoll_ctl(efd, EPOLL_CTL_DEL,
+					   epevs[i].data.fd, NULL);
 
 			if (retval < 0) {
 				perror("epoll_ctl");
@@ -434,16 +470,19 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 			pm_count++;
 		}
 
-		if (cprocessed > 0)
+		if (cprocessed > 0) {
 			psize += cprocessed;
-		else
-            break;
+		} else {
+			/* No musician processed */
+			break;
+		}
 	}
+
 	delete [] epevs;
 	close(efd);
 }
 
-/* TODO: deep debug && it's really useful? */
+/* Memory management */
 void free_play_measures(struct play_measure_s *nl, int size)
 {
 	int i;
@@ -458,8 +497,9 @@ void free_play_measures(struct play_measure_s *nl, int size)
 	}
 }
 
-/* Director */
+/*** Director ***/
 
+/* Receive subscription from musician */
 void recv_subscription(int conn_socket, struct subscription_s *new_musician)
 {
 	struct iovec iov[3];
@@ -481,7 +521,7 @@ void recv_subscription(int conn_socket, struct subscription_s *new_musician)
 
 	retval = readv(mus_connection, iov, 3);
 	if(retval < 0) {
-		perror("readv");
+		perror("recv subscription readv");
 		throw net_ex;
 		return;
 	} else if (retval == 0) {
@@ -492,6 +532,7 @@ void recv_subscription(int conn_socket, struct subscription_s *new_musician)
 	IOVEC_NTOHL(iov, 1);
 }
 
+/* Receive player subscription */
 uint32_t recv_player(int conn_socket)
 {
 	int retval = -1;
@@ -516,15 +557,17 @@ uint32_t recv_player(int conn_socket)
 	return retval;
 }
 
+/* Send the num of musicians to the player */
 void send_num_of_musicians(int player_conn, uint32_t musicians_count)
 {
 	uint32_t tosend = htonl(musicians_count);
 	if (write(player_conn, &tosend, sizeof(tosend)) <= 0) {
-		perror("write");
+		perror("send num of musician write");
 		throw net_ex;
 	}
 }
 
+/* Send an id to the connection endpoint (usually a musician) */
 void send_id(int musician_conn, uint32_t id)
 {
 	uint32_t tosend = htonl(id);
@@ -534,11 +577,13 @@ void send_id(int musician_conn, uint32_t id)
 	}
 }
 
+/* send an ack to the connection endpoint (usually a musician) */
 void send_ack(int musician_conn)
 {
 	send_id(musician_conn, ACK);
 }
 
+/* Broadcast the measure to all the musicians. */
 void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 {
 	struct subscription_s *cmusician;
@@ -547,6 +592,8 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 
 	list_for_each_entry(cmusician, dests, list) {
 		int i;
+
+		/* Fixed fields */
 		LOAD_IOVEC(safe_iov, 0, next_measure->bpm);
 		LOAD_IOVEC(safe_iov, 1, next_measure->soloist_id);
 		LOAD_IOVEC(safe_iov, 2, next_measure->tempo.upper);
@@ -561,13 +608,12 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 		for (i = 0;
 		     i < sizeof(next_measure->prioargs) / sizeof(*next_measure->prioargs);
 		     i++) {
-			next_measure->prioargs[i] =
-						htonl(next_measure->prioargs[i]);
+			next_measure->prioargs[i] = htonl(next_measure->prioargs[i]);
 		}
 
 		retval = writev(cmusician->connection, safe_iov, 5);
 		if (retval <= 0) {
-			perror("writev3");
+			perror("broadcast measure writev (1)");
 			throw net_ex;
 			return;
 		}
@@ -577,17 +623,17 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 		for (i = 0;
 		     i < sizeof(next_measure->prioargs) / sizeof(*next_measure->prioargs);
 		     i++) {
-			next_measure->prioargs[i] =
-						ntohl(next_measure->prioargs[i]);
+			next_measure->prioargs[i] = ntohl(next_measure->prioargs[i]);
 		}
 
+		/* Dynamic fields */
 		tmp_iov = new struct iovec [next_measure->tempo.upper * 2 + 2];
 
 		for (i = 0; i < next_measure->tempo.upper; i++) {
 			LOAD_IOVEC(tmp_iov, i * 2,
-					next_measure->tonal_zones[i].note);
+				   next_measure->tonal_zones[i].note);
 			LOAD_IOVEC(tmp_iov, i * 2 + 1,
-					next_measure->tonal_zones[i].scale);
+				   next_measure->tonal_zones[i].scale);
 		}
 
 		IOVEC_HTONS(tmp_iov, next_measure->tempo.upper * 2);
@@ -595,18 +641,19 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 		retval = writev(cmusician->connection, tmp_iov,
 				next_measure->tempo.upper * 2);
 		if (retval < 0) {
-			perror("writev4");
+			perror("broadcast measure writev (2)");
 			throw net_ex;
 			return;
 		}
 
 		IOVEC_NTOHS(tmp_iov, next_measure->tempo.upper * 2);
 
+		/* Dynamic fields */
 		for (i = 0; i < next_measure->tempo.upper; i++) {
 			LOAD_IOVEC(tmp_iov, i * 2,
-					next_measure->chords[i].note);
+				   next_measure->chords[i].note);
 			LOAD_IOVEC(tmp_iov, i * 2 + 1,
-					next_measure->chords[i].mode);
+				   next_measure->chords[i].mode);
 		}
 
 		IOVEC_HTONS(tmp_iov, next_measure->tempo.upper * 2);
@@ -614,25 +661,29 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 		retval = writev(cmusician->connection, tmp_iov,
 				next_measure->tempo.upper * 2);
 		if (retval < 0) {
-			perror("writev5");
+			perror("broadcast measure writev (3)");
 			throw net_ex;
 			return;
 		}
 
 		IOVEC_NTOHS(tmp_iov, next_measure->tempo.upper * 2);
 
+		/* Tags */
+
+		/* Fixed size */
 		next_measure->tags.size = htonl(next_measure->tags.size);
 
 		retval = write(cmusician->connection,
 				&next_measure->tags.size,
 				sizeof(next_measure->tags.size));
 		if (retval <= 0) {
-			perror("write");
+			perror("broadcast measure write (1)");
 			throw net_ex;
 			return;
 		}
 		next_measure->tags.size = ntohl(next_measure->tags.size);
 
+		/* Dynamic field, tags payload */
 		retval = write(cmusician->connection,
 				next_measure->tags.payload,
 				sizeof(char) * next_measure->tags.size);
@@ -646,6 +697,9 @@ void broadcast_measure(struct measure_s *next_measure, struct list_head *dests)
 	}
 }
 
+/* Sync barrier, every musician should reach this point
+ * before composing the next measure */
+/* WARNING: completely blocking! */
 void sync_all(struct list_head *musicians)
 {
 	struct subscription_s *cmusician;
@@ -658,6 +712,7 @@ void sync_all(struct list_head *musicians)
 
 	struct epoll_event *epevs;
 
+	/* Epoll pool to get every musician sync (network order) */
 	int efd = epoll_create1(0);
 
 	if (efd < 0) {
@@ -672,7 +727,8 @@ void sync_all(struct list_head *musicians)
 		epev.events = EPOLLIN;
 		epev.data.fd = cmusician->connection;
 
-		if (epoll_ctl(efd, EPOLL_CTL_ADD, cmusician->connection, &epev)){
+		if (epoll_ctl(efd, EPOLL_CTL_ADD,
+			      cmusician->connection, &epev)){
 			perror("epoll_ctl");
 			throw net_ex;
 			return;
@@ -691,6 +747,7 @@ void sync_all(struct list_head *musicians)
 
 	while (psize < size) {
 		int i;
+		/* Wait for every musician */
 		int cprocessed = epoll_wait(efd, epevs, size, -1);
 
 		if (cprocessed < 0) {
@@ -702,6 +759,7 @@ void sync_all(struct list_head *musicians)
 			return;
 		}
 
+		/* Process received acks. */
 		for(i = 0; i < cprocessed; i++) {
 			int j;
 			if (!epevs[i].events & EPOLLIN) {
@@ -734,12 +792,14 @@ void sync_all(struct list_head *musicians)
 	close(efd);
 }
 
-void clear_measure(struct measure_s *m){
-    if(m->tonal_zones != NULL)
-        free(m->tonal_zones);
-    if(m->chords != NULL)
-        free(m->chords);
-    if(m->tags.payload != NULL)
-        free(m->tags.payload);
-    memset(m, 0, sizeof(struct measure_s));
+/* Memory management */
+void clear_measure(struct measure_s *m)
+{
+	if(m->tonal_zones != NULL)
+		free(m->tonal_zones);
+	if(m->chords != NULL)
+		free(m->chords);
+	if(m->tags.payload != NULL)
+		free(m->tags.payload);
+	memset(m, 0, sizeof(struct measure_s));
 }
