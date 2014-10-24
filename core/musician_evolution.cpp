@@ -73,12 +73,13 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 
 		if (ggoal->notes[i].notes[0] == gtrial->notes[i].notes[0])
 			csim++;
-		if (ggoal->notes[i].tempo == gtrial->notes[i].tempo)
+		if ((ggoal->notes[i].tempo == gtrial->notes[i].tempo) &&
+			(ggoal->notes[i].triplets == gtrial->notes[i].triplets))
 			csim++;
-		if (ggoal->notes[i].triplets == gtrial->notes[i].triplets)
-			csim++;
-		ctot += 3;
+		ctot += 2;
 	}
+	
+	/* TODO Bigram Perplexity */
 	
 	if (!ggoal->count)
 		*sim = 0;
@@ -184,34 +185,38 @@ int transrecombine(struct piece_s * genetic_pool){
 	
 	for (j = 0; j < GENETIC_POOL_SIZE/4; j += 2) {
 		
-		print_piece(genetic_pool[j], "genetic", 0);
-		
-		if (genetic_pool[j].size == 0) {
+		/* We're using these weird indexes because the array is sorted
+		 * with increasing order, so the pieces to treat are at the end
+		 * and the ones to be replaced at the beginning */
+		if ((genetic_pool[GENETIC_POOL_SIZE - j - 1].count == 0) ||
+			(genetic_pool[GENETIC_POOL_SIZE - j - 2].count == 0)){
 			fprintf(stderr, "Zero size error in transrecombine\n");
 			return -1;
 		}
 		/* Choose the crossover point */
-		if (genetic_pool[j].size < genetic_pool[j + 1].size) {
-			crossover = rand()%(genetic_pool[j].size);
+		if (genetic_pool[GENETIC_POOL_SIZE - j - 1].count < 
+						genetic_pool[GENETIC_POOL_SIZE - j - 2].count) {
+			
+			crossover = (rand()%
+				(genetic_pool[GENETIC_POOL_SIZE - j - 1].count)) + 1;
 		} else {
-			/* XXX check that! */
-			if (genetic_pool[j + 1].size)
-				crossover = rand()%(genetic_pool[j + 1].size);
-			else
-				crossover = 0;
+			crossover = (rand()%
+				(genetic_pool[GENETIC_POOL_SIZE - j - 2].count)) + 1;
 		}
-		swap_pieces(genetic_pool[j].notes, 
-			    genetic_pool[j + 1].notes, crossover);
+		
+		swap_pieces(genetic_pool[GENETIC_POOL_SIZE - j - 1].notes, 
+			genetic_pool[GENETIC_POOL_SIZE - j - 2].notes, crossover);
 		
 		/* TODO add here transposon propagation */
 		
 		/* Here's the replacement on the lower 25% */
-		genetic_pool[GENETIC_POOL_SIZE - j - 1] = genetic_pool[j];
-		genetic_pool[GENETIC_POOL_SIZE - j - 2] = genetic_pool[j + 1];	
+		genetic_pool[j] = genetic_pool[GENETIC_POOL_SIZE - j - 1];
+		genetic_pool[j + 1] = genetic_pool[GENETIC_POOL_SIZE - j - 2];	
 	}
-	
+
 	return 0;
 }
+
 
 int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 {
@@ -223,11 +228,14 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 	/* Array that stats the similarity coefficient (0-100) with the ideal */
 	uint8_t sim[GENETIC_POOL_SIZE];
 
-	int i,j;
+	int i,j,percent;
 	
 	/* Print the initial arrays in debug mode */
-	print_piece(*ginitial, "initial", 0);
+	print_piece(*ginitial, "init", 0);
 	print_piece(*ggoal, "goal", 0);
+	percent = 0;
+	
+	shrink(initial, ggoal->count);
 
 	/* Initialize the genetic pool with copies of the original (and the similarities with 0) */
 	for (i = 0; i < GENETIC_POOL_SIZE; i++) {
@@ -252,8 +260,9 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		similarity[i][2] = 0; */
 
 		compute_similarity(ggoal, &genetic_pool[i], &sim[i]);	
-		// print_piece(genetic_pool[i], "genetic", sim[i]);
 	}
+
+	print_piece(genetic_pool[GENETIC_POOL_SIZE - 1], "entr", sim[GENETIC_POOL_SIZE - 1]);
 
 	/* Now we have everything set, let's get started with the loop! */
 	for (i = 0; i < GENETIC_ROUNDS; i++) {
@@ -263,21 +272,36 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		if(i > 0)
 			if(transrecombine(genetic_pool) == -1)
 				return -1;
+		
+		print_piece(genetic_pool[GENETIC_POOL_SIZE - 1], "tran", sim[GENETIC_POOL_SIZE - 1]);
 
 		/* First we change a number (according to the length) of notes at random */
 		/* Then we need to compute similarity and sort the array according to it */
 		for(j=0; j<GENETIC_POOL_SIZE; j++) {
 			change_random_note(&genetic_pool[j]);
 			compute_similarity(ggoal, &genetic_pool[j], &sim[j]);
-			print_piece(genetic_pool[j], "genetic", sim[j]);
 		}
+		
+		print_piece(genetic_pool[GENETIC_POOL_SIZE - 1], "chnt", sim[GENETIC_POOL_SIZE - 1]);
+		
 		sort_pool(genetic_pool, sim);
+		
+		print_piece(genetic_pool[GENETIC_POOL_SIZE - 1], "sort", sim[GENETIC_POOL_SIZE - 1]);
+		
+		//~ for(j=0; j<GENETIC_POOL_SIZE; j++) {
+			//~ print_piece(genetic_pool[j], "genetic", sim[j]);
+		//~ }
+		
+		printf("Completed %d\%500\n", i + 1);
+		if (i + 1 > 10)
+			break;
 	}
-
-	/* TODO:Need to sort once again */
 	
 	/* Finally we keep the most similar */
-	*ginitial = genetic_pool[0];
+	*ginitial = genetic_pool[GENETIC_POOL_SIZE - 1];
+	
+	print_piece(*ginitial, "final", 0);
+	print_piece(*ggoal, "goal", 0);
 
-	return sim[0];
+	return sim[GENETIC_POOL_SIZE - 1];
 }
