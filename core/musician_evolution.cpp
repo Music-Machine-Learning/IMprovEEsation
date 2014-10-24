@@ -54,7 +54,7 @@ void print_piece(struct piece_s piece, char * name, uint8_t sim){
 	
 	printf("Piece %s sz:%d cnt:%d sim:%d [",
 				name, piece.size, piece.count, sim);
-	for (i=1; i<piece.count; i++){
+	for (i=0; i<piece.count; i++){
 		printf("%d/%d ", piece.notes[i].notes[0], piece.notes[i].tempo);
 	}
 	printf("]\n");
@@ -204,14 +204,25 @@ int transrecombine(struct piece_s * genetic_pool){
 				(genetic_pool[GENETIC_POOL_SIZE - j - 2].count)) + 1;
 		}
 		
-		swap_pieces(genetic_pool[GENETIC_POOL_SIZE - j - 1].notes, 
-			genetic_pool[GENETIC_POOL_SIZE - j - 2].notes, crossover);
+		/* Here's the replacement on the lower 25% */
+		memcpy(genetic_pool[j].notes, 
+				genetic_pool[GENETIC_POOL_SIZE - j - 1].notes, 
+				sizeof(struct notes_s) * 
+				genetic_pool[GENETIC_POOL_SIZE - j - 1].count);
+		memcpy(genetic_pool[j + 1].notes, 
+				genetic_pool[GENETIC_POOL_SIZE - j - 2].notes, 
+				sizeof(struct notes_s) * 
+				genetic_pool[GENETIC_POOL_SIZE - j - 2].count);
+		genetic_pool[j].count = 
+				genetic_pool[GENETIC_POOL_SIZE - j - 1].count;
+		genetic_pool[j + 1].count = 
+				genetic_pool[GENETIC_POOL_SIZE - j - 2].count;
+		
+		swap_pieces(genetic_pool[j].notes, genetic_pool[j + 1].notes,
+					crossover);
 		
 		/* TODO add here transposon propagation */
-		
-		/* Here's the replacement on the lower 25% */
-		genetic_pool[j] = genetic_pool[GENETIC_POOL_SIZE - j - 1];
-		genetic_pool[j + 1] = genetic_pool[GENETIC_POOL_SIZE - j - 2];	
+			
 	}
 
 	return 0;
@@ -234,13 +245,11 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 	print_piece(*ginitial, "init", 0);
 	print_piece(*ggoal, "goal", 0);
 	percent = 0;
-	
-	shrink(initial, ggoal->count);
 
 	/* Initialize the genetic pool with copies of the original (and the similarities with 0) */
 	for (i = 0; i < GENETIC_POOL_SIZE; i++) {
 		/* XXX FREE */
-		genetic_pool[i].notes = (struct notes_s *)calloc(ginitial->size,
+		genetic_pool[i].notes = (struct notes_s *)calloc(ggoal->size,
 						sizeof(struct notes_s));
 		if (!genetic_pool[i].notes) {
 			perror("calloc");
@@ -248,11 +257,17 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		}
 
 		/* XXX FREE */
-		memcpy(genetic_pool[i].notes, ginitial->notes, 
-		       sizeof(struct notes_s) * ginitial->count);
+		//~ memcpy(genetic_pool[i].notes, ginitial->notes, 
+		       //~ sizeof(struct notes_s) * ginitial->count);
+		       
+		/* Customized memcpy to ensure that the sizes are the same */
+		for(j=0; j<ggoal->count; j++){
+			genetic_pool[i].notes[j] = 
+							ginitial->notes[j%(ginitial->count)];
+		}
 			
-		genetic_pool[i].size = ginitial->size;
-		genetic_pool[i].count = ginitial->count;
+		genetic_pool[i].size = ggoal->size;
+		genetic_pool[i].count = ggoal->count;
 	
 		/* FIXME to remove when the similarity is complete 
 		similarity[i][0] = 0;
@@ -262,11 +277,12 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		compute_similarity(ggoal, &genetic_pool[i], &sim[i]);	
 	}
 
-	print_piece(genetic_pool[GENETIC_POOL_SIZE - 1], "entr", sim[GENETIC_POOL_SIZE - 1]);
-
 	/* Now we have everything set, let's get started with the loop! */
 	for (i = 0; i < GENETIC_ROUNDS; i++) {
 
+		
+		print_piece(genetic_pool[GENETIC_POOL_SIZE - 1], "entr", sim[GENETIC_POOL_SIZE - 1]);
+		
 		/* Recombination and transposon propagation (skip on the first iteration) */
 		/* This function automatically replaces the upper 25% with the lower */
 		if(i > 0)
@@ -293,8 +309,6 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		//~ }
 		
 		printf("Completed %d\%500\n", i + 1);
-		if (i + 1 > 10)
-			break;
 	}
 	
 	/* Finally we keep the most similar */
