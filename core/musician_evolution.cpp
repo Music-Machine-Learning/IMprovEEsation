@@ -88,8 +88,9 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 }
 
 /* Functions which sort the pool according to similarity (with mergesort) */
-void merge_pool(struct piece_s **pool, uint8_t *sim, int fst, int q, int end)
+void merge_pool(struct piece_s *pool, uint8_t *sim, int fst, int q, int end)
 {
+	// print_piece(pool[0], "mrg", 0);
 	int lw, k, hh, j, B[GENETIC_POOL_SIZE];
 	struct piece_s sandbox[GENETIC_POOL_SIZE];
 	lw = fst; hh = q + 1; k = fst;	
@@ -97,11 +98,11 @@ void merge_pool(struct piece_s **pool, uint8_t *sim, int fst, int q, int end)
 	while (lw <= q && hh <= end) {
 		if (sim[lw] <= sim[hh]) {
 			B[k] = sim[lw];
-			sandbox[k] = (*pool)[lw];
+			sandbox[k] = pool[lw];
 			lw++;
 		} else {
 			B[k] = sim[hh];
-			sandbox[k] = (*pool)[hh];
+			sandbox[k] = pool[hh];
 			hh++;
 		}
 		k++;
@@ -110,24 +111,26 @@ void merge_pool(struct piece_s **pool, uint8_t *sim, int fst, int q, int end)
 	if (lw > q) {
 		for(j = hh; j <= end; j++) {
 			B[k] = sim[j];
-			sandbox[k] = (*pool)[j];
+			sandbox[k] = pool[j];
 			k++;
 		}
 	} else {
 		for (j = lw; j <= q; j++) {
 			B[k] = sim[j];
-			sandbox[k] = (*pool)[j];
+			sandbox[k] = pool[j];
 			k++;
 		}
 	}
-	
 	for (j = fst; j <= end; j++)
 		sim[j] = B[j];
 
-	(*pool)[j] = sandbox[j];
+	pool[j] = sandbox[j];
 }
 
-void mergesort_pool(struct piece_s **pool, uint8_t * sim, int fst, int end){
+void mergesort_pool(struct piece_s * pool, uint8_t * sim, int fst, int end){
+	
+	//print_piece(pool[0], "mrgrg", 0);
+	
 	int q;
 	if (fst < end){
 		q = ((fst + end) / 2);
@@ -137,7 +140,7 @@ void mergesort_pool(struct piece_s **pool, uint8_t * sim, int fst, int end){
 	}
 }
 
-int sort_pool(struct piece_s **pool, uint8_t * sim)
+int sort_pool(struct piece_s * pool, uint8_t * sim)
 {
 	mergesort_pool(pool, sim, 0, GENETIC_POOL_SIZE - 1);
 	return 0;
@@ -148,7 +151,7 @@ int sort_pool(struct piece_s **pool, uint8_t * sim)
 int change_random_note(struct piece_s *piece){
 	int i,r;
 	
-	printf("Changing positions: ");
+	print_debug("Changing positions: ");
 	for(i=0; i<NUM_CHANGE(piece->count); i++){
 		r = rand()%piece->count; /* Establish which note to change */
 		
@@ -163,11 +166,13 @@ int change_random_note(struct piece_s *piece){
 				
 		/* Change the tempo */		
 		piece->notes[r].tempo = (piece->notes[r].tempo + 
-			(rand()%TEMPO_CHANGE_RANGE - TEMPO_CHANGE_DIST))%MAX_TEMPO;
+			(rand()%TEMPO_CHANGE_RANGE - TEMPO_CHANGE_DIST));
+		/* I know, double assignment, but it doesn't work otherwise */
+		piece->notes[r].tempo = (piece->notes[r].tempo)%MAX_TEMPO + 1;
 
-		printf("%d ", r);
+		print_debug("%d ", r);
 	}
-	printf("\n");
+	print_debug("\n");
 }
 
 /** Function used to recombine pieces in the genetic pool.
@@ -246,7 +251,7 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		similarity[i][2] = 0; */
 
 		compute_similarity(ggoal, &genetic_pool[i], &sim[i]);	
-		// FIXME print_piece(genetic_pool[i], "genetic", sim[i]);
+		// print_piece(genetic_pool[i], "genetic", sim[i]);
 	}
 
 	/* Now we have everything set, let's get started with the loop! */
@@ -263,10 +268,14 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		for(j=0; j<GENETIC_POOL_SIZE; j++) {
 			change_random_note(&genetic_pool[j]);
 			compute_similarity(ggoal, &genetic_pool[j], &sim[j]);
+			// print_piece(genetic_pool[j], "genetic", sim[j]);
 		}
-		sort_pool((struct piece_s**)&genetic_pool, sim);
-		//print_piece(genetic_pool[j], "genetic", sim[j]);
-		printf("mergesort?");
+		sort_pool(genetic_pool, sim);
+		//~ print_piece(genetic_pool[0], "genetic", sim[j]);
+		//~ print_piece(genetic_pool[1], "genetic", sim[j]);
+		//~ print_piece(genetic_pool[2], "genetic", sim[j]);
+		//~ print_piece(*ginitial, "initial", 0);
+
 	}
 
 	/* TODO:Need to sort once again */
