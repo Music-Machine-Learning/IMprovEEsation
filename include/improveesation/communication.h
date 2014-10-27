@@ -38,10 +38,10 @@ uint32_t send_subscription(int director, struct subscription_s *proposal);
 
 #ifdef __cplusplus /* polymorphism */
 uint32_t send_subscription(int director, uint32_t coupling,
-			   uint8_t instrument_class, uint8_t soloer);
+               uint8_t instrument_class, uint8_t flags);
 #else /* C retrocompatibilty */
 uint32_t send_subscription_fields(int director, uint32_t coupling,
-			   uint8_t instrument_class, uint8_t soloer);
+               uint8_t instrument_class, uint8_t flags);
 #endif
 
 void recv_measure(int director, struct measure_s *newMeasure);

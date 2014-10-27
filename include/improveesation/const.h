@@ -25,6 +25,8 @@
 
 #define DB_CONN_TIMEOUT "10"
 
+#define MEASURE_BPM_EOI 0
+
 #define NSEMITONES 12
 #define PROB_ARR_SIZE NSEMITONES + 1
 #define OCTAVE_MAX_JUMP 2
@@ -67,6 +69,9 @@ enum {
 
 #define DIR_DEFAULT_PORT 50000
 #define PLA_DEFAULT_PORT 50001
+
+#define FLAG_MUSICIAN_SOLOIST 0b00000001
+#define FLAG_MUSICIAN_GENETIC 0b00000010
 
 #define GENETIC_ROUNDS 500
 #define GENETIC_POOL_SIZE 512 // Watch out! 1/4 of this must be an even number

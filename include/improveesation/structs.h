@@ -35,7 +35,7 @@ struct subscription_s
 {
 	uint32_t coupling;
 	uint8_t instrument_class;
-	uint8_t soloer;
+    uint8_t flags;
 
 	/* For the storage of the subscriptions */
 	int connection;

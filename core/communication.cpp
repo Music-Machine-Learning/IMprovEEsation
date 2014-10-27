@@ -91,14 +91,14 @@ class end_of_improvisation_exception eoi_ex;
 /*** Musician ***/
 /* Send a subscription to the director */
 uint32_t send_subscription(int director, uint32_t coupling,
-		uint8_t instrument_class, uint8_t soloer)
+        uint8_t instrument_class, uint8_t flags)
 {
 	uint32_t id;
 	struct iovec comm_vec[3];
 
 	LOAD_IOVEC(comm_vec, 0, coupling);
 	LOAD_IOVEC(comm_vec, 1, instrument_class);
-	LOAD_IOVEC(comm_vec, 2, soloer);
+    LOAD_IOVEC(comm_vec, 2, flags);
 
 	IOVEC_HTONL(comm_vec, 1);
 
@@ -129,7 +129,7 @@ uint32_t send_subscription_struct(int director, struct subscription_s *s)
 #endif
 {
 	return send_subscription(director, s->coupling, s->instrument_class,
-			s->soloer);
+            s->flags);
 }
 
 /* Receive a measure from the director */
@@ -516,7 +516,7 @@ void recv_subscription(int conn_socket, struct subscription_s *new_musician)
 
 	LOAD_IOVEC(iov, 0, new_musician->coupling);
 	LOAD_IOVEC(iov, 1, new_musician->instrument_class);
-	LOAD_IOVEC(iov, 2, new_musician->soloer);
+    LOAD_IOVEC(iov, 2, new_musician->flags);
 	new_musician->connection = mus_connection;
 
 	retval = readv(mus_connection, iov, 3);
