@@ -274,7 +274,7 @@ int main(int argc, char **argv)
 
 		printf("got a new musician!\n\tcoupling: %d\n\tinstrument_class: %d\n\tsoloer: %d\n\tconnection :%d\n",
 				new_musician->coupling, new_musician->instrument_class,
-				new_musician->soloer, new_musician->connection);
+                new_musician->flags, new_musician->connection);
 		list_add_tail(&new_musician->list, &musicians);
 
 		if (!test_flag){

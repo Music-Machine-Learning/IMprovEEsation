@@ -66,26 +66,26 @@ void fill_test_musician(subscription_s *new_musician, int prog){
 		case 0:
 			new_musician->coupling = 0;
 			new_musician->instrument_class = GRANDPIANO;
-			new_musician->soloer = SOLO;
+            new_musician->flags = FLAG_MUSICIAN_SOLOIST;
 			new_musician->connection = 0;
 			break;
 		case 1:
 			new_musician->coupling = 0;
 			new_musician->instrument_class = BASS;
-			new_musician->soloer = RYTHMIC;
+            new_musician->flags = FLAG_MUSICIAN_NONE;
 			new_musician->connection = 1;
 			break;
 		case 2:	
 			new_musician->coupling = 0;
 			new_musician->instrument_class = DRUMS;
-			new_musician->soloer = RYTHMIC;
+            new_musician->flags = FLAG_MUSICIAN_NONE;
 			new_musician->connection = 10;
 			break;
 		default:
 			printf("It's nothing!\n");
 			break;
 		}
-	}
+    }
 	
 /* TEST Stupid and frightening cycling scale */	
 void fill_test_measure(struct play_measure_s *note_list, int prog, uint32_t musicians_num){

@@ -51,6 +51,7 @@ struct musician_registration_s {
 int net_handler;
 int player;
 LIST_HEAD(musicians);
+LIST_HEAD(genetics);
 uint32_t *soloers;
 
 class end_of_improvisation_exception eoi_ex;
@@ -118,15 +119,64 @@ uint32_t calculateID(subscription_s *entry, musician_registration_s *subs, int r
     return id;
 }
 
+void copyMeasure(struct measure_s *dest, struct measure_s *src){
+    int i;
+    dest->bpm = src->bpm;
+    dest->soloist_id = src->soloist_id;
+    dest->tempo.upper = src->tempo.upper;
+    dest->tempo.lower = src->tempo.lower;
+    for(i = 0; i < QUARTER_QUERY_ARGS; i++){
+        dest->prioargs[i] = src->prioargs[i];
+    }
+    dest->tonal_zones = (struct tonal_zone_s *) calloc(dest->tempo.upper, sizeof(struct tonal_zone_s));
+    dest->chords = (struct chord_s *) calloc(dest->tempo.upper, sizeof(struct chord_s));
+    for(i = 0; i < dest->tempo.upper; i++){
+        dest->tonal_zones[i].note = src->tonal_zones[i].note;
+        dest->tonal_zones[i].scale = src->tonal_zones[i].scale;
+        dest->chords[i].note = src->chords[i].note;
+        dest->chords[i].mode = src->chords[i].mode;
+    }
+    dest->tags.size = src->tags.size;
+    dest->tags.payload = (char *) calloc(dest->tags.size, sizeof(char));
+    strcpy(dest->tags.payload, src->tags.payload);
+}
+
+void secondLoop(struct measure_s *measure_list, int measures_count){
+    int i;
+    for (i = 0; i < measures_count; i++) {
+        printf("broadcasting measure...\n");
+        fflush(stdout);
+        try {
+            broadcast_measure(&(measure_list[i]), &musicians);
+            sync_all(&musicians);
+        } catch (end_of_improvisation_exception e) {
+            break;
+        }
+
+        printf("musicians syncronized.\n");
+        /* sleep to see if things block properly */
+        sleep(1);
+    }
+}
+
+int listLen(struct list_head *list){
+    struct subscription_s *it, *tmp;
+    int count = 0;
+    list_fore_each_entry_safe(it, tmp, list, list){
+        count++;
+    }
+    return count;
+}
+
 int main(int argc, char **argv)
 {
     /* For now do a full round of blues by default (12 measures)*/
     int measures_count = 12;
     uint32_t musicians_num, soloers_num = 0;
-    int i, current_measure_num = 0, measures_per_section;
+    int c, i, current_measure_num = 0, measures_per_section;
     musician_registration_s *registrations;
-    struct measure_s nm;
-	int c;
+    struct measure_s nm, *stored_impro;
+    bool genetic_process = false;
     struct subscription_s *new_musician, *tmp_musician;
 	in_port_t port = DIR_DEFAULT_PORT;
 	
@@ -174,19 +224,24 @@ int main(int argc, char **argv)
 		printf("waiting for a musician\n");
 		recv_subscription(net_handler, new_musician);
 
-		printf("director: got a new musician\n\tcoupling: %d\n\tinstrument_class: %d\n\tsoloer: %d\n\tconnection :%d\n",
+        printf("director: got a new musician\n\tcoupling: %d\n\tinstrument_class: %d\n\tflags: %d\n\tconnection :%d\n",
 		       new_musician->coupling, new_musician->instrument_class,
-		       new_musician->soloer, new_musician->connection);
+               new_musician->flags, new_musician->connection);
 
         uint32_t newId = calculateID(new_musician, registrations, i);
 
         registrations[i].subscritpion = new_musician;
         registrations[i].id = newId;
 
-        list_add_tail(&new_musician->list, &musicians);
-        if(new_musician->soloer == SOLO){
+        if(new_musician->flags & FLAG_MUSICIAN_GENETIC){
+            list_add_tail(&new_musician->list, &genetics);
+            genetic_process = true;
+        } else {
+            list_add_tail(&new_musician->list, &musicians);
+        }
+        if(new_musician->flags & FLAG_MUSICIAN_SOLOIST){
             soloers[soloers_num] = newId;
-            soloers_num ++;
+            soloers_num++;
         }
 
         send_id(new_musician->connection, newId);
@@ -198,7 +253,9 @@ int main(int argc, char **argv)
 
     send_num_of_musicians(player, musicians_num);
 
-    //atexit(cleanup);
+    if(genetic_process){
+        stored_impro = new struct measure_s[measures_count];
+    }
 
     fflush(stdout);
 
@@ -223,9 +280,31 @@ int main(int argc, char **argv)
         printf("broadcasting measure...\n");
         fflush(stdout);
         try {
-            broadcast_measure(&nm, &musicians);
-			sync_all(&musicians);
+            broadcast_measure(&nm, (genetic_process ? &genetics : &musicians));
+            if(genetic_process){
+                copyMeasure(&(stored_impro[i]), &nm);
+            }
+            sync_all(genetic_process ? &genetics : &musicians);
 		} catch (end_of_improvisation_exception e) {
+            if(genetic_process){
+                void *tmp_list;
+                nm.bpm = MEASURE_BPM_EOI;
+                broadcast_measure(&nm, &genetics);
+                sync_all(&genetics);
+
+                print_debug("musicians len before: %d\n", listLen(&musicians));
+
+                /* concat musicians and genetics */
+                tmp_list = musicians.prev;
+                musicians.prev->next = &genetics;
+                musicians.prev = genetics.prev;
+                genetics.prev->next = &musicians;
+                genetics.prev = (struct list_head*) tmp_list;
+
+                print_debug("musicians len after: %d\n", listLen(&musicians));
+
+                secondLoop(stored_impro, measures_count);
+            }
 			break;
 		}
 
