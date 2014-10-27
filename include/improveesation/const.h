@@ -68,6 +68,11 @@ enum {
 #define DIR_DEFAULT_PORT 50000
 #define PLA_DEFAULT_PORT 50001
 
+#define MEASURE_BPM_EOI 0
+
+#define FLAG_MUSICIAN_SOLOIST 0b00000001
+#define FLAG_MUSICIAN_GENETIC 0b00000010
+
 #define GENETIC_ROUNDS 1500
 #define GENETIC_POOL_SIZE 512 // Watch out! 1/4 of this must be an even number
 
