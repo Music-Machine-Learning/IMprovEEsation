@@ -1,9 +1,11 @@
 #!/bin/bash
 
-if [ `pwd | basename` == "tools" ]; then
+FOLDER=`pwd | sed -e 's/^.*\///'`
+
+if [ "$FOLDER" == "tools" ]; then
   cd ..
 fi
 
 mkdir -p build
 cd build
-cmake -DCMAKE_BUILD_TYPE=Debug -DDEBUG ..
+cmake -DCMAKE_BUILD_TYPE=Debug -D IMPROVEESATION_DEBUG=1 ..
