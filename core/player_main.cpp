@@ -309,7 +309,10 @@ int main(int argc, char **argv)
 			}
 		} catch (end_of_improvisation_exception e) {
 			/* XXX TODO: Server Mode infinite loop */
-			break;
+			if (genetic)
+				continue;
+			else
+				break;
 		}
 
 		printf("\tPlaying measure normal %d\n ", i);

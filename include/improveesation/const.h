@@ -68,7 +68,7 @@ enum {
 #define DIR_DEFAULT_PORT 50000
 #define PLA_DEFAULT_PORT 50001
 
-#define GENETIC_ROUNDS 500
+#define GENETIC_ROUNDS 1500
 #define GENETIC_POOL_SIZE 512 // Watch out! 1/4 of this must be an even number
 
 #define PIECE_START_SIZE 32

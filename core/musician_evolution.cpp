@@ -52,12 +52,12 @@ void swap_pieces(struct notes_s *fst, struct notes_s *snd, int cross){
 void print_piece(struct piece_s piece, char * name, uint8_t sim){
 	int i;
 	
-	printf("Piece %s sz:%d cnt:%d sim:%d [",
+	print_debug("Piece %s sz:%d cnt:%d sim:%d [",
 				name, piece.size, piece.count, sim);
 	for (i=0; i<piece.count; i++){
-		printf("%d/%d ", piece.notes[i].notes[0], piece.notes[i].tempo);
+		print_debug("%d/%d ", piece.notes[i].notes[0], piece.notes[i].tempo);
 	}
-	printf("]\n");
+	print_debug("]\n");
 }
 
 /* Function that checks how much the array trial is similar to goal and stores the similarity in the 3array */
@@ -91,7 +91,6 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 /* Functions which sort the pool according to similarity (with mergesort) */
 void merge_pool(struct piece_s *pool, uint8_t *sim, int fst, int q, int end)
 {
-	// print_piece(pool[0], "mrg", 0);
 	int lw, k, hh, j, B[GENETIC_POOL_SIZE];
 	struct piece_s sandbox[GENETIC_POOL_SIZE];
 	lw = fst; hh = q + 1; k = fst;	
@@ -128,8 +127,6 @@ void merge_pool(struct piece_s *pool, uint8_t *sim, int fst, int q, int end)
 }
 
 void mergesort_pool(struct piece_s * pool, uint8_t * sim, int fst, int end){
-	
-	//print_piece(pool[0], "mrgrg", 0);
 	
 	int q;
 	if (fst < end){
@@ -308,7 +305,7 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 			//~ print_piece(genetic_pool[j], "genetic", sim[j]);
 		//~ }
 		
-		printf("Completed %d\%500\n", i + 1);
+		printf("Completed %d/500\tsimilarity:%d\n", i + 1, sim[GENETIC_POOL_SIZE - 1]);
 	}
 	
 	/* Finally we keep the most similar */
