@@ -32,6 +32,7 @@
 #include <improveesation/structs.h>
 #include <improveesation/communication.h>
 #include <improveesation/const.h>
+#include <improveesation/utils.h>
 
 #include <improveesation/director_core.h>
 
@@ -162,7 +163,7 @@ void secondLoop(struct measure_s *measure_list, int measures_count){
 int listLen(struct list_head *list){
     struct subscription_s *it, *tmp;
     int count = 0;
-    list_fore_each_entry_safe(it, tmp, list, list){
+    list_for_each_entry_safe(it, tmp, list, list){
         count++;
     }
     return count;
