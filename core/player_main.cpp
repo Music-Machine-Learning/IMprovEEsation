@@ -312,12 +312,12 @@ int main(int argc, char **argv)
 			break;
 		}
 
-		printf("\tPlaying measure %d\n ", i);
+		printf("\tPlaying measure normal %d\n ", i);
 		play_measure(note_list, &musicians, musicians_num, fd);
 	}
 
 	if (genetic) {
-		printf("\tPlaying measure %d\n ", i);
+		printf("\tPlaying measure genetic %d\n ", i);
 		play_measure(note_list, &musicians, musicians_num, fd);
 	}
 

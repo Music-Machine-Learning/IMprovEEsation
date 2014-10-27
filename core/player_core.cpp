@@ -40,6 +40,8 @@
 
 #include <time.h>
 
+#define DEBUG
+
 using namespace std;
 
 /* Data to be written to midi (16 channels X 3 params per every note in chord) */
@@ -232,7 +234,7 @@ void play_measure(struct play_measure_s *note_list, struct list_head *musicians,
 	}
 	
 	/* For every note step (limit is max value + 1 like there would be all smallest triplets) */
-	for(i=0; i<49; i++){
+	for(i=0; ; i++){ // TODO no controls... it should be set to 49 but we have to cut the genetic measure
 		print_debug("[debug] Loop %d\n",i);
 		/* For every instrument */
 		for(j=0; j<musicians_num; j++){
