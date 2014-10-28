@@ -79,4 +79,23 @@ enum {
 
 #define PIECE_START_SIZE 32
 
+enum {
+	/* Cymbals */
+	DRUM_CLOSED_HIHAT = 0,
+	DRUM_OPEN_HIHAT,
+	DRUM_CRASH,
+	DRUM_RIDE,
+	DRUM_SPLASH,
+	DRUM_SNARE,
+	DRUM_COWBELL,
+
+	/* Drums */
+	DRUM_HIGH_TOM,
+	DRUM_MID_TOM,
+	DRUM_FLOOR_TOM,
+	DRUM_RIMSHOT,
+	DRUM_BASS,
+	DRUM_UNUSED
+};
+
 #endif /* _CONST_H */
