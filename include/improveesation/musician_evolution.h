@@ -33,6 +33,23 @@
 #define TEMPO_CHANGE_RANGE (TEMPO_CHANGE_DIST * 2 + 1)
 #define MIDDLE_NOTE 64 /* FIXME characterize instrument */
 #define MAX_TEMPO 16 /* More is too much */
+#define MAX_NOTE 128 /* Maximum pitch available */
+
+struct bigram {
+	uint8_t fst;
+	uint8_t snd;
+};
+
+struct BigramComparer{
+	bool operator()(const struct bigram & Left, 
+					const struct bigram & Right) const {
+			if (Left.fst == Right.fst)
+				return (Left.snd < Right.snd);
+			else return (Left.fst < Right.fst);
+		}
+};
+
+typedef map<uint8_t, int>::iterator it_uni;
 
 int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal);
 

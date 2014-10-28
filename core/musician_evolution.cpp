@@ -33,9 +33,22 @@
 #include <signal.h>
 #include <string.h>
 
+#include <math.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <time.h>
+
+using namespace std;
+
+/* Bayesian Maps */
+map<uint8_t, int> train_unigrams_pitch;
+map<uint8_t, int> test_unigrams_pitch;
+map<uint8_t, int> train_unigrams_tempo;
+map<uint8_t, int> test_unigrams_tempo;	
+map<struct bigram, int, struct BigramComparer> train_bigrams_pitch;
+map<struct bigram, int, struct BigramComparer> test_bigrams_pitch;
+map<struct bigram, int, struct BigramComparer> train_bigrams_tempo;
+map<struct bigram, int, struct BigramComparer> test_bigrams_tempo;
 
 void swap_pieces(struct notes_s *fst, struct notes_s *snd, int cross){
 	struct notes_s temp[cross];
@@ -65,26 +78,67 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 		       uint8_t *sim)
 {
 	int i,k;
-	int csim = 0;
+	struct bigram bg_pitch;
+	struct bigram bg_tempo;
+	
+	/* Position similarity in percentage (stored in csim) */
+	double csim = 0;
 	int ctot = 0;
-
-	/* FIXME check the effective array length */
+	
+	/* Inverse Perplexities */
+	double u_pt_ppl = 0;
+	double u_tm_ppl = 0;
+	double b_pt_ppl = 0;
+	double b_tm_ppl = 0;
+	
 	for (i = 0; i < ggoal->count; i++) {
-
+		
+		/* Compute the point-to-point similarity */
 		if (ggoal->notes[i].notes[0] == gtrial->notes[i].notes[0])
 			csim++;
 		if ((ggoal->notes[i].tempo == gtrial->notes[i].tempo) &&
 			(ggoal->notes[i].triplets == gtrial->notes[i].triplets))
 			csim++;
 		ctot += 2;
+		
+		/* Compute Unigram Perplexity with Laplace Smoothing */
+		u_pt_ppl += log(
+			((double)train_unigrams_pitch[gtrial->notes[i].notes[0]] + 1)
+			 / ((double)gtrial->count + MAX_NOTE));
+		u_tm_ppl += log(
+			((double)train_unigrams_tempo[gtrial->notes[i].tempo] + 1)
+			 / ((double)gtrial->count + MAX_TEMPO));
+
+		/* Compute Bigram Perplexity with Laplace Smoothing*/
+		
+		if (i + 1 <= ggoal->count){
+			bg_pitch.fst = gtrial->notes[i].notes[0];
+			bg_pitch.snd = gtrial->notes[i+1].notes[0];
+			bg_tempo.fst = gtrial->notes[i].tempo;
+			bg_tempo.snd = gtrial->notes[i+1].tempo;
+			b_pt_ppl += log(
+				((double)train_bigrams_pitch[bg_pitch] + 1) / 
+				((double)train_unigrams_pitch[bg_pitch.fst]
+				+ MAX_NOTE));
+			b_tm_ppl += log(
+				((double)train_bigrams_tempo[bg_tempo] + 1) / 
+				((double)train_unigrams_tempo[bg_tempo.fst]
+				+ MAX_TEMPO));
+		}
 	}
-	
-	/* TODO Bigram Perplexity */
-	
+	u_pt_ppl = ((exp(u_pt_ppl) * 100) / (ctot / 2)) / 5;
+	u_tm_ppl = ((exp(u_tm_ppl) * 100) / (ctot / 2)) / 5;	
+	b_pt_ppl = ((exp(b_pt_ppl) * 100) / (ctot / 2)) / 5;
+	b_tm_ppl = ((exp(b_tm_ppl) * 100) / (ctot / 2)) / 5 ;	
+	csim = ((csim * 100) / ctot) / 5;
+
 	if (!ggoal->count)
 		*sim = 0;
 	else
-		*sim = ((csim * 100) / ctot);
+		*sim = ctot + u_pt_ppl + u_tm_ppl + b_pt_ppl + b_tm_ppl;
+//	printf("--> %f %f %f %f %f - %f\n",
+	//		u_pt_ppl, u_tm_ppl, b_pt_ppl, b_tm_ppl, csim, sim);
+
 	return *sim;
 }
 
@@ -225,7 +279,6 @@ int transrecombine(struct piece_s * genetic_pool){
 	return 0;
 }
 
-
 int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 {
 
@@ -237,11 +290,52 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 	uint8_t sim[GENETIC_POOL_SIZE];
 
 	int i,j,percent;
+
+	/* Temporary stuff to fill the maps */
+	struct bigram bg_pitch;
+	struct bigram bg_tempo;
 	
 	/* Print the initial arrays in debug mode */
 	print_piece(*ginitial, "init", 0);
 	print_piece(*ggoal, "goal", 0);
 	percent = 0;
+
+	/* Init and fill the training maps */
+	for (i = 0; i < ggoal->count; i++){
+		
+		/* In unigrams, if note or tempo exist in map increase it else
+		 * initialize it to 1. */
+		//~ if(train_unigrams_pitch[ggoal->notes[i].notes[0]])
+			//~ train_unigrams_pitch[ggoal->notes[i].notes[0]]++;
+		//~ else
+			//~ train_unigrams_pitch[ggoal->notes[i].notes[0]] = 1;
+		//~ if(train_unigrams_tempo[ggoal->notes[i].tempo])
+			//~ train_unigrams_tempo[ggoal->notes[i].tempo]++;
+		//~ else
+			//~ train_unigrams_tempo[ggoal->notes[i].tempo] = 1;
+		train_unigrams_pitch[ggoal->notes[i].notes[0]]++;
+		train_unigrams_tempo[ggoal->notes[i].tempo]++;
+			
+		/* For bigram is the same, but avoid the last couple (because 
+		 * snd is null) */
+		if(i+1 != ggoal->count){
+			bg_pitch.fst = ggoal->notes[i].notes[0];
+			bg_pitch.snd = ggoal->notes[i+1].notes[0];
+			bg_tempo.fst = ggoal->notes[i].tempo;
+			bg_tempo.snd = ggoal->notes[i+1].tempo; 
+			
+			//~ if(train_bigrams_pitch[bg_pitch])
+				//~ train_bigrams_pitch[bg_pitch]++;
+			//~ else
+				//~ train_bigrams_pitch[bg_pitch] = 1;
+			//~ if(train_bigrams_tempo[bg_tempo])
+				//~ train_bigrams_tempo[bg_tempo]++;
+			//~ else
+				//~ train_bigrams_tempo[bg_tempo] = 1;
+			train_bigrams_tempo[bg_tempo]++;
+			train_bigrams_pitch[bg_pitch]++;
+		}
+	}
 
 	/* Initialize the genetic pool with copies of the original (and the similarities with 0) */
 	for (i = 0; i < GENETIC_POOL_SIZE; i++) {
@@ -254,9 +348,6 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		}
 
 		/* XXX FREE */
-		//~ memcpy(genetic_pool[i].notes, ginitial->notes, 
-		       //~ sizeof(struct notes_s) * ginitial->count);
-		       
 		/* Customized memcpy to ensure that the sizes are the same */
 		for(j=0; j<ggoal->count; j++){
 			genetic_pool[i].notes[j] = 
@@ -270,7 +361,7 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		similarity[i][0] = 0;
 		similarity[i][1] = 0;
 		similarity[i][2] = 0; */
-
+		
 		compute_similarity(ggoal, &genetic_pool[i], &sim[i]);	
 	}
 
@@ -292,6 +383,7 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		/* Then we need to compute similarity and sort the array according to it */
 		for(j=0; j<GENETIC_POOL_SIZE; j++) {
 			change_random_note(&genetic_pool[j]);
+			printf("%d:%d ",i,j );
 			compute_similarity(ggoal, &genetic_pool[j], &sim[j]);
 		}
 		
@@ -300,10 +392,6 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		sort_pool(genetic_pool, sim);
 		
 		print_piece(genetic_pool[GENETIC_POOL_SIZE - 1], "sort", sim[GENETIC_POOL_SIZE - 1]);
-		
-		//~ for(j=0; j<GENETIC_POOL_SIZE; j++) {
-			//~ print_piece(genetic_pool[j], "genetic", sim[j]);
-		//~ }
 		
 		printf("Completed %d/500\tsimilarity:%d\n", i + 1, sim[GENETIC_POOL_SIZE - 1]);
 	}
