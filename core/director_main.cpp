@@ -286,28 +286,9 @@ int main(int argc, char **argv)
 				copyMeasure(&(stored_impro[i]), &nm);
 			}
 			sync_all(genetic_process ? &genetics : &musicians);
-		} catch (end_of_improvisation_exception e) {
-			if(genetic_process){
-				void *tmp_list;
-				nm.bpm = MEASURE_BPM_EOI;
-				broadcast_measure(&nm, &genetics);
-				sync_all(&genetics);
-
-				print_debug("musicians len before: %d\n", listLen(&musicians));
-
-				/* concat musicians and genetics */
-				tmp_list = musicians.prev;
-				musicians.prev->next = &genetics;
-				musicians.prev = genetics.prev;
-				genetics.prev->next = &musicians;
-				genetics.prev = (struct list_head*) tmp_list;
-
-				print_debug("musicians len after: %d\n", listLen(&musicians));
-
-				secondLoop(stored_impro, measures_count);
-			}
-			break;
-		}
+        } catch (end_of_improvisation_exception e) {
+            break;
+        }
 
 		printf("musicians syncronized.\n");
 		/* sleep to see if things block properly */
@@ -315,6 +296,26 @@ int main(int argc, char **argv)
 
 		clear_measure(&nm);
 	}
+
+    if(genetic_process){
+        void *tmp_list;
+        nm.bpm = MEASURE_BPM_EOI;
+        broadcast_measure(&nm, &genetics);
+        sync_all(&genetics);
+
+        print_debug("musicians len before: %d\n", listLen(&musicians));
+
+        /* concat musicians and genetics */
+        tmp_list = musicians.prev;
+        musicians.prev->next = &genetics;
+        musicians.prev = genetics.prev;
+        genetics.prev->next = &musicians;
+        genetics.prev = (struct list_head*) tmp_list;
+
+        print_debug("musicians len after: %d\n", listLen(&musicians));
+
+        secondLoop(stored_impro, measures_count);
+    }
 
 	free_director_core();
 	list_for_each_entry_safe(new_musician, tmp_musician, &musicians, list){
