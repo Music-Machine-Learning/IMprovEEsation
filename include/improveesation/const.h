@@ -79,6 +79,9 @@ enum {
 
 #define PIECE_START_SIZE 32
 
+/* Drums */
+
+/* This is here only to help to keep things in order */
 enum {
 	/* Cymbals */
 	DRUM_CLOSED_HIHAT = 0,
@@ -95,7 +98,42 @@ enum {
 	DRUM_FLOOR_TOM,
 	DRUM_RIMSHOT,
 	DRUM_BASS,
-	DRUM_UNUSED
+	DRUM_UNUSED,
+	DRUM_LAST
 };
+
+/* Drum Translation (timidity standard) */
+#define MIDI_DRUM_CLOSED_HIHAT 42
+#define MIDI_DRUM_OPEN_HIHAT 46
+#define MIDI_DRUM_CRASH 28
+#define MIDI_DRUM_RIDE 51
+#define MIDI_DRUM_SPLASH 55
+#define MIDI_DRUM_SNARE 38
+#define MIDI_DRUM_COWBELL 56
+#define MIDI_DRUM_HIGH_TOM 48
+#define MIDI_DRUM_MID_TOM 47
+#define MIDI_DRUM_FLOOR_TOM 43
+#define MIDI_DRUM_RIMSHOT 37
+#define MIDI_DRUM_BASS 35
+
+/* Compute drum size */
+#define DRUM_FIRST DRUM_CLOSED_HIHAT
+#define DEFAULT_DRUM_SIZE (DRUM_LAST - DRUM_FIRST)
+
+/* A basical drumset */
+#define DEFAULT_DRUMSET {\
+	MIDI_DRUM_CLOSED_HIHAT,\
+	MIDI_DRUM_OPEN_HIHAT,\
+	MIDI_DRUM_CRASH,\
+	MIDI_DRUM_RIDE,\
+	MIDI_DRUM_SPLASH,\
+	MIDI_DRUM_SNARE,\
+	MIDI_DRUM_COWBELL,\
+	MIDI_DRUM_HIGH_TOM,\
+	MIDI_DRUM_MID_TOM,\
+	MIDI_DRUM_FLOOR_TOM,\
+	MIDI_DRUM_RIMSHOT,\
+	MIDI_DRUM_BASS,\
+}
 
 #endif /* _CONST_H */

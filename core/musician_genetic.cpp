@@ -36,7 +36,7 @@ int musician_init_genetic(int genetic_mode, const char *samplesfile)
 		return 0;
 	}
 
-	printf("samplefile: %s\n");
+	printf("samplefile: %s\n", samplesfile);
 	if (parse_sample(samplesfile) == -1) {
 		fprintf(stderr, "Failed to parse samples file\n");
 		return -1;
