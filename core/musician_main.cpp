@@ -265,9 +265,10 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* XXX build it with an appropiate method */
+	printf("Subscription flags %x\n", sub_flags);
+
 	uint32_t myid = send_subscription(director_socket,
-				coupling, midi_class, soloist);
+				coupling, midi_class, sub_flags);
 
 	printf("connected to director (%d)\n", myid);
 
