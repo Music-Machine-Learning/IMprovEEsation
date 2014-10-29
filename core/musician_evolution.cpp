@@ -62,7 +62,7 @@ void swap_pieces(struct notes_s *fst, struct notes_s *snd, int cross){
 
 /* This function prints in a user-friendly way a piece in input 
  * FIXME change to print_debug */
-void print_piece(struct piece_s piece, char * name, uint8_t sim){
+void print_piece(struct piece_s piece, const char * name, uint8_t sim){
 	int i;
 	
 	print_debug("Piece %s sz:%d cnt:%d sim:%d [",

@@ -40,8 +40,6 @@
 
 #include <time.h>
 
-#define DEBUG
-
 using namespace std;
 
 /* Data to be written to midi (16 channels X 3 params per every note in chord) */

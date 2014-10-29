@@ -52,6 +52,8 @@ class end_of_improvisation_exception eoi_ex;
 int director_socket;
 int player_socket;
 
+int print_measure(struct play_measure_s *pm);
+
 void cleanup(void)
 {
 	close(director_socket);
@@ -133,7 +135,7 @@ void exit_usage(char *usage)
 int main(int argc, char **argv)
 {
 	int i, j, k;
-	int coupling, midi_class, soloist, play_chords, genetic;
+	int coupling, midi_class, play_chords, soloist, genetic, sub_flags;
 	int res, randfd;
 	int c;
 	int digit_optind = 0;
@@ -146,7 +148,7 @@ int main(int argc, char **argv)
 	struct timeval tv;
  
 
-	coupling = soloist = play_chords = genetic = 0;
+	coupling = soloist = play_chords = genetic = sub_flags = 0;
 	midi_class = -1; /* required arg */
 	samples_file_path = NULL;
 
@@ -189,6 +191,7 @@ int main(int argc, char **argv)
 				break;
 			case 's':
 				soloist = 1;
+				sub_flags |= FLAG_MUSICIAN_SOLOIST;
 				break;
 			case 'p':
 				default_player = 0;
@@ -204,6 +207,7 @@ int main(int argc, char **argv)
 				break;
 			case 'g':
 				genetic = 1;		
+				sub_flags |= FLAG_MUSICIAN_GENETIC;
 				asprintf(&samples_file_path, "%s", optarg);
 				printf("Genetic mode activated\n");
 				break;
@@ -267,7 +271,7 @@ int main(int argc, char **argv)
 
 	printf("connected to director (%d)\n", myid);
 
-	send_subscription(player_socket, myid, midi_class, soloist);
+	send_subscription(player_socket, myid, midi_class, sub_flags);
 
 	/* set the socket to non blocking */
 	fcntl(player_socket, F_SETFL, 
@@ -316,33 +320,15 @@ int main(int argc, char **argv)
 				printf("exiting\n");
 				return -1;
 			}
-				
 			pm.id = i;
 			pm.musician_id = myid;
-			printf("Measure: id: %d, size: %d, musid %d\n", 
-					pm.id, pm.size, pm.musician_id);
-			
-			int temposum = 0;	
-			printf("Note\tidx\tlength\ttripl\tvelocity\tch_size\tnotes\n");
-			for (j = 0; j < pm.size; j++){
-				nt = &(pm.measure[j]);
-				printf("\t%d\t%d\t%d\t%d\t%d\t[",
-					nt->id, 
-					nt->tempo, 
-					nt->triplets,
-					nt->velocity,
-					nt->chord_size);
-				temposum += nt->tempo;
-				for (k = 0; k < nt->chord_size; k++)
-					printf("%d, ", nt->notes[k]);
-				printf("]\n");
-			}
-			printf("Tempo SUM: %d\n", temposum);	
+			print_measure(&pm);
 			if (genetic) {
+				if (nm.bpm == MEASURE_BPM_EOI)
+					break;
 				store_gmeasure(&pm, &nm);
 				send_sync_ack(director_socket);
-			}
-			else  {
+			} else  {
 				send_to_play(player_socket, director_socket, &pm);
 			}
 
@@ -355,34 +341,77 @@ int main(int argc, char **argv)
 	}
 	
 	if (genetic) {
+		/* This genetically modifies the ginitial notes array trying
+		 * to catch the ggoal notes array */ 
 		if (genetic_loop(&(mfields.ginitial), &(mfields.ggoal)) == -1) {
 			fprintf(stderr, "Genetic loop failed\n");
-			//exit(EXIT_FAILURE);
-		}
-		/* Clean the measure structure and re-fill it  
-		 * with the new genetic stuff */
-		free(pm.measure);	
-		memset(&pm, 0, sizeof(struct play_measure_s));
-		
-		pm.id = 0;
-		pm.size = mfields.ggoal.count;
-		pm.musician_id = myid;
-		pm.measure = (struct notes_s *)malloc(sizeof(struct notes_s) * 
-			     pm.size);
-
-		if (pm.measure == NULL) {
-			fprintf(stderr, "Malloc error in main loop\n");
 			exit(EXIT_FAILURE);
 		}
-		memcpy(pm.measure, mfields.ggoal.notes, 
-		       sizeof(struct notes_s) * pm.size);
 
-		/* TODO: send ggoal.notes to the player */
-		send_to_play(player_socket, director_socket, &pm);	
+		/* Ack the director telling that the genetic is ready to play */
+		send_sync_ack(director_socket);
+		
+		int ntcount = 0;
+		for (i = 0; ;i++) {
+			/* Clean the measure structure and re-fill it  
+			 * with the new genetic stuff */
+			free(pm.measure);	
+			memset(&pm, 0, sizeof(struct play_measure_s));
+			
+			try {
+				recv_measure(director_socket, &nm);
+					
+				ntcount = compose_measure_genetic(&pm, &nm, ntcount);
+				pm.id = i;
+				pm.musician_id = myid;
+				print_measure(&pm);
+				
+				if (ntcount == -1) {
+					fprintf(stderr, "Compose genetic measure error");
+					return -1;
+				} else if (ntcount >= mfields.ginitial.count) {
+					/* Restart if there are less notes than before */
+					ntcount = 0;
+				}
+
+				send_to_play(player_socket, director_socket, &pm);	
+			} catch (end_of_improvisation_exception e) {
+				fprintf(stderr, "EOI exception catched: exiting\n");
+				break;
+			}
+
+			clear_measure(&nm);
+	
+		} 		
 		free(mfields.ginitial.notes);
 		free(mfields.ggoal.notes);
 	}
 
-
 	return 0;
+}
+
+
+int print_measure(struct play_measure_s *pm)
+{
+	int j, k;
+	struct notes_s *nt;
+	printf("Measure: id: %d, size: %d, musid %d\n", 
+			pm->id, pm->size, pm->musician_id);
+
+	int temposum = 0;	
+	printf("Note\tidx\tlength\ttripl\tvelocity\tch_size\tnotes\n");
+	for (j = 0; j < pm->size; j++){
+		nt = &(pm->measure[j]);
+		printf("\t%d\t%d\t%d\t%d\t%d\t[",
+				nt->id, 
+				nt->tempo, 
+				nt->triplets,
+				nt->velocity,
+				nt->chord_size);
+		temposum += nt->tempo;
+		for (k = 0; k < nt->chord_size; k++)
+			printf("%d, ", nt->notes[k]);
+		printf("]\n");
+	}
+	printf("Tempo SUM: %d\n", temposum);	
 }

@@ -339,6 +339,52 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 	return 0;
 }
 
+
+/* Compose a measure looking into the measure hints provided by the director. */
+int compose_measure_genetic(struct play_measure_s *pm, 
+			    struct measure_s *minfo, 
+			    int ntcount) 
+{
+	int i, tempo, max_quarters, max_sqcount;
+
+	max_quarters = minfo->tempo.upper / (minfo->tempo.lower / SQS_IN_Q);
+
+	max_sqcount = max_quarters * SQS_IN_Q;
+	
+	/* Allocates the array of notes with the max count of notes as size.
+	 * It will be truncated later if the notes are lesser than the max. */
+	pm->measure = (struct notes_s *)calloc((size_t)max_sqcount,
+			sizeof(struct notes_s));
+
+	for(i = 0, tempo = 0; tempo < max_sqcount; i++, ntcount++) {
+
+		if (ntcount > mfields.ginitial.count) 
+			return mfields.ginitial.count;
+
+		pm->measure[i] = mfields.ginitial.notes[ntcount];
+		tempo += pm->measure[i].tempo;
+		/*TODO: add a new note instead */
+		if (tempo > max_sqcount)
+			tempo = max_sqcount;
+	}
+
+	pm->size = i;
+
+	/* Re-alloc the array of notes according to the notes count */
+	if (i < max_sqcount){
+		pm->measure = (struct notes_s *)realloc((void *)pm->measure, 
+				sizeof(struct notes_s) * (size_t)ntcount);
+		if (pm->measure == NULL){
+			fprintf(stderr, "Realloc error: %s\n", strerror(errno));
+			
+			return -1;
+		}
+		pm->size = ntcount;
+	}
+
+	return ntcount;
+}
+
 /* Just a debug function that prints the values of a semiquaver structure */
 int print_semiquaver(struct semiquaver_s *sq)
 {

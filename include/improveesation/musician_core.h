@@ -40,6 +40,10 @@ int compose_measure(struct play_measure_s *pm,
 		    int soloist, 
 		    PGconn *dbh);
 
+int compose_measure_genetic(struct play_measure_s *pm, 
+			    struct measure_s *minfo, 
+			    int ntcount); 
+
 int musician_init(PGconn **dbh,
 		  int coupling, 
 		  int instrument, 
