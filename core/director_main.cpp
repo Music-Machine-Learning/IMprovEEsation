@@ -306,11 +306,7 @@ int main(int argc, char **argv)
         print_debug("musicians len before: %d\n", listLen(&musicians));
 
         /* concat musicians and genetics */
-        tmp_list = musicians.prev;
-        musicians.prev->next = &genetics;
-        musicians.prev = genetics.prev;
-        genetics.prev->next = &musicians;
-        genetics.prev = (struct list_head*) tmp_list;
+	concat_list_inplace(musicians, genetics);
 
         print_debug("musicians len after: %d\n", listLen(&musicians));
 

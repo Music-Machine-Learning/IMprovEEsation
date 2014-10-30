@@ -46,4 +46,11 @@ int byte_size(unsigned int n);
 
 #define RANDOM_FUZZY() ((float) ((float) rand() / (float) RAND_MAX))
 
+#define concat_list_inplace(a,b)  ({\
+	a.prev->next = b.next;\
+	b.prev->next = &a;\
+	b.next->prev = a.prev;\
+	a.prev = b.prev;\
+})
+
 #endif /* improveesation/utils.h */
