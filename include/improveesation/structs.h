@@ -166,6 +166,7 @@ struct piece_s {
 };
 
 struct musician_fields_s{
+	int instrument;
 	int octave_min;
 	int octave_max;
 	int prev_octave;

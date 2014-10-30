@@ -40,8 +40,6 @@ int print_debug(const char *f, ...)
 }
 #endif
 
-#define RANDOM_FUZZY() ((float) ((float) rand() / (float) RAND_MAX))
-
 struct play_measure_s glob_ideal[MAX_SAMPLE_ROW];
 char dyna_list[MAX_SAMPLE_ROW][DYNA_SIZE]; /* Fictional hash corresponding to the above array */
 
@@ -221,27 +219,5 @@ int get_goal_measures(struct play_measure_s **goal_ms, char *dyna)
 		}
 	}
 	
-	return cnt;
-}
-
-/* Translate IMprovEEsation Drums notation to user midi notation
- * (Default is timidity MIDI Drums notation) */
-int get_midi_drums(float *drum_notes, struct notes_s *drum_sq,
-		   int *user_drumset = NULL, int user_drum_size = 0)
-{
-	int i, cnt = 0;
-	int default_drumset[DEFAULT_DRUM_SIZE] = DEFAULT_DRUMSET;
-	int *drumset  = ( user_drumset ? user_drumset   : default_drumset );
-	int drum_size = ( user_drumset ? user_drum_size : DEFAULT_DRUM_SIZE );
-
-	for ( i = 0, cnt = 0; i < drum_size; i++ ) {
-		if (RANDOM_FUZZY() <= drum_notes[i]) {
-			drum_sq->notes[cnt] = drumset[i];
-			cnt++;
-		}
-	}
-
-	drum_sq->chord_size = cnt;
-
 	return cnt;
 }

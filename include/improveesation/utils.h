@@ -37,13 +37,13 @@ int split_tags(char *tags_str, char **tags);
 int parse_sample(const char * filename);
 int get_goal_measures(struct play_measure_s ** goal_ms, char * dyna);
 int byte_size(unsigned int n);
-int get_midi_drums(float *drum_notes, struct notes_s *drum_sq,
-		   int *user_drumset, int user_drum_size);
 
 #ifdef DEBUG
 	int print_debug(const char *f, ...);
 #else
 	#define print_debug(f, ...) ({})
 #endif
+
+#define RANDOM_FUZZY() ((float) ((float) rand() / (float) RAND_MAX))
 
 #endif /* improveesation/utils.h */

@@ -175,7 +175,7 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
     list_for_each_entry(cmusician, musicians, list) {
 
         /* Drums are assigned by default to channel 16 and it shouldn't be selected */
-        if(cmusician->instrument_class != DRUMS){
+        if(cmusician->instrument_class != INSTRUMENT_DRUM){
             t = chcounter++;
         } else {
             t = MIDI_CHANNELS - 1;

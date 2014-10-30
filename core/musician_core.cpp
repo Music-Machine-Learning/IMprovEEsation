@@ -61,6 +61,7 @@ int musician_init(PGconn **dbh, int coupling, int instrument, int soloist,
 	if (*dbh == NULL)
 		return -1;
 
+	mfields.instrument = instrument;
 	mfields.prev_octave = -1;
 	mfields.play_chords = play_chords;
 
@@ -126,9 +127,11 @@ int continue_last_note(struct play_measure_s *pm,
                        struct semiquaver_s *sq)	
 {
 	if (*ntcount == 0) {
+		new_notes->chord_size = prev_pm->measure[prev_pm->size - 1].chord_size;
+		
 		memcpy(new_notes->notes, prev_pm->measure[prev_pm->size - 1].notes, 
 				MAX_CHORD_SIZE);
-			
+	
 		pm->unchanged_fst = 1; 
 		printf("fisrt note is unchanged\n");
 		if (assign_new_notes(pm, new_notes, ntcount, sq))
@@ -199,22 +202,28 @@ int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 				return -1;
 			}
 		} else {
-		
-			idx = decide_note(sqs[s]->pnote);
+	
+			if (mfields.instrument == INSTRUMENT_DRUM) {
+				decide_drum(sqs[s]->pnote, &new_notes, NULL, 0);
+				/* TODO: some size check */
+			} else {
+
+				idx = decide_note(sqs[s]->pnote);
 
 
-			if (!mfields.play_chords) {
-				new_notes.notes[0] = note_to_midi(idx, key_note);
-				if (new_notes.notes[0] == -1)
-					return -1;
-				printf("new single note added\n");
-			} else  {
-				/* If it's a rest I don't care about the chord notes */
-				if (idx == 0)
-					new_notes.notes[0] = MIDI_REST_NOTE;
-				else 
-					decide_chord(&new_notes, minfo, q_idx); 
-				printf("chord added.\n");
+				if (!mfields.play_chords) {
+					new_notes.notes[0] = note_to_midi(idx, key_note);
+					if (new_notes.notes[0] == -1)
+						return -1;
+					printf("new single note added\n");
+				} else  {
+					/* If it's a rest I don't care about the chord notes */
+					if (idx == 0)
+						new_notes.notes[0] = MIDI_REST_NOTE;
+					else 
+						decide_chord(&new_notes, minfo, q_idx); 
+					printf("chord added.\n");
+				}
 			}
 			if (assign_new_notes(pm, &new_notes, &ntcount, sqs[s]) == -1)
 				return -1;

@@ -30,5 +30,6 @@ int decide_note(float *pnote);
 int decide_octave(int octave_min, int octave_max);
 int decide_chord(struct notes_s *chord, struct measure_s *minfo, int q_idx);
 int decide_velocity(int vmin, int vmax);
-
+int decide_drum(float *drum_notes, struct notes_s *drum_sq,
+		   int *user_drumset, int user_drum_size);
 #endif //MUSICIA_IMPROVISER_H

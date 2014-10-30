@@ -63,19 +63,19 @@ void fill_test_musician(subscription_s *new_musician, int prog){
 	switch (prog){
 		case 0:
 			new_musician->coupling = 0;
-			new_musician->instrument_class = GRANDPIANO;
+			new_musician->instrument_class = 0; //GRANDPIANO
             new_musician->flags = FLAG_MUSICIAN_SOLOIST;
 			new_musician->connection = 0;
 			break;
 		case 1:
 			new_musician->coupling = 0;
-			new_musician->instrument_class = BASS;
+			new_musician->instrument_class = 33; //BASS
             new_musician->flags = FLAG_MUSICIAN_NONE;
 			new_musician->connection = 1;
 			break;
 		case 2:	
 			new_musician->coupling = 0;
-			new_musician->instrument_class = DRUMS;
+			new_musician->instrument_class = INSTRUMENT_DRUM;
             new_musician->flags = FLAG_MUSICIAN_NONE;
 			new_musician->connection = 10;
 			break;
