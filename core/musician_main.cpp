@@ -310,6 +310,9 @@ int main(int argc, char **argv)
 
 		try {
 			recv_measure(director_socket, &nm);
+			
+			if (genetic && nm.bpm == MEASURE_BPM_EOI)
+				break;
 
 			printf("new measure got,\
 			       playing the random note:\n\tid: %d (%s)\n", i, 
@@ -325,8 +328,6 @@ int main(int argc, char **argv)
 			pm.musician_id = myid;
 			print_measure(&pm);
 			if (genetic) {
-				if (nm.bpm == MEASURE_BPM_EOI)
-					break;
 				store_gmeasure(&pm, &nm);
 				send_sync_ack(director_socket);
 			} else  {
