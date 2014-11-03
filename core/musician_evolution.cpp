@@ -50,6 +50,10 @@ map<struct bigram, int, struct BigramComparer> test_bigrams_pitch;
 map<struct bigram, int, struct BigramComparer> train_bigrams_tempo;
 map<struct bigram, int, struct BigramComparer> test_bigrams_tempo;
 
+typedef map<uint8_t, int>::iterator uni_iter;
+typedef map<struct bigram, int, struct BigramComparer>::iterator 
+															bi_iter;
+
 void swap_pieces(struct notes_s *fst, struct notes_s *snd, int cross){
 	struct notes_s temp[cross];
 	int x;
@@ -60,26 +64,24 @@ void swap_pieces(struct notes_s *fst, struct notes_s *snd, int cross){
 	}
 }
 
-/* This function prints in a user-friendly way a piece in input 
- * FIXME change to print_debug */
-void print_piece(struct piece_s piece, const char * name, uint8_t sim){
+/* This function prints in a user-friendly way a piece in input */
+void print_piece(struct piece_s piece, char * name, double sim){
 	int i;
 	
-	print_debug("Piece %s sz:%d cnt:%d sim:%d [",
+	printf("Piece %s sz:%d cnt:%d sim:%f [",
 				name, piece.size, piece.count, sim);
 	for (i=0; i<piece.count; i++){
-		print_debug("%d/%d ", piece.notes[i].notes[0], piece.notes[i].tempo);
+		printf("%d/%d ", piece.notes[i].notes[0], piece.notes[i].tempo);
 	}
-	print_debug("]\n");
+	printf("]\n");
 }
 
 /* Function that checks how much the array trial is similar to goal and stores the similarity in the 3array */
 int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial, 
-		       uint8_t *sim)
+		       double *sim)
 {
 	int i,k;
-	struct bigram bg_pitch;
-	struct bigram bg_tempo;
+	struct bigram bg_pitch, bg_tempo, tmp_pitch, tmp_tempo;
 	
 	/* Position similarity in percentage (stored in csim) */
 	double csim = 0;
@@ -91,59 +93,109 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 	double b_pt_ppl = 0;
 	double b_tm_ppl = 0;
 	
+	for (i = 0; i < ggoal->count; i++){
+		/* In unigrams, if note or tempo exist in map increase it else
+		 * initialize it to 1. */
+		if(test_unigrams_pitch[gtrial->notes[i].notes[0]])
+			test_unigrams_pitch[gtrial->notes[i].notes[0]]++;
+		else
+			test_unigrams_pitch[gtrial->notes[i].notes[0]] = 1;
+		if(test_unigrams_tempo[gtrial->notes[i].tempo])
+			test_unigrams_tempo[gtrial->notes[i].tempo]++;
+		else
+			test_unigrams_tempo[gtrial->notes[i].tempo] = 1;
+			
+		/* For bigram is the same, but avoid the last couple (because 
+		 * snd is null) */
+		if(i+1 != ggoal->count){
+			tmp_pitch.fst = gtrial->notes[i].notes[0];
+			tmp_pitch.snd = gtrial->notes[i+1].notes[0];
+			tmp_tempo.fst = gtrial->notes[i].tempo;
+			tmp_tempo.snd = gtrial->notes[i+1].tempo; 
+			
+			if(test_bigrams_pitch[tmp_pitch])
+				test_bigrams_pitch[tmp_pitch]++;
+			else
+				test_bigrams_pitch[tmp_pitch] = 1;
+			if(test_bigrams_tempo[tmp_tempo])
+				test_bigrams_tempo[tmp_tempo]++;
+			else
+				test_bigrams_tempo[tmp_tempo] = 1;
+		}
+	}
+	
+	/* Scan the goal array */
 	for (i = 0; i < ggoal->count; i++) {
 		
 		/* Compute the point-to-point similarity */
 		if (ggoal->notes[i].notes[0] == gtrial->notes[i].notes[0])
-			csim++;
+			csim += 1;
 		if ((ggoal->notes[i].tempo == gtrial->notes[i].tempo) &&
 			(ggoal->notes[i].triplets == gtrial->notes[i].triplets))
 			csim++;
 		ctot += 2;
-		
-		/* Compute Unigram Perplexity with Laplace Smoothing */
-		u_pt_ppl += log(
-			((double)train_unigrams_pitch[gtrial->notes[i].notes[0]] + 1)
-			 / ((double)gtrial->count + MAX_NOTE));
-		u_tm_ppl += log(
-			((double)train_unigrams_tempo[gtrial->notes[i].tempo] + 1)
-			 / ((double)gtrial->count + MAX_TEMPO));
-
-		/* Compute Bigram Perplexity with Laplace Smoothing*/
-		
-		if (i + 1 <= ggoal->count){
-			bg_pitch.fst = gtrial->notes[i].notes[0];
-			bg_pitch.snd = gtrial->notes[i+1].notes[0];
-			bg_tempo.fst = gtrial->notes[i].tempo;
-			bg_tempo.snd = gtrial->notes[i+1].tempo;
-			b_pt_ppl += log(
-				((double)train_bigrams_pitch[bg_pitch] + 1) / 
-				((double)train_unigrams_pitch[bg_pitch.fst]
-				+ MAX_NOTE));
-			b_tm_ppl += log(
-				((double)train_bigrams_tempo[bg_tempo] + 1) / 
-				((double)train_unigrams_tempo[bg_tempo.fst]
-				+ MAX_TEMPO));
-		}
 	}
-	u_pt_ppl = ((exp(u_pt_ppl) * 100) / (ctot / 2)) / 5;
-	u_tm_ppl = ((exp(u_tm_ppl) * 100) / (ctot / 2)) / 5;	
-	b_pt_ppl = ((exp(b_pt_ppl) * 100) / (ctot / 2)) / 5;
-	b_tm_ppl = ((exp(b_tm_ppl) * 100) / (ctot / 2)) / 5 ;	
-	csim = ((csim * 100) / ctot) / 5;
+	
+	/* Scan the unigram pitch map */
+	for(uni_iter current = test_unigrams_pitch.begin();
+					current != test_unigrams_pitch.end(); current++) {
+		/* Euclidean distance */
+		if (train_unigrams_pitch[current->first] != 0)		
+			u_pt_ppl += 1 / sqrt(1 + pow(
+				((double)train_unigrams_pitch[current->first] - 
+				(double)current->second), 2));
+	}
+	/* Scan the unigram tempo map */
+	for(uni_iter current = test_unigrams_tempo.begin();
+				current != test_unigrams_tempo.end(); current++) {
+		/* Euclidean distance */
+		if (train_unigrams_tempo[current->first] != 0)		
+			u_tm_ppl += 1 / sqrt(1 + pow(
+				((double)train_unigrams_tempo[current->first] - 
+				(double)current->second), 2));
+	}
+	/* Scan the bigram pitch map */
+	for(bi_iter current = test_bigrams_pitch.begin();
+					current != test_bigrams_pitch.end(); current++) {
+		/* Euclidean distance */
+		if (train_bigrams_pitch[current->first] != 0)		
+			b_pt_ppl += 1 / sqrt(1 + pow(
+				((double)train_bigrams_pitch[current->first] - 
+				(double)current->second), 2));
+	}
+	//~ /* Scan the bigram tempo map */
+	//~ for(bi_iter current = test_bigrams_tempo.begin();
+					//~ current != test_bigrams_tempo.end(); current++) {
+		//~ /* Euclidean distance */
+		//~ if (train_bigrams_tempo[current->first] != 0)		
+			//~ b_tm_ppl += 1 / sqrt(1 + pow(
+				//~ ((double)train_bigrams_tempo[current->first] - 
+				//~ (double)current->second), 2));
+	//~ }
+	
+	csim /= ctot;
+	u_pt_ppl /= test_unigrams_pitch.size();
+	u_tm_ppl /= test_unigrams_tempo.size();
+	b_pt_ppl /= test_bigrams_pitch.size();
+	b_tm_ppl /= test_bigrams_tempo.size();
 
 	if (!ggoal->count)
 		*sim = 0;
 	else
-		*sim = ctot + u_pt_ppl + u_tm_ppl + b_pt_ppl + b_tm_ppl;
-//	printf("--> %f %f %f %f %f - %f\n",
-	//		u_pt_ppl, u_tm_ppl, b_pt_ppl, b_tm_ppl, csim, sim);
+		*sim = csim * GET_WEIGHT(P2P) + 
+				u_pt_ppl * GET_WEIGHT(UNP) + 
+				u_tm_ppl * GET_WEIGHT(UNT) + 
+				b_pt_ppl * GET_WEIGHT(BIP) + 
+				b_tm_ppl * GET_WEIGHT(BIT);
+				
+	//~ printf("--> %f %f %f %f %f - %f\n",
+		//~ u_pt_ppl, u_tm_ppl, b_pt_ppl, b_tm_ppl, csim, *sim);
 
 	return *sim;
 }
 
 /* Functions which sort the pool according to similarity (with mergesort) */
-void merge_pool(struct piece_s *pool, uint8_t *sim, int fst, int q, int end)
+void merge_pool(struct piece_s *pool, double *sim, int fst, int q, int end)
 {
 	int lw, k, hh, j, B[GENETIC_POOL_SIZE];
 	struct piece_s sandbox[GENETIC_POOL_SIZE];
@@ -180,7 +232,7 @@ void merge_pool(struct piece_s *pool, uint8_t *sim, int fst, int q, int end)
 	}
 }
 
-void mergesort_pool(struct piece_s * pool, uint8_t * sim, int fst, int end){
+void mergesort_pool(struct piece_s * pool, double * sim, int fst, int end){
 	
 	int q;
 	if (fst < end){
@@ -192,7 +244,7 @@ void mergesort_pool(struct piece_s * pool, uint8_t * sim, int fst, int end){
 }
 
 /* This sorts the pool in INCREASING order */
-int sort_pool(struct piece_s * pool, uint8_t * sim)
+int sort_pool(struct piece_s * pool, double * sim)
 {
 	mergesort_pool(pool, sim, 0, GENETIC_POOL_SIZE - 1);
 	return 0;
@@ -284,10 +336,8 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 
 	/* Arrays that contain the genetic pool generated every round */
 	struct piece_s genetic_pool[GENETIC_POOL_SIZE];
-	/* Array that stats the similarity coefficient (0-100) with the ideal, the postion of the most similar and the position of the less similar */
-	uint8_t similarity[GENETIC_POOL_SIZE][3];
 	/* Array that stats the similarity coefficient (0-100) with the ideal */
-	uint8_t sim[GENETIC_POOL_SIZE];
+	double sim[GENETIC_POOL_SIZE];
 
 	int i,j,percent;
 
@@ -305,16 +355,14 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		
 		/* In unigrams, if note or tempo exist in map increase it else
 		 * initialize it to 1. */
-		//~ if(train_unigrams_pitch[ggoal->notes[i].notes[0]])
-			//~ train_unigrams_pitch[ggoal->notes[i].notes[0]]++;
-		//~ else
-			//~ train_unigrams_pitch[ggoal->notes[i].notes[0]] = 1;
-		//~ if(train_unigrams_tempo[ggoal->notes[i].tempo])
-			//~ train_unigrams_tempo[ggoal->notes[i].tempo]++;
-		//~ else
-			//~ train_unigrams_tempo[ggoal->notes[i].tempo] = 1;
-		train_unigrams_pitch[ggoal->notes[i].notes[0]]++;
-		train_unigrams_tempo[ggoal->notes[i].tempo]++;
+		if(train_unigrams_pitch[ggoal->notes[i].notes[0]])
+			train_unigrams_pitch[ggoal->notes[i].notes[0]]++;
+		else
+			train_unigrams_pitch[ggoal->notes[i].notes[0]] = 1;
+		if(train_unigrams_tempo[ggoal->notes[i].tempo])
+			train_unigrams_tempo[ggoal->notes[i].tempo]++;
+		else
+			train_unigrams_tempo[ggoal->notes[i].tempo] = 1;
 			
 		/* For bigram is the same, but avoid the last couple (because 
 		 * snd is null) */
@@ -324,19 +372,17 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 			bg_tempo.fst = ggoal->notes[i].tempo;
 			bg_tempo.snd = ggoal->notes[i+1].tempo; 
 			
-			//~ if(train_bigrams_pitch[bg_pitch])
-				//~ train_bigrams_pitch[bg_pitch]++;
-			//~ else
-				//~ train_bigrams_pitch[bg_pitch] = 1;
-			//~ if(train_bigrams_tempo[bg_tempo])
-				//~ train_bigrams_tempo[bg_tempo]++;
-			//~ else
-				//~ train_bigrams_tempo[bg_tempo] = 1;
-			train_bigrams_tempo[bg_tempo]++;
-			train_bigrams_pitch[bg_pitch]++;
+			if(train_bigrams_pitch[bg_pitch])
+				train_bigrams_pitch[bg_pitch]++;
+			else
+				train_bigrams_pitch[bg_pitch] = 1;
+			if(train_bigrams_tempo[bg_tempo])
+				train_bigrams_tempo[bg_tempo]++;
+			else
+				train_bigrams_tempo[bg_tempo] = 1;
 		}
 	}
-
+	
 	/* Initialize the genetic pool with copies of the original (and the similarities with 0) */
 	for (i = 0; i < GENETIC_POOL_SIZE; i++) {
 		/* XXX FREE */
@@ -356,19 +402,13 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 			
 		genetic_pool[i].size = ggoal->size;
 		genetic_pool[i].count = ggoal->count;
-	
-		/* FIXME to remove when the similarity is complete 
-		similarity[i][0] = 0;
-		similarity[i][1] = 0;
-		similarity[i][2] = 0; */
 		
-		compute_similarity(ggoal, &genetic_pool[i], &sim[i]);	
+		compute_similarity(ggoal, &genetic_pool[i], &sim[i]);
 	}
 
 	/* Now we have everything set, let's get started with the loop! */
 	for (i = 0; i < GENETIC_ROUNDS; i++) {
 
-		
 		print_piece(genetic_pool[GENETIC_POOL_SIZE - 1], "entr", sim[GENETIC_POOL_SIZE - 1]);
 		
 		/* Recombination and transposon propagation (skip on the first iteration) */
@@ -383,7 +423,6 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		/* Then we need to compute similarity and sort the array according to it */
 		for(j=0; j<GENETIC_POOL_SIZE; j++) {
 			change_random_note(&genetic_pool[j]);
-			printf("%d:%d ",i,j );
 			compute_similarity(ggoal, &genetic_pool[j], &sim[j]);
 		}
 		
@@ -393,7 +432,7 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		
 		print_piece(genetic_pool[GENETIC_POOL_SIZE - 1], "sort", sim[GENETIC_POOL_SIZE - 1]);
 		
-		printf("Completed %d/500\tsimilarity:%d\n", i + 1, sim[GENETIC_POOL_SIZE - 1]);
+		printf("Completed %d/500\tsimilarity:%lf\n", i + 1, sim[GENETIC_POOL_SIZE - 1]);
 	}
 	
 	/* Finally we keep the most similar */

@@ -76,11 +76,25 @@ enum {
 #define FLAG_MUSICIAN_SOLOIST   0b00000001
 #define FLAG_MUSICIAN_GENETIC   0b00000010
 
-#define GENETIC_ROUNDS 1500
+#define GENETIC_ROUNDS 500
 #define GENETIC_POOL_SIZE 512 // Watch out! 1/4 of this must be an even number
 
 #define PIECE_START_SIZE 32
 
+/* Genetic Evaluation Weights */
+#define __RAW_WEIGHT_P2P 70
+#define __RAW_WEIGHT_UNP 10
+#define __RAW_WEIGHT_UNT 5
+#define __RAW_WEIGHT_BIP 10
+#define __RAW_WEIGHT_BIT 5
+
+#define GET_WEIGHT(n) (double)(((double)__RAW_WEIGHT_##n) / ( \
+	(double)__RAW_WEIGHT_P2P +\
+	(double)__RAW_WEIGHT_UNP +\
+	(double)__RAW_WEIGHT_UNT +\
+	(double)__RAW_WEIGHT_BIP +\
+	(double)__RAW_WEIGHT_BIT ))
+	
 /* Drums */
 
 /* This is here only to help to keep things in order */
