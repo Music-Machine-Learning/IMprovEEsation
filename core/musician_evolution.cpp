@@ -44,15 +44,12 @@ using namespace std;
 map<uint8_t, int> train_unigrams_pitch;
 map<uint8_t, int> test_unigrams_pitch;
 map<uint8_t, int> train_unigrams_tempo;
-map<uint8_t, int> test_unigrams_tempo;	
-map<struct bigram, int, struct BigramComparer> train_bigrams_pitch;
-map<struct bigram, int, struct BigramComparer> test_bigrams_pitch;
-map<struct bigram, int, struct BigramComparer> train_bigrams_tempo;
-map<struct bigram, int, struct BigramComparer> test_bigrams_tempo;
+map<uint8_t, int> test_unigrams_tempo;
 
-typedef map<uint8_t, int>::iterator uni_iter;
-typedef map<struct bigram, int, struct BigramComparer>::iterator 
-															bi_iter;
+map<uint16_t, int> train_bigrams_pitch;
+map<uint16_t, int> test_bigrams_pitch;
+map<uint16_t, int> train_bigrams_tempo;
+map<uint16_t, int> test_bigrams_tempo;
 
 void swap_pieces(struct notes_s *fst, struct notes_s *snd, int cross){
 	struct notes_s temp[cross];
@@ -66,14 +63,16 @@ void swap_pieces(struct notes_s *fst, struct notes_s *snd, int cross){
 
 /* This function prints in a user-friendly way a piece in input */
 void print_piece(struct piece_s piece, char * name, double sim){
+	#ifdef DEBUG
 	int i;
 	
-	printf("Piece %s sz:%d cnt:%d sim:%f [",
+	print_debug("Piece %s sz:%d cnt:%d sim:%f [",
 				name, piece.size, piece.count, sim);
 	for (i=0; i<piece.count; i++){
-		printf("%d/%d ", piece.notes[i].notes[0], piece.notes[i].tempo);
+		print_debug("%d/%d ", piece.notes[i].notes[0], piece.notes[i].tempo);
 	}
-	printf("]\n");
+	print_debug("]\n");
+	#endif
 }
 
 /* Function that checks how much the array trial is similar to goal and stores the similarity in the 3array */
@@ -81,7 +80,7 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 		       double *sim)
 {
 	int i,k;
-	struct bigram bg_pitch, bg_tempo, tmp_pitch, tmp_tempo;
+	uint16_t bg_pitch, bg_tempo, tmp_pitch, tmp_tempo;
 	
 	/* Position similarity in percentage (stored in csim) */
 	double csim = 0;
@@ -92,6 +91,12 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 	double u_tm_ppl = 0;
 	double b_pt_ppl = 0;
 	double b_tm_ppl = 0;
+	
+	test_unigrams_pitch.clear();
+	test_unigrams_tempo.clear();
+	test_bigrams_pitch.clear();
+	test_bigrams_tempo.clear();
+	
 	
 	for (i = 0; i < ggoal->count; i++){
 		/* In unigrams, if note or tempo exist in map increase it else
@@ -108,10 +113,12 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 		/* For bigram is the same, but avoid the last couple (because 
 		 * snd is null) */
 		if(i+1 != ggoal->count){
-			tmp_pitch.fst = gtrial->notes[i].notes[0];
-			tmp_pitch.snd = gtrial->notes[i+1].notes[0];
-			tmp_tempo.fst = gtrial->notes[i].tempo;
-			tmp_tempo.snd = gtrial->notes[i+1].tempo; 
+			tmp_pitch = LOAD_BIGRAM(
+				gtrial->notes[i].notes[0],
+				gtrial->notes[i+1].notes[0]);
+			tmp_tempo = LOAD_BIGRAM(
+				gtrial->notes[i].tempo,
+				gtrial->notes[i+1].tempo);
 			
 			if(test_bigrams_pitch[tmp_pitch])
 				test_bigrams_pitch[tmp_pitch]++;
@@ -155,23 +162,25 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 				(double)current->second), 2));
 	}
 	/* Scan the bigram pitch map */
+	bi_iter end = test_bigrams_pitch.end();
+
 	for(bi_iter current = test_bigrams_pitch.begin();
-					current != test_bigrams_pitch.end(); current++) {
+					current != end; current++) {
 		/* Euclidean distance */
-		if (train_bigrams_pitch[current->first] != 0)		
+		if (train_bigrams_pitch[current->first] != 0)
 			b_pt_ppl += 1 / sqrt(1 + pow(
 				((double)train_bigrams_pitch[current->first] - 
 				(double)current->second), 2));
 	}
-	//~ /* Scan the bigram tempo map */
-	//~ for(bi_iter current = test_bigrams_tempo.begin();
-					//~ current != test_bigrams_tempo.end(); current++) {
-		//~ /* Euclidean distance */
-		//~ if (train_bigrams_tempo[current->first] != 0)		
-			//~ b_tm_ppl += 1 / sqrt(1 + pow(
-				//~ ((double)train_bigrams_tempo[current->first] - 
-				//~ (double)current->second), 2));
-	//~ }
+	/* Scan the bigram tempo map */
+	for(bi_iter current = test_bigrams_tempo.begin();
+					current != test_bigrams_tempo.end(); current++) {
+		/* Euclidean distance */
+		if (train_bigrams_tempo[current->first] != 0)		
+			b_tm_ppl += 1 / sqrt(1 + pow(
+				((double)train_bigrams_tempo[current->first] - 
+				(double)current->second), 2));
+	}
 	
 	csim /= ctot;
 	u_pt_ppl /= test_unigrams_pitch.size();
@@ -197,7 +206,8 @@ int compute_similarity(struct piece_s *ggoal, struct piece_s *gtrial,
 /* Functions which sort the pool according to similarity (with mergesort) */
 void merge_pool(struct piece_s *pool, double *sim, int fst, int q, int end)
 {
-	int lw, k, hh, j, B[GENETIC_POOL_SIZE];
+	int lw, k, hh, j;
+	double B[GENETIC_POOL_SIZE];
 	struct piece_s sandbox[GENETIC_POOL_SIZE];
 	lw = fst; hh = q + 1; k = fst;	
 
@@ -342,8 +352,7 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 	int i,j,percent;
 
 	/* Temporary stuff to fill the maps */
-	struct bigram bg_pitch;
-	struct bigram bg_tempo;
+	uint16_t bg_pitch, bg_tempo;
 	
 	/* Print the initial arrays in debug mode */
 	print_piece(*ginitial, "init", 0);
@@ -367,10 +376,12 @@ int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal)
 		/* For bigram is the same, but avoid the last couple (because 
 		 * snd is null) */
 		if(i+1 != ggoal->count){
-			bg_pitch.fst = ggoal->notes[i].notes[0];
-			bg_pitch.snd = ggoal->notes[i+1].notes[0];
-			bg_tempo.fst = ggoal->notes[i].tempo;
-			bg_tempo.snd = ggoal->notes[i+1].tempo; 
+			bg_pitch = LOAD_BIGRAM(
+				ggoal->notes[i].notes[0],
+				ggoal->notes[i+1].notes[0]);
+			bg_tempo = LOAD_BIGRAM(
+				ggoal->notes[i].tempo,
+				ggoal->notes[i+1].tempo);
 			
 			if(train_bigrams_pitch[bg_pitch])
 				train_bigrams_pitch[bg_pitch]++;

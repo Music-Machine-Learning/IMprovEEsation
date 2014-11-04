@@ -35,21 +35,12 @@
 #define MAX_TEMPO 16 /* More is too much */
 #define MAX_NOTE 128 /* Maximum pitch available */
 
-struct bigram {
-	uint8_t fst;
-	uint8_t snd;
-};
+#define LOAD_BIGRAM(f, s) (((uint16_t)f)<<8 | ((uint16_t)s & 0xff))
+#define GET_FIRST(b) ((uint8_t)(b>>8) & 0xff)
+#define GET_SECOND(b) ((uint8_t)(b) & 0xff)
 
-struct BigramComparer{
-	bool operator()(const struct bigram & Left, 
-					const struct bigram & Right) const {
-			if (Left.fst == Right.fst)
-				return (Left.snd < Right.snd);
-			else return (Left.fst < Right.fst);
-		}
-};
-
-typedef map<uint8_t, int>::iterator it_uni;
+typedef map<uint8_t, int>::iterator uni_iter;
+typedef map<uint16_t, int>::iterator bi_iter;
 
 int genetic_loop(struct piece_s *ginitial, struct piece_s *ggoal);
 
