@@ -21,6 +21,7 @@
 /* USA.                                                                      */
 /*****************************************************************************/
 
+#include <linux/list.h>
 #include <improveesation/musician_improviser.h>
 #include <improveesation/musician_genetic.h>
 #include <improveesation/configuration.h>
@@ -45,6 +46,7 @@ int musician_init(PGconn **dbh, int coupling, int instrument, int soloist,
 	struct rc_conf_s conf;
 
 	*dbh = NULL;
+	res = 0;
 	
 	if (load_conf(DEFAULT_RC_PATH, &conf) < 4) {
 		fprintf(stderr, "error while loading configuration (%s)\n",
@@ -65,11 +67,20 @@ int musician_init(PGconn **dbh, int coupling, int instrument, int soloist,
 	mfields.prev_octave = -1;
 	mfields.play_chords = play_chords;
 
-	res = get_range(*dbh, instrument, &(mfields.octave_min), 
-			&(mfields.octave_max));
-	
-	if (res != 0 || (mfields.octave_max - mfields.octave_min) > MIDI_NOCTAVES)
+	if (mfields.octave_min == -1 && mfields.octave_max == -1) {
+		res = get_range(*dbh, instrument, &(mfields.octave_min), 
+			        &(mfields.octave_max));
+	} else if (mfields.octave_min == -1 || mfields.octave_max == -1) {
+		fprintf(stderr, "Invalid octave range [%d %d]\n", 
+			mfields.octave_min, mfields.octave_max);
 		return -1;
+	}
+
+	if (res != 0 || (mfields.octave_max - mfields.octave_min) > MIDI_NOCTAVES) {
+		fprintf(stderr, "Invalid octave range [%d %d]\n", 
+			mfields.octave_min, mfields.octave_max);
+		return -1;
+	}
 
 	return 0;
 }
@@ -348,11 +359,108 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 	return 0;
 }
 
+int split_note(struct notes_s *nnew, struct list_head *list, int sqcount, 
+	       int max_sqcount)
+{
+	struct notes_s tmp;
+	int split_tempo, last_count;
+
+	last_count = sqcount;
+
+	/* Split the new note until it doesn't fit into measures */
+	while (nnew->tempo + last_count > max_sqcount) {
+		memset((void *)&tmp, 0, sizeof(struct notes_s));
+		tmp = *nnew;
+
+		/* Reduce the tempo of the last note (just created) to let 
+		   it fit in the measure */
+		split_tempo = max_sqcount - last_count;
+		nnew->tempo = split_tempo;
+		last_count += split_tempo;
+
+		print_debug("Note split left\n");
+		print_debug_note(nnew);
+
+		/* Reset the last_counter when we finished a measure */
+		if (last_count == max_sqcount) {
+			last_count = 0;
+		} else {
+			fprintf(stderr, "Something wrong in split note\n");
+			return -1;
+		}
+		
+		/* Create a new note with the tempo of the previous minus
+		 * the amount of tempo reduced from the previous */
+		nnew = (struct notes_s *)malloc(sizeof (struct notes_s));
+		if (nnew == NULL) {
+			fprintf(stderr, "Malloc error in split_note\n");
+			return -1;
+		}
+		*nnew = tmp;
+		/* Special id to understand later that it was a continuous note */
+		nnew->id = NOTE_CONTINUOUS_ID;
+		nnew->tempo -= split_tempo;
+		sqcount = nnew->tempo;
+		print_debug("Note split right\n");
+		print_debug_note(nnew);
+		list_add_tail(&(nnew->list), list);
+	}
+
+	return sqcount;
+}
+
+/* Converts the notes array into a list */
+/* TODO  A list should be directly created instead of an array.
+   TODO  Otherwise we can't know the time signature at each measure.
+   TODO  As a WORKAROUND we assume a fixed time signature that never changes 
+*/
+int piece_to_list(struct piece_s *piece, struct list_head *list)
+{
+	int sqcount, max_sqcount, i;
+	struct notes_s *nnew;
+	
+	if (piece->count <= 0 || !piece || !list) {
+		fprintf(stderr, "Error in piece_to_list\n");
+		return -1;
+	}
+
+	max_sqcount = 16; /* TODO: Sorry for this, it's just a workaround */
+
+	sqcount = 0;
+
+	print_debug("Converting into the finalist\n");
+	print_debug("Note\tidx\tlength\ttripl\tvelocity\tch_size\tnotes\n");
+	for (i = 0; i < piece->count; i++) {
+		nnew = (struct notes_s *)malloc(sizeof (struct notes_s));
+		*nnew = piece->notes[i];
+		list_add_tail(&(nnew->list), list);
+	
+		print_debug_note(nnew);
+		print_debug("counter %d\n", sqcount + nnew->tempo);
+
+		if (sqcount + nnew->tempo == max_sqcount) {
+			sqcount = 0;
+		} else if (sqcount + nnew->tempo > max_sqcount) {
+			print_debug("Splitting the note\n");
+			sqcount = split_note(nnew, list, sqcount, max_sqcount);
+			if (sqcount == -1) {
+				fprintf(stderr, "Error in piece_to_list\n");
+				return -1;
+			}
+		} else {
+			sqcount += nnew->tempo;
+		}
+	}
+
+
+	return 0;
+
+}
 
 /* Compose a measure looking into the measure hints provided by the director. */
-int compose_measure_genetic(struct play_measure_s *pm, 
-			    struct measure_s *minfo, 
-			    int ntcount) 
+struct list_head *compose_measure_genetic(struct play_measure_s *pm, 
+			    		  struct measure_s *minfo,
+			    		  struct list_head *node) 
 {
 	int i, tempo, max_quarters, max_sqcount;
 
@@ -363,18 +471,29 @@ int compose_measure_genetic(struct play_measure_s *pm,
 	/* Allocates the array of notes with the max count of notes as size.
 	 * It will be truncated later if the notes are lesser than the max. */
 	pm->measure = (struct notes_s *)calloc((size_t)max_sqcount,
-			sizeof(struct notes_s));
+		sizeof(struct notes_s));
 
-	for(i = 0, tempo = 0; tempo < max_sqcount; i++, ntcount++) {
+	for(i = 0, tempo = 0; tempo < max_sqcount; i++) {
+		pm->measure[i] = *(list_entry(node, struct notes_s, list));
 
-		if (ntcount > mfields.ginitial.count) 
-			return mfields.ginitial.count;
+		if (pm->measure[i].id == NOTE_CONTINUOUS_ID) {
+			if (i != 0) {
+				fprintf(stderr, "Invalid note idx\n");
+				return NULL;
+			}
 
-		pm->measure[i] = mfields.ginitial.notes[ntcount];
+			/* It's a continuous note if the idx == -1 and it's
+			 * the first of the measure. */
+			pm->unchanged_fst = 1;
+		}
+
+		pm->measure[i].id = i;
 		tempo += pm->measure[i].tempo;
-		/*TODO: add a new note instead */
-		if (tempo > max_sqcount)
-			tempo = max_sqcount;
+		if (tempo > max_sqcount) {
+			fprintf(stderr, "Tempo out of measure error\n");
+			return NULL;
+		}
+		node = node->next;
 	}
 
 	pm->size = i;
@@ -382,16 +501,15 @@ int compose_measure_genetic(struct play_measure_s *pm,
 	/* Re-alloc the array of notes according to the notes count */
 	if (i < max_sqcount){
 		pm->measure = (struct notes_s *)realloc((void *)pm->measure, 
-				sizeof(struct notes_s) * (size_t)ntcount);
+				sizeof(struct notes_s) * (size_t)i);
 		if (pm->measure == NULL){
 			fprintf(stderr, "Realloc error: %s\n", strerror(errno));
 			
-			return -1;
+			return NULL;
 		}
-		pm->size = ntcount;
 	}
 
-	return ntcount;
+	return node;
 }
 
 /* Just a debug function that prints the values of a semiquaver structure */

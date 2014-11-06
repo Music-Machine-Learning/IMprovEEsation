@@ -155,8 +155,6 @@ void secondLoop(struct measure_s *measure_list, int measures_count){
 		}
 
 		printf("musicians syncronized.\n");
-		/* sleep to see if things block properly */
-		sleep(1);
 	}
 }
 

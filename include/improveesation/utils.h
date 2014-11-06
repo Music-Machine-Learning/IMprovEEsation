@@ -40,8 +40,10 @@ int byte_size(unsigned int n);
 
 #ifdef DEBUG
 	int print_debug(const char *f, ...);
+	int print_debug_note(struct notes_s *nt);
 #else
 	#define print_debug(f, ...) ({})
+	#define print_debug_note(n) ({})
 #endif
 
 #define RANDOM_FUZZY() ((float) ((float) rand() / (float) RAND_MAX))

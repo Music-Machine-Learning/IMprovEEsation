@@ -38,6 +38,24 @@ int print_debug(const char *f, ...)
 	vfprintf(stderr, f, parms);
 	va_end(parms);
 }
+
+int print_debug_note(struct notes_s *nt) 
+{
+	int k;
+	print_debug("\t%d\t%d\t%d\t%d\t%d\t[",
+		    nt->id, 
+		    nt->tempo, 
+		    nt->triplets,
+		    nt->velocity,
+		    nt->chord_size);
+
+	for (k = 0; k < nt->chord_size; k++)
+		print_debug("%d, ", nt->notes[k]);
+
+	print_debug("]\n");
+	
+	return 0;
+}
 #endif
 
 struct play_measure_s glob_ideal[MAX_SAMPLE_ROW];
@@ -45,14 +63,17 @@ char dyna_list[MAX_SAMPLE_ROW][DYNA_SIZE]; /* Fictional hash corresponding to th
 
 char * trim(char *s); /* in configuration.cpp */
 
-int byte_size(unsigned int n){
-    int h = 0;
+int byte_size(unsigned int n)
+{
+	int h = 0;
 	int j = n;
-	while(j > 0){
+
+	while (j > 0) {
 		h++;
-		j = j>>8;
+		j = j >> 8;
 	}
-    return (h > 0 ? h : 1);
+
+	return (h > 0 ? h : 1);
 }
 
 /* Split the tags string into 3 strings contained in the "results" array which 
