@@ -44,9 +44,10 @@ int musician_init(PGconn **dbh, int coupling, int instrument, int soloist,
 {
 	int res;
 	struct rc_conf_s conf;
+	int *prioargs, priosize;
 
 	*dbh = NULL;
-	res = 0;
+	res = priosize = 0;
 	
 	if (load_conf(DEFAULT_RC_PATH, &conf) < 4) {
 		fprintf(stderr, "error while loading configuration (%s)\n",
@@ -62,6 +63,35 @@ int musician_init(PGconn **dbh, int coupling, int instrument, int soloist,
 	
 	if (*dbh == NULL)
 		return -1;
+
+	/* Check if there is a custom prioargs array for this musician.
+	   Otherwise use the one decided by the director */
+	mfields.custom_prioargs = 0;
+	priosize = get_fixed_prioargs(*dbh, instrument, soloist, &prioargs);
+	if (priosize == 1) {
+		if (prioargs == NULL) {
+			fprintf(stderr, "Error in get fixed prioargs\n");
+			return -1;
+		}
+		memcpy(mfields.prioargs, prioargs, 
+		       QUARTER_QUERY_ARGS * sizeof(int));
+		mfields.custom_prioargs = 1;
+	} else if (priosize != 0) {
+		fprintf(stderr, "Error in get fixed prioargs\n");
+		return -1;
+	}
+
+	int i = 0;
+	print_debug("prioargs [%d %d %d %d %d %d %d %d %d]\n", 
+		    mfields.prioargs[i++],
+		    mfields.prioargs[i++],
+		    mfields.prioargs[i++],
+	 	    mfields.prioargs[i++],
+		    mfields.prioargs[i++],
+		    mfields.prioargs[i++],
+		    mfields.prioargs[i++],
+		    mfields.prioargs[i++],
+		    mfields.prioargs[i++]);
 
 	mfields.instrument = instrument;
 	mfields.prev_octave = -1;
@@ -289,6 +319,7 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 	    key_note, q_id;
 	char *qargs[QUARTER_QUERY_ARGS];
 	int *qids;
+	int *prioargs;
 	struct semiquaver_s **sqs;
 
 	q_size = ntcount = 0;
@@ -314,9 +345,17 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 			return -1;
 		
 		i = 0;
+
+		/* Get the musician prioargs if there is any, 
+		   otherwise get the director decided prioargs */
+		if (mfields.custom_prioargs == 1)
+			prioargs = mfields.prioargs;
+		else
+			prioargs = minfo->prioargs;
+
 		while (q_size == 0 && i < QUARTER_QUERY_ARGS)
-			q_size = get_quarters(dbh, qargs, minfo->prioargs, 
-					i++, &qids);
+			q_size = get_quarters(dbh, qargs, prioargs, i++, &qids);
+
 		if (q_size <= 0){
 			fprintf(stderr, "No quarters found\n");
 			return -1;

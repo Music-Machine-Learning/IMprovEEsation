@@ -174,6 +174,8 @@ struct musician_fields_s{
 	int octave_max;
 	int prev_octave;
 	int play_chords;
+	short int custom_prioargs;
+ 	int prioargs[QUARTER_QUERY_ARGS];
 	struct piece_s ginitial;
 	struct piece_s ggoal;
 	struct list_head *finalist;

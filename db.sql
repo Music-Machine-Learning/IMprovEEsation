@@ -1557,6 +1557,26 @@ GRANT USAGE ON SEQUENCE pattern_id_seq TO read_only;
 
 
 --
+-- Name: prioargs; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE prioargs FROM PUBLIC;
+REVOKE ALL ON TABLE prioargs FROM postgres;
+GRANT ALL ON TABLE prioargs TO postgres;
+GRANT SELECT ON TABLE prioargs TO read_only;
+
+
+--
+-- Name: prioargs_instrument; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE prioargs_instrument FROM PUBLIC;
+REVOKE ALL ON TABLE prioargs_instrument FROM postgres;
+GRANT ALL ON TABLE prioargs_instrument TO postgres;
+GRANT SELECT ON TABLE prioargs_instrument TO read_only;
+
+
+--
 -- Name: quarter; Type: ACL; Schema: public; Owner: postgres
 --
 

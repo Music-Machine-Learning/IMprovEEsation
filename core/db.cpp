@@ -712,7 +712,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	modes_fn = PQfnumber(res, "modes");
 	dynamics_fn = PQfnumber(res, "dynamics");
 	measure_count_fn = PQfnumber(res, "measure_count");
-	prioargs_fn = PQfnumber(res, "prioargs");
+	prioargs_fn = PQfnumber(res, "prioarray");
 
 	id = atoi(PQgetvalue(res, 0, id_fn));
 	moods = PQgetvalue(res, 0, moods_fn);
