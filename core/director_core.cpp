@@ -503,21 +503,24 @@ void decideImproScale(measure_s *measure, int current_measure_id){
     free(tzones);
 }
 
-void decidePriorities(measure_s *measure, int current_measure_id){
-	int i;
+void decidePriorities(measure_s *measure){
+    int i = 0;
 
-	/* TODO: Now this is just for testing but this function should 
-	   fill the prioargs array with some policy */
-	i = 0;
-	measure->prioargs[i++] = QUARTER_ARG_MOOD;
-	measure->prioargs[i++] = QUARTER_ARG_POS;
-	measure->prioargs[i++] = QUARTER_ARG_GENRE;
-	measure->prioargs[i++] = QUARTER_ARG_CMODE;
-	measure->prioargs[i++] = QUARTER_ARG_SCALE;
-	measure->prioargs[i++] = QUARTER_ARG_CNOTE;
-	measure->prioargs[i++] = QUARTER_ARG_SOLO;
-	measure->prioargs[i++] = QUARTER_ARG_INSTR;
-	measure->prioargs[i++] = QUARTER_ARG_DYNA;
+    if(current_pattern->prioargs == NULL){
+        measure->prioargs[i++] = QUARTER_ARG_MOOD;
+        measure->prioargs[i++] = QUARTER_ARG_POS;
+        measure->prioargs[i++] = QUARTER_ARG_GENRE;
+        measure->prioargs[i++] = QUARTER_ARG_CMODE;
+        measure->prioargs[i++] = QUARTER_ARG_SCALE;
+        measure->prioargs[i++] = QUARTER_ARG_CNOTE;
+        measure->prioargs[i++] = QUARTER_ARG_SOLO;
+        measure->prioargs[i++] = QUARTER_ARG_INSTR;
+        measure->prioargs[i++] = QUARTER_ARG_DYNA;
+    } else {
+       for(; i < QUARTER_ARG_LAST; i ++){
+           measure->prioargs[i] = current_pattern->prioargs[i];
+       }
+    }
 
 	if (i != QUARTER_QUERY_ARGS)
 		printf("too many or not enough arguments checked\n");
@@ -726,7 +729,7 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
     setupTags(measure, current_measure_id);
     printf("\ttags: %s\n", measure->tags.payload);
 
-    decidePriorities(measure, current_measure_id);
+    decidePriorities(measure);
     /* Debug print */
     printf("\tprioargs: {");
     for (i = QUARTER_ARG_FIRST; i < QUARTER_QUERY_ARGS; i++)
