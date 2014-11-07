@@ -2,8 +2,6 @@
 -- PostgreSQL database cluster dump
 --
 
-SET default_transaction_read_only = off;
-
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 
@@ -15,6 +13,11 @@ CREATE ROLE postgres;
 ALTER ROLE postgres WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION;
 CREATE ROLE read_only;
 ALTER ROLE read_only WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN NOREPLICATION PASSWORD 'md54c37fd589c47b3d64e69baaec73ebfa2';
+
+
+
+
+
 
 --
 -- Database creation
@@ -35,8 +38,6 @@ GRANT CONNECT ON DATABASE template1 TO PUBLIC;
 
 
 \connect improveesation
-
-SET default_transaction_read_only = off;
 
 --
 -- PostgreSQL database dump
@@ -160,7 +161,8 @@ CREATE TABLE pattern (
     moods character varying(255)[],
     steps integer[] NOT NULL,
     dynamics character varying(255)[] NOT NULL,
-    modes character varying(3)[] NOT NULL
+    modes character varying(3)[] NOT NULL,
+    prioargs_id integer NOT NULL
 );
 
 
@@ -185,6 +187,53 @@ ALTER TABLE public.pattern_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE pattern_id_seq OWNED BY pattern.id;
+
+
+--
+-- Name: prioargs; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE prioargs (
+    id integer NOT NULL,
+    prioarray integer[] NOT NULL
+);
+
+
+ALTER TABLE public.prioargs OWNER TO postgres;
+
+--
+-- Name: prioargs_instrument; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE prioargs_instrument (
+    id integer NOT NULL,
+    prioargs_id integer,
+    instrument_id integer NOT NULL,
+    solo boolean NOT NULL
+);
+
+
+ALTER TABLE public.prioargs_instrument OWNER TO postgres;
+
+--
+-- Name: prioargs_instrument_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE prioargs_instrument_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.prioargs_instrument_id_seq OWNER TO postgres;
+
+--
+-- Name: prioargs_instrument_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE prioargs_instrument_id_seq OWNED BY prioargs_instrument.id;
 
 
 --
@@ -402,6 +451,13 @@ ALTER TABLE ONLY pattern ALTER COLUMN id SET DEFAULT nextval('pattern_id_seq'::r
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
+ALTER TABLE ONLY prioargs_instrument ALTER COLUMN id SET DEFAULT nextval('prioargs_instrument_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
 ALTER TABLE ONLY quarter ALTER COLUMN id SET DEFAULT nextval('quarter_id_seq'::regclass);
 
 
@@ -534,10 +590,10 @@ SELECT pg_catalog.setval('instrument_id_seq', 1, false);
 -- Data for Name: pattern; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY pattern (id, measure_count, moods, steps, dynamics, modes) FROM stdin;
-2	12	{pushed,slow}	{{0,-1},{5,-1},{0,-1},{7,0},{5,-1},{6,-1},{0,-1},{4,9},{2,-1},{7,-1},{4,9},{2,7}}	{groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,fill}	{{7,""},{7,""},{7,""},{m7,7},{7,""},{m7,""},{7,""},{m7,7},{m7,""},{7,""},{m7,7},{m7,7}}
-3	12	{pushed,slow}	{{0,3},{8,11},{4,7},{0,0},{5,-1},{6,-1},{0,-1},{10,3},{2,-1},{7,-1},{4,9},{2,7}}	{groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,fill}	{{7,7},{7+,7},{7+,7},{7+,7},{7,""},{m7,""},{7,""},{m7,7},{m7,""},{7,""},{m7,7},{m7,7}}
-1	12	{pushed,slow}	{{0},{0},{0},{0},{5},{5},{0},{0},{7},{7},{0},{0}}	{groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,fill}	{{7},{7},{7},{7},{7},{7},{7},{7},{7},{7},{7},{7}}
+COPY pattern (id, measure_count, moods, steps, dynamics, modes, prioargs_id) FROM stdin;
+2	12	{pushed,slow}	{{0,-1},{5,-1},{0,-1},{7,0},{5,-1},{6,-1},{0,-1},{4,9},{2,-1},{7,-1},{4,9},{2,7}}	{groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,fill}	{{7,""},{7,""},{7,""},{m7,7},{7,""},{m7,""},{7,""},{m7,7},{m7,""},{7,""},{m7,7},{m7,7}}	0
+3	12	{pushed,slow}	{{0,3},{8,11},{4,7},{0,0},{5,-1},{6,-1},{0,-1},{10,3},{2,-1},{7,-1},{4,9},{2,7}}	{groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,fill}	{{7,7},{7+,7},{7+,7},{7+,7},{7,""},{m7,""},{7,""},{m7,7},{m7,""},{7,""},{m7,7},{m7,7}}	0
+1	12	{pushed,slow}	{{0},{0},{0},{0},{5},{5},{0},{0},{7},{7},{0},{0}}	{groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,groove,fill}	{{7},{7},{7},{7},{7},{7},{7},{7},{7},{7},{7},{7}}	0
 \.
 
 
@@ -546,6 +602,114 @@ COPY pattern (id, measure_count, moods, steps, dynamics, modes) FROM stdin;
 --
 
 SELECT pg_catalog.setval('pattern_id_seq', 4, true);
+
+
+--
+-- Data for Name: prioargs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY prioargs (id, prioarray) FROM stdin;
+0	{6,5,0,8,7,4,1,3,2}
+1	{2,3,7,4,8,6,5,0,1}
+2	{2,3,0,6,5,1,4,7,8}
+\.
+
+
+--
+-- Data for Name: prioargs_instrument; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY prioargs_instrument (id, prioargs_id, instrument_id, solo) FROM stdin;
+7	\N	12	f
+9	\N	0	f
+10	\N	1	f
+11	\N	2	f
+12	\N	3	f
+13	\N	4	f
+14	\N	5	f
+15	\N	6	f
+16	\N	7	f
+17	\N	10	f
+18	\N	14	f
+19	\N	15	f
+20	\N	16	f
+21	\N	17	f
+22	\N	18	f
+23	\N	19	f
+24	\N	20	f
+25	\N	21	f
+26	\N	13	f
+27	\N	24	f
+28	\N	25	f
+29	\N	26	f
+30	\N	27	f
+31	\N	28	f
+32	\N	29	f
+33	\N	30	f
+34	\N	31	f
+35	\N	8	f
+36	\N	9	f
+37	\N	11	f
+38	\N	23	f
+39	\N	22	f
+40	\N	32	f
+41	\N	34	f
+42	\N	33	f
+43	\N	35	f
+44	\N	36	f
+45	\N	37	f
+46	\N	38	f
+47	\N	39	f
+48	\N	12	t
+50	\N	0	t
+51	\N	1	t
+52	\N	2	t
+53	\N	3	t
+54	\N	4	t
+55	\N	5	t
+56	\N	6	t
+57	\N	7	t
+58	\N	10	t
+59	\N	14	t
+60	\N	15	t
+67	\N	13	t
+68	\N	24	t
+69	\N	25	t
+70	\N	26	t
+71	\N	27	t
+72	\N	28	t
+73	\N	29	t
+74	\N	30	t
+75	\N	31	t
+76	\N	8	t
+77	\N	9	t
+78	\N	11	t
+81	\N	32	t
+82	\N	34	t
+83	\N	33	t
+84	\N	35	t
+85	\N	36	t
+86	\N	37	t
+87	\N	38	t
+88	\N	39	t
+2	1	127	f
+49	1	127	t
+61	2	16	t
+62	2	17	t
+63	2	18	t
+64	2	19	t
+65	2	20	t
+66	2	21	t
+79	2	23	t
+80	2	22	t
+\.
+
+
+--
+-- Name: prioargs_instrument_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('prioargs_instrument_id_seq', 88, true);
 
 
 --
@@ -705,14 +869,6 @@ COPY quarter (id, pos, instrument_class, chord_note, chord_mode, tag_dyna, tag_m
 402	1	4	10	137	groove	slow	4	f
 403	2	4	10	137	groove	slow	4	f
 404	3	4	10	137	groove	slow	4	f
-280	0	15	0	0	groove	slow	4	f
-281	1	15	0	0	groove	slow	4	f
-282	2	15	0	0	groove	slow	4	f
-283	3	15	0	0	groove	slow	4	f
-284	0	15	0	0	groove	pushed	4	f
-285	1	15	0	0	groove	pushed	4	f
-286	2	15	0	0	groove	pushed	4	f
-287	3	15	0	0	groove	pushed	4	f
 \.
 
 
@@ -720,7 +876,7 @@ COPY quarter (id, pos, instrument_class, chord_note, chord_mode, tag_dyna, tag_m
 -- Name: quarter_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('quarter_id_seq', 287, true);
+SELECT pg_catalog.setval('quarter_id_seq', 279, true);
 
 
 --
@@ -1097,30 +1253,6 @@ COPY semiquaver (id, pos, quarter, velocity_min, velocity_max, pchange, pchange_
 384	2	401	40	90	0.5	0	0	0	{0,0,0,0,0,0,0.5,0,0,0,0,0.5,0}
 295	0	239	40	90	0.800000000000000044	0	0	0	{0.100000000000000006,0.200000000000000011,0,0.100000000000000006,0.200000000000000011,0.200000000000000011,0,0,0,0,0.200000000000000011,0,0}
 375	0	393	40	90	0.800000000000000044	0	0	0	{0.100000000000000006,0,0,0,0,0.200000000000000011,0,0,0,0,0.699999999999999956,0,0}
-183	0	280	40	90	1	0	0	0	{0,0,0,1,0,0,0,0,0,0,0,1,0}
-184	2	280	40	90	1	0	0	0	{0,0,0,0.800000000000000044,0,0,0.200000000000000011,0,0,0,0,0,0}
-185	0	281	40	90	1	0	0	0	{0,0,0,0,0,0,0,0,0,0,1,0,0}
-186	1	281	40	90	1	0	0	0	{0,0,0,0.25,0,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.149999999999999994,0,0}
-187	2	281	40	90	1	0	0	0	{0,0,0,0.25,0,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.149999999999999994,0,0}
-188	3	281	40	90	1	0	0	0	{0,0,0,0.25,0,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.149999999999999994,0,0}
-195	0	284	80	120	1	0	0	0	{0,0,1,0,0,0,0,0,0,0,0,1,0}
-189	0	282	40	90	1	0	0	0	{0,0,0,0,0,0,0,0,0,0,0,1,0}
-190	2	282	40	90	1	0	0	0	{0,0,0,0.800000000000000044,0,0,0.200000000000000011,0,0,0,0,0,0}
-191	0	283	40	90	1	0	0	0	{0,0,0,0,0,0,0,0,0,0,1,0,0}
-192	1	283	40	90	1	0	0	0	{0,0,0,0.25,0,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.149999999999999994,0,0}
-193	2	283	40	90	1	0	0	0	{0,0,0,0.25,0,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.149999999999999994,0,0}
-194	3	283	40	90	1	0	0	0	{0,0,0,0.25,0,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.100000000000000006,0.149999999999999994,0,0}
-198	1	285	80	120	1	0	0	0	{0.25,0,0,0,0,0.149999999999999994,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0,0,0}
-196	2	284	80	120	1	0	0	0	{0.800000000000000044,0,0,0,0,0,0,0,0.200000000000000011,0,0,0,0}
-197	0	285	80	120	1	0	0	0	{0,0,0,0,0,1,0,0,0,0,0,0,0}
-199	2	285	80	120	1	0	0	0	{0.25,0,0,0,0,0.149999999999999994,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0,0,0}
-200	3	285	80	120	1	0	0	0	{0.25,0,0,0,0,0.149999999999999994,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0,0,0}
-201	0	286	80	120	1	0	0	0	{0,0,0,0,0,0,0,0,0,0,0,1,0}
-202	2	286	80	120	1	0	0	0	{0.800000000000000044,0,0,0,0,0,0,0,0.200000000000000011,0,0,0,0}
-203	0	287	80	120	1	0	0	0	{0,0,0,0,0,1,0,0,0,0,0,0,0}
-204	1	287	80	120	1	0	0	0	{0.25,0,0,0,0,0.149999999999999994,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0,0,0}
-205	2	287	80	120	1	0	0	0	{0.25,0,0,0,0,0.149999999999999994,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0,0,0}
-206	3	287	80	120	1	0	0	0	{0.25,0,0,0,0,0.149999999999999994,0,0.100000000000000006,0.100000000000000006,0.100000000000000006,0,0,0}
 \.
 
 
@@ -1128,7 +1260,7 @@ COPY semiquaver (id, pos, quarter, velocity_min, velocity_max, pchange, pchange_
 -- Name: semiquaver_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('semiquaver_id_seq', 206, true);
+SELECT pg_catalog.setval('semiquaver_id_seq', 182, true);
 
 
 --
@@ -1201,6 +1333,22 @@ ALTER TABLE ONLY pattern
 
 
 --
+-- Name: prioargs_instrument_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY prioargs_instrument
+    ADD CONSTRAINT prioargs_instrument_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: prioargs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY prioargs
+    ADD CONSTRAINT prioargs_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: quarter_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -1246,6 +1394,30 @@ ALTER TABLE ONLY subgenre
 
 ALTER TABLE ONLY var_measure
     ADD CONSTRAINT var_measure_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: instr_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY prioargs_instrument
+    ADD CONSTRAINT instr_fk FOREIGN KEY (instrument_id) REFERENCES instrument(id) MATCH FULL;
+
+
+--
+-- Name: prio_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY pattern
+    ADD CONSTRAINT prio_fk FOREIGN KEY (prioargs_id) REFERENCES prioargs(id) MATCH FULL;
+
+
+--
+-- Name: prio_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY prioargs_instrument
+    ADD CONSTRAINT prio_fk FOREIGN KEY (prioargs_id) REFERENCES prioargs(id) MATCH FULL;
 
 
 --
@@ -1509,8 +1681,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE read_only IN SCHEMA public GRANT USAGE ON SEQU
 
 \connect postgres
 
-SET default_transaction_read_only = off;
-
 --
 -- PostgreSQL database dump
 --
@@ -1557,8 +1727,6 @@ GRANT ALL ON SCHEMA public TO postgres;
 --
 
 \connect template1
-
-SET default_transaction_read_only = off;
 
 --
 -- PostgreSQL database dump
