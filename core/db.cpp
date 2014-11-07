@@ -31,6 +31,7 @@
 
 #include <improveesation/structs.h>
 #include <improveesation/db.h>
+#include <improveesation/const.h>
 
 
 void *sql_array_unload(const char *instr, const char *del, int outtype, 
@@ -651,13 +652,16 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 
 	/* Field Position */
 	int measure_count_fn, moods_fn, steps_fn,
-	    modes_fn, dynamics_fn, var_meas_fn, id_fn;
+	    modes_fn, dynamics_fn, var_meas_fn, id_fn, prioargs_fn;
 
-	int marr_size, darr_size; /* moods_array and dyna_array sizes */
+	int *tmp_prioargs;
+
+	/* moods_array and dyna_array sizes */
+	int marr_size, darr_size, prioargs_size;
 
 	/* Raw parameters */
 	char *measure_count, *moods, *steps,
-	     *modes, *dynamics, *var_meas;
+	     *modes, *dynamics, *var_meas, *prioargs;
 	
 	char **tmp_dynamics;
 	char ***tmp_modes;
@@ -672,12 +676,11 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	loadv[0] = genre;
 	loadv[1] = patternName;
 
-	query = "SELECT id, measure_count, moods, steps, modes, dynamics "
-		"FROM pattern AS p "
+	query = "SELECT p.id, measure_count, moods, steps, modes, dynamics, prioarray "
+		"FROM pattern AS p, prioargs AS parg "
 		"WHERE p.id = (SELECT subgenre.id FROM subgenre, genre "
-		"WHERE subgenre.id_genre = genre.id and genre.name = $1 "
-		"AND subgenre.name = $2)";
-
+		"WHERE subgenre.id_genre = genre.id AND genre.name = $1 "
+		"AND subgenre.name = $2) AND parg.id = p.prioargs_id";
 
 	res = PQexecParams(dbh, query,
 			   2, NULL, loadv, NULL, NULL, 0);
@@ -709,6 +712,7 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	modes_fn = PQfnumber(res, "modes");
 	dynamics_fn = PQfnumber(res, "dynamics");
 	measure_count_fn = PQfnumber(res, "measure_count");
+	prioargs_fn = PQfnumber(res, "prioargs");
 
 	id = atoi(PQgetvalue(res, 0, id_fn));
 	moods = PQgetvalue(res, 0, moods_fn);
@@ -716,9 +720,11 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	modes = PQgetvalue(res, 0, modes_fn);
 	dynamics = PQgetvalue(res, 0, dynamics_fn);
 	measure_count = PQgetvalue(res, 0, measure_count_fn);
+	prioargs = PQgetvalue(res, 0, prioargs_fn);
 
 	/* Consinstency check */
-	if (!moods || !steps || !modes || !dynamics || !measure_count) {
+	if (!moods || !steps || !modes || !dynamics || !measure_count
+	    || !prioargs) {
 		fprintf(stderr,
 			"Warn: one of the requested fields where NULL\n");
 		return;
@@ -739,10 +745,19 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 	tmp_steps = (int **) sql_array_unload_2_def(steps, INT_TYPE);
 	tmp_modes = (char ***) sql_array_unload_2_def(modes, CHAR_TYPE);
 
+	tmp_prioargs = (int *) sql_array_unload_def(prioargs, INT_TYPE,
+						    &prioargs_size);
+
 	p->variants_size = 0;
 	p->variants = NULL;
 
-	if (!p->moods || !tmp_steps || !tmp_modes
+	if (prioargs_size != QUARTER_QUERY_ARGS) {
+		fprintf(stderr,
+			"Warn: prioargs size differ from standard size");
+		return;
+	}
+
+	if (!p->moods || !tmp_steps || !tmp_modes || !tmp_prioargs
 	    || !tmp_dynamics || !p->measures_count) {
 		fprintf(stderr,
 			"Warn: one of the parsed field where NULL\n");
@@ -763,12 +778,63 @@ void get_pattern(PGconn *dbh, char *genre, char *patternName,
 
 	p->variants_size = get_var_meas(dbh, p, id);
 
+	p->prioargs = tmp_prioargs;
+
 	PQclear(res);
 
 	*pp = p;
 	return;
 }
 
+int get_fixed_prioargs(PGconn *dbh, int instrument, int solo, int **prioargs)
+{
+	int prioarray_num, prioargs_size;
+	int i;
+	int size = 0;
+	PGresult *res;
+	char *loadv[2];
+	char *tmp_prioargs;
+	const char *query = "SELECT prioarray FROM prioargs AS pa, "
+			  "prioargs_instrument AS pi "
+			  "WHERE pi.instrument_id = $1 AND "
+			  "pa.id = pi.prioargs_id AND pi.solo = $2";
+
+
+	asprintf(&(loadv[0]), "%d", instrument);
+	asprintf(&(loadv[1]), (solo ? "t" : "f"));
+
+	res = PQexecParams(dbh, query,
+			   2, NULL, loadv, NULL, NULL, 0);
+
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "fixed_prioargs SELECT failed %s",
+			PQerrorMessage(dbh));
+		return -1;
+	}
+	size = PQntuples(res);
+	prioarray_num = PQfnumber(res, "prioarray");
+
+	/* No result */
+	if (!size) {
+		*prioargs = NULL;
+		return 0;
+	}
+	
+	tmp_prioargs = PQgetvalue(res, 0, prioarray_num);
+
+	*prioargs = (int *) sql_array_unload_def(tmp_prioargs, INT_TYPE,
+						 &prioargs_size);
+
+	PQclear(res);
+
+	if (prioargs_size != QUARTER_QUERY_ARGS) {
+		fprintf(stderr,
+			"WARN: prioargs size differ from standard size!\n");
+		return -1;
+	}
+
+	return size;
+}
 
 /* Single pointer (i.e. arrays) */
 void free_db_results(void *results)
@@ -819,6 +885,9 @@ void free_db_results(struct pattern_s *p)
 		free(p->measures[i].steps);
 		free(p->measures[i].dynamics);
 	}
+
+	if (p->prioargs)
+		free(p->prioargs);
 
 	free(p);
 }

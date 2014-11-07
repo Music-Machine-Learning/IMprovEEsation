@@ -24,6 +24,7 @@
 #include <improveesation/configuration.h>
 #include <errno.h>
 #include <stdio.h>
+#include <improveesation/const.h>
 void printpattern(struct pattern_s *p)
 {
 	int i;
@@ -53,6 +54,11 @@ void printpattern(struct pattern_s *p)
 		}
 		printf("]\n");
 	}
+
+	printf("prioargs [ ");
+	for (i = 0; i < QUARTER_QUERY_ARGS; i++)
+		printf("%d, ", p->prioargs[i]);
+	printf("]\n");
 }
 
 int print_quarters(int *quarters)
@@ -81,10 +87,20 @@ int print_semiquaver(struct semiquaver_s *sq)
 	return 0;
 }
 
+void print_prioargs(int *p)
+{
+	int i;
+	printf("[ ");
+	for ( i = 0 ; i < QUARTER_QUERY_ARGS; i++)
+		printf("%d %s", p[i], (i != QUARTER_QUERY_ARGS - 1? ", ": ""));
+	printf("]\n");
+}
+
 int main(int argc, char **argv)
 {
 	struct pattern_s *p;
 	int i, genn, subgenn;
+	int *prioargs;
 	char **genres;
 	char **subgenres;
 	int *quarters, quarters_size;
@@ -199,6 +215,20 @@ int main(int argc, char **argv)
 		free_db_results(subgenres);
 	}
 	free_db_results(genres);
+
+	for (i = 0; i <= 127; i++) {
+		if (get_fixed_prioargs(dbh, i, 0, &prioargs)) {
+			printf("prioargs for %d\n", i);
+			print_prioargs(prioargs);
+			free_db_results(prioargs);
+		}
+		
+		if (get_fixed_prioargs(dbh, i, 1, &prioargs)) {
+			printf("prioargs for %d soloer\n", i);
+			print_prioargs(prioargs);
+			free_db_results(prioargs);
+		}
+	}
 
 	db_close(dbh);
 
