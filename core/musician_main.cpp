@@ -24,6 +24,7 @@
  * real improveesation implementation
  * parameters from the cli */
 #include <stdio.h>
+#include <linux/list.h>
 #include <improveesation/communication.h>
 #include <improveesation/musician_core.h>
 #include <improveesation/db.h>
@@ -147,7 +148,7 @@ int main(int argc, char **argv)
 	char *usage, *samples_file_path;
 	struct timeval tv;
  
-
+	mfields.octave_min = mfields.octave_max = -1;
 	coupling = soloist = play_chords = genetic = sub_flags = 0;
 	midi_class = -1; /* required arg */
 	samples_file_path = NULL;
@@ -159,7 +160,8 @@ int main(int argc, char **argv)
 		"  -s, --soloist             enable the soloist playing mode\n"
 		"  -p, --player=hostname     specify a remote player\n"
 		"  -d, --director=hostname   specify a remote director\n\n"
-		"  -g, --genetic=samplefile  enable the genetic loop mode\n",
+		"  -g, --genetic=samplefile  enable the genetic loop mode\n"
+		"  -o  --octaves=MIN,MAX     set a custom range of octaves\n",
 			argv[0]);
 	
 	for (;;) {
@@ -174,9 +176,10 @@ int main(int argc, char **argv)
 			{ "player", required_argument, 0, 'p' },
 			{ "director", required_argument, 0, 'd' },
 			{ "genetic", required_argument, 0, 'g' },
+			{ "octaves", required_argument, 0, 'o' },
 			{ 0, 0, 0, 0 },
 		};
-		c = getopt_long(argc, argv, "hc:Csp:d:g:",
+		c = getopt_long(argc, argv, "hc:Csp:d:g:o:",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -210,6 +213,17 @@ int main(int argc, char **argv)
 				sub_flags |= FLAG_MUSICIAN_GENETIC;
 				asprintf(&samples_file_path, "%s", optarg);
 				printf("Genetic mode activated\n");
+				break;
+			case 'o':
+				char *omin, *omax;
+				printf("Custom octaves range selected\n");
+				omin = strtok(optarg, ",");
+				mfields.octave_min = atoi(omin);
+				omax = strtok(NULL, ",");
+				mfields.octave_max = atoi(omax);
+				printf("%s %s %d %d\n", omin, omax, 
+						mfields.octave_min, 
+						mfields.octave_max);
 				break;
 			default:
 				exit_usage(usage);
@@ -280,8 +294,8 @@ int main(int argc, char **argv)
 
 	printf("connected to player\n");
 	
-	if (musician_init(&dbh, coupling, midi_class, soloist, 
-					myid, play_chords, genetic) == -1) {
+	if (musician_init(&dbh, coupling, midi_class, soloist, myid, 
+			  play_chords, genetic) == -1) {
 		fprintf(stderr, "Initialization failed\n");
 		exit(EXIT_FAILURE);
 	}
@@ -350,31 +364,30 @@ int main(int argc, char **argv)
 			exit(EXIT_FAILURE);
 		}
 
+		piece_to_list(&(mfields.ginitial), mfields.finalist);
+
 		/* Ack the director telling that the genetic is ready to play */
 		send_sync_ack(director_socket);
 		
-		int ntcount = 0;
+		struct list_head *node = mfields.finalist->next;
 		for (i = 0; ;i++) {
 			/* Clean the measure structure and re-fill it  
 			 * with the new genetic stuff */
 			free(pm.measure);	
 			memset(&pm, 0, sizeof(struct play_measure_s));
-			
+
 			try {
 				recv_measure(director_socket, &nm);
 					
-				ntcount = compose_measure_genetic(&pm, &nm, ntcount);
+				node = compose_measure_genetic(&pm, &nm, node);
 				pm.id = i;
 				pm.musician_id = myid;
 				print_measure(&pm);
 				
-				if (ntcount == -1) {
+				if (node == NULL) {
 					fprintf(stderr, "Compose genetic measure error");
 					return -1;
-				} else if (ntcount >= mfields.ginitial.count) {
-					/* Restart if there are less notes than before */
-					ntcount = 0;
-				}
+				} 
 
 				send_to_play(player_socket, director_socket, &pm);	
 			} catch (end_of_improvisation_exception e) {
@@ -397,19 +410,19 @@ int print_measure(struct play_measure_s *pm)
 {
 	int j, k;
 	struct notes_s *nt;
-	printf("Measure: id: %d, size: %d, musid %d\n", 
-			pm->id, pm->size, pm->musician_id);
+	printf("Measure: id: %d, size: %d, musid %d, fstun %d\n", 
+	       pm->id, pm->size, pm->musician_id, pm->unchanged_fst);
 
 	int temposum = 0;	
 	printf("Note\tidx\tlength\ttripl\tvelocity\tch_size\tnotes\n");
 	for (j = 0; j < pm->size; j++){
 		nt = &(pm->measure[j]);
 		printf("\t%d\t%d\t%d\t%d\t%d\t[",
-				nt->id, 
-				nt->tempo, 
-				nt->triplets,
-				nt->velocity,
-				nt->chord_size);
+			nt->id, 
+			nt->tempo, 
+			nt->triplets,
+			nt->velocity,
+			nt->chord_size);
 		temposum += nt->tempo;
 		for (k = 0; k < nt->chord_size; k++)
 			printf("%d, ", nt->notes[k]);

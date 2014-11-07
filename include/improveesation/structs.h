@@ -35,7 +35,7 @@ struct subscription_s
 {
 	uint32_t coupling;
 	uint8_t instrument_class;
-    uint8_t flags;
+	uint8_t flags;
 
 	/* For the storage of the subscriptions */
 	int connection;
@@ -115,6 +115,8 @@ struct notes_s {
 	uint8_t chord_size;
 	/* the notes array that should be played simultaneously */
 	uint8_t notes[MAX_CHORD_SIZE]; 
+
+	struct list_head list;
 };
 
 struct play_measure_s {
@@ -174,6 +176,7 @@ struct musician_fields_s{
 	int play_chords;
 	struct piece_s ginitial;
 	struct piece_s ggoal;
+	struct list_head *finalist;
 };
 
 

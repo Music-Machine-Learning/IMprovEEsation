@@ -28,13 +28,17 @@
 #include <improveesation/const.h>
 #include <improveesation/utils.h>
 
+LIST_HEAD(finalist);
 int musician_init_genetic(int genetic_mode, const char *samplesfile)
 {
 	if (!genetic_mode) {
 		mfields.ginitial.notes = NULL;
 		mfields.ggoal.notes = NULL;
+		mfields.finalist = NULL;
 		return 0;
 	}
+
+	mfields.finalist = &finalist;
 
 	printf("samplefile: %s\n", samplesfile);
 	if (parse_sample(samplesfile) == -1) {

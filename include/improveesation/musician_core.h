@@ -24,6 +24,7 @@
 #ifndef MUSICAN_CORE_H
 #define MUSICAN_CORE_H
 
+#include <linux/list.h>
 #include <improveesation/structs.h>
 #include <improveesation/db.h>
 
@@ -40,9 +41,11 @@ int compose_measure(struct play_measure_s *pm,
 		    int soloist, 
 		    PGconn *dbh);
 
-int compose_measure_genetic(struct play_measure_s *pm, 
-			    struct measure_s *minfo, 
-			    int ntcount); 
+struct list_head *compose_measure_genetic(struct play_measure_s *pm, 
+			    		  struct measure_s *minfo, 
+			    		  struct list_head *node); 
+
+int piece_to_list(struct piece_s *piece, struct list_head *list);
 
 int musician_init(PGconn **dbh,
 		  int coupling, 
@@ -51,5 +54,6 @@ int musician_init(PGconn **dbh,
 		  int musician_id,
 		  int play_chords,
 		  int genetic);
+
 
 #endif //MUSICAN_CORE_H

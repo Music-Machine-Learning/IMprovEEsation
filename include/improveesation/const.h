@@ -40,6 +40,7 @@
 #define MAX_CHORD_SIZE 8
 #define MIN_CHORD_SIZE 2
 #define SQS_IN_Q 4 /* number of semiquavers in one quarter */
+#define NOTE_CONTINUOUS_ID 255
 
 #define N_TAGS 3
 
