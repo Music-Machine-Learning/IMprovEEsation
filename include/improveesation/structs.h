@@ -145,6 +145,7 @@ struct pattern_s {
 	struct measure_pattern_s *measures;
 	int variants_size;
 	struct impro_variant_s *variants;
+	int *prioargs;
 };
 
 struct semiquaver_s{
