@@ -63,6 +63,14 @@ if (POSTGRESQL_FOUND)
 	set (POSTGRES_DB_LIBRARY ${PostgreSQL_LIBRARIES})
 endif()
 
+find_package(Curses)
+
+if (CURSES_FOUND)
+	include_directories(${CURSES_INCLUDE_DIR})
+	set (CURSES_USE_NCURSES TRUE)
+	set(EXTRA_GRAPH_LIBRARIES curses)
+endif()
+
 set(EXTRA_NET_LIBRARIES improveesation_communication)
 set(EXTRA_DB_LIBRARIES improveesation_db pq)
 
@@ -70,6 +78,7 @@ file(GLOB DirectorSources
      "${CORE_SOURCE_PROJECT_DIR}/director_*.cpp"
      "${CORE_SOURCE_PROJECT_DIR}/configuration.cpp"
      "${CORE_SOURCE_PROJECT_DIR}/utils.cpp"
+     "${CORE_SOURCE_PROJECT_DIR}/tui.cpp"
      "${CORE_SOURCE_PROJECT_DIR}/midi_writer.cpp")
 file(GLOB PlayerSources
      "${CORE_SOURCE_PROJECT_DIR}/player_*.cpp"
@@ -89,7 +98,7 @@ file(GLOB DbTestSources
 
 
 add_executable(director ${DirectorSources})
-target_link_libraries(director ${EXTRA_NET_LIBRARIES} ${EXTRA_DB_LIBRARIES})
+target_link_libraries(director ${EXTRA_NET_LIBRARIES} ${EXTRA_DB_LIBRARIES} ${CURSES_LIBRARIES})
 
 add_executable(player ${PlayerSources})
 target_link_libraries(player ${EXTRA_NET_LIBRARIES} ${EXTRA_DB_LIBRARIES})

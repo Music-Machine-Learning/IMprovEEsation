@@ -36,6 +36,8 @@
 
 #include <improveesation/director_core.h>
 
+#include <improveesation/tui.h>
+
 #include <linux/list.h>
 
 #include <time.h>
@@ -145,7 +147,7 @@ void copyMeasure(struct measure_s *dest, struct measure_s *src){
 void secondLoop(struct measure_s *measure_list, int measures_count){
 	int i;
 	for (i = 0; i < measures_count; i++) {
-		printf("broadcasting measure...\n");
+        debugPrint("broadcasting measure...\n");
 		fflush(stdout);
 		try {
 			broadcast_measure(&(measure_list[i]), &musicians);
@@ -154,7 +156,9 @@ void secondLoop(struct measure_s *measure_list, int measures_count){
 			break;
 		}
 
-		printf("musicians syncronized.\n");
+        advanceProgressBar((i*100)/(measures_count*2));
+
+        debugPrint("musicians syncronized.\n");
 	}
 }
 
@@ -179,6 +183,8 @@ int main(int argc, char **argv)
 	struct subscription_s *new_musician, *tmp_musician;
 	in_port_t port = DIR_DEFAULT_PORT;
 
+    initTui(true);
+
 	for (;;) {
 		int option_index = 0;
 
@@ -195,7 +201,7 @@ int main(int argc, char **argv)
 				port = atoi(optarg);
 				break;
 			default:
-				printf("option not recognized\n");
+                debugPrint("option not recognized\n");
 		}
 	}
 	if (argc - optind + 1 < 2) {
@@ -213,17 +219,23 @@ int main(int argc, char **argv)
 
 	net_handler = net_init(port, "127.0.0.1");
 
+    makeDirectorMenu(&musicians_num, &measures_count);
+
+    waitForDialogOk();
+
+    fullscreenMessage("Waiting for musicians to be ready for improvisation...");
+
 	player = recv_player(net_handler);
 
-	printf("got midi player (%d)\n", player);
+    debugPrint("got midi player (%d)\n", player);
 
 	/* Build musicians list */
 	for (i = 0; i < musicians_num; i++) {
 		new_musician = (struct subscription_s *) malloc(sizeof(struct subscription_s));
-		printf("waiting for a musician\n");
+        debugPrint("waiting for a musician\n");
 		recv_subscription(net_handler, new_musician);
 
-		printf("director: got a new musician\n\tcoupling: %d\n\tinstrument_class: %d\n\tflags: %d\n\tconnection :%d\n",
+        debugPrint("director: got a new musician\n\tcoupling: %d\n\tinstrument_class: %d\n\tflags: %d\n\tconnection :%d\n",
 				new_musician->coupling, new_musician->instrument_class,
 				new_musician->flags, new_musician->connection);
 
@@ -244,9 +256,9 @@ int main(int argc, char **argv)
 		}
 
 		send_id(new_musician->connection, newId);
-		printf("\tregistered with id: %d\n", newId);
+        debugPrint("\tregistered with id: %d\n", newId);
 	}
-	printf("registered %d musicians, of wich %d are soloers\n", musicians_num, soloers_num);
+    debugPrint("registered %d musicians, of wich %d are soloers\n", musicians_num, soloers_num);
 
 	free(registrations);
 
@@ -265,10 +277,16 @@ int main(int argc, char **argv)
 	}
 
 	/* main loop */
-	printf("main loop\n");
+    debugPrint("main loop\n");
+
+    fullscreenMessage("Musicians ready, press any key to begin improvvisation!");
+
+    waitForInput();
+
+    makeProgressBar();
 
 	for (i = 0; i < measures_count; i++) {
-		printf("decide next measure:\n");
+        debugPrint("decide next measure:\n");
 		measures_per_section = decide_next_measure(&nm, current_measure_num);
 
 		if(current_measure_num < measures_per_section)
@@ -276,7 +294,7 @@ int main(int argc, char **argv)
 		else
 			current_measure_num = 0;
 
-		printf("broadcasting measure...\n");
+        debugPrint("broadcasting measure...\n");
 		fflush(stdout);
 		try {
 			broadcast_measure(&nm, (genetic_process ? &genetics : &musicians));
@@ -288,9 +306,10 @@ int main(int argc, char **argv)
             break;
         }
 
-		printf("musicians syncronized.\n");
-		/* sleep to see if things block properly */
-		/* sleep(1); UNBELIEVABLE!!! */
+        debugPrint("musicians syncronized.\n");
+
+        /* if genetic mode is enabled, this cycle is only half of the process */
+        advanceProgressBar((i*100)/(measures_count*(genetic_process ? 2 : 1)));
 
 		clear_measure(&nm);
 	}
@@ -304,7 +323,7 @@ int main(int argc, char **argv)
         print_debug("musicians len before: %d\n", listLen(&musicians));
 
         /* concat musicians and genetics */
-	concat_list_inplace(musicians, genetics);
+        concat_list_inplace(musicians, genetics);
 
         print_debug("musicians len after: %d\n", listLen(&musicians));
 
@@ -316,7 +335,11 @@ int main(int argc, char **argv)
 		free(new_musician);
 	}
 
-	printf("we have come to an end\n");
+    fullscreenMessage("All done, hope you enjoyed");
+    waitForInput();advanceProgressBar((i*100)/(measures_count*(genetic_process ? 2 : 1)));
+
+    debugPrint("we have come to an end\n");
+    closeTui();
 	cleanup();
 	return 0;
 }

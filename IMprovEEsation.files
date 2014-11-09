@@ -94,3 +94,5 @@ include/improveesation/musician_improviser.h
 include/improveesation/player_core.h
 include/improveesation/structs.h
 include/improveesation/utils.h
+core/tui.cpp
+include/improveesation/tui.h
