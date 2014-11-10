@@ -125,6 +125,7 @@ struct play_measure_s {
 	uint32_t musician_id;
 	uint8_t unchanged_fst;
 	struct notes_s *measure;
+	uint8_t bpm;
 	
 };
 

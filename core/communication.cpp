@@ -279,7 +279,7 @@ void send_sync_ack(int director)
 void send_to_play(int player, struct play_measure_s *measure)
 {
 	int j;
-	struct iovec iov[measure->size * 6 + 4];
+	struct iovec iov[measure->size * 6 + 5];
 	uint32_t measure_size_bck = measure->size;
 
 	/* player send */
@@ -287,19 +287,20 @@ void send_to_play(int player, struct play_measure_s *measure)
 	LOAD_IOVEC(iov, 1, measure->size);
 	LOAD_IOVEC(iov, 2, measure->musician_id);
 	LOAD_IOVEC(iov, 3, measure->unchanged_fst);
+	LOAD_IOVEC(iov, 4, measure->bpm);
 
 	for (j = 0; j < measure->size; j++) {
-		LOAD_IOVEC(iov, j * 6 + 4, measure->measure[j].tempo);
-		LOAD_IOVEC(iov, j * 6 + 5, measure->measure[j].id);
-		LOAD_IOVEC(iov, j * 6 + 6, measure->measure[j].triplets);
-		LOAD_IOVEC(iov, j * 6 + 7, measure->measure[j].velocity);
-		LOAD_IOVEC(iov, j * 6 + 8, measure->measure[j].chord_size);
-		LOAD_IOVEC(iov, j * 6 + 9, measure->measure[j].notes);
+		LOAD_IOVEC(iov, j * 6 + 5, measure->measure[j].tempo);
+		LOAD_IOVEC(iov, j * 6 + 6, measure->measure[j].id);
+		LOAD_IOVEC(iov, j * 6 + 7, measure->measure[j].triplets);
+		LOAD_IOVEC(iov, j * 6 + 8, measure->measure[j].velocity);
+		LOAD_IOVEC(iov, j * 6 + 9, measure->measure[j].chord_size);
+		LOAD_IOVEC(iov, j * 6 + 10, measure->measure[j].notes);
 	}
 
 	IOVEC_HTONL(iov, 3);
 
-	if (writev(player, iov, measure_size_bck * 6 + 4) < 0) {
+	if (writev(player, iov, measure_size_bck * 6 + 5) < 0) {
 		perror("send to play writev");
 		throw net_ex;
 		return;
@@ -385,7 +386,7 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 		/* Load the structs from the net. */
 		for(i = 0; i < cprocessed; i++) {
 			int j;
-			struct iovec safe_iov[4], *iov = NULL;
+			struct iovec safe_iov[5], *iov = NULL;
 			if (!epevs[i].events & EPOLLIN) {
 				throw net_ex;
 				return;
@@ -400,8 +401,10 @@ void recv_to_play(struct play_measure_s *note_list, struct list_head *musicians)
 				   note_list[pm_count].musician_id);
 			LOAD_IOVEC(safe_iov, 3,
 				   note_list[pm_count].unchanged_fst);
+			LOAD_IOVEC(safe_iov, 4,
+				   note_list[pm_count].bpm);
 
-			retval = readv(epevs[i].data.fd, safe_iov, 4);
+			retval = readv(epevs[i].data.fd, safe_iov, 5);
 			if (retval < 0) {
 				perror("recv to play readv (1)");
 				throw net_ex;

@@ -315,6 +315,8 @@ int main(int argc, char **argv)
 				break;
 		}
 
+		printf("BPM: %d\n", note_list[0].bpm);
+
 		printf("\tPlaying measure normal %d\n ", i);
 		play_measure(note_list, &musicians, musicians_num, fd);
 	}

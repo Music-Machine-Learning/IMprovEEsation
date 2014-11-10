@@ -341,6 +341,11 @@ int main(int argc, char **argv)
 			pm.id = i;
 			pm.musician_id = myid;
 			print_measure(&pm);
+
+			/* XXX this value is only for test */
+			pm.bpm = random() % 200;
+			printf("bpm: %d\n", pm.bpm);
+
 			if (genetic) {
 				store_gmeasure(&pm, &nm);
 				send_sync_ack(director_socket);
