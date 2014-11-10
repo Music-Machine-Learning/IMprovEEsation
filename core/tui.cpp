@@ -39,7 +39,7 @@ WINDOW *wdebug;
 
 WINDOW *pbar;
 
-static bool colors;
+static bool colors, initialized = false;
 static int mainh, mainw, debw;
 
 static char* debugcontents;
@@ -75,66 +75,86 @@ void initTui(bool debug){
         wdebug = NULL;
 
     REFRESH_ALL();
+
+    initialized = true;
 }
 
 void makeDirectorMenu(uint32_t *musicians_count, int *measures_count){
-    wclear(wmain);
-
+    if(initialized){
+        wclear(wmain);
+    }
 }
 
 void makeProgressBar(){
-    wclear(wmain);
-
+    if(initialized){
+        wclear(wmain);
+    }
 }
 
 void advanceProgressBar(int percentage){
+    if(initialized){
 
+    }
 }
 
 void fullscreenMessage(char *message){
-    wclear(wmain);
-
+    if(initialized){
+        wclear(wmain);
+    }
 }
 
 void debugPrint(const char *f, ...){
-    char *str = (char *) calloc (MAXDEBUGLEN, sizeof(char));
+    char *str;
     va_list params;
     va_start(params, f);
-    vsprintf(str, f, params);
+    if(initialized){
+        str = (char *) calloc (MAXDEBUGLEN, sizeof(char));
+        vsprintf(str, f, params);
+    } else
+        vprintf(f, params);
     va_end(params);
 
-    /*delete some chunks of debug buffer*/
-    while((strlen(str) + debugi) >= debugs){
-        int tmpi = 0;
-        while(debugcontents[tmpi] != '\n')
-            tmpi++;
-        debugi -= tmpi;
-        for(int i = 0; i < debugi; i++)
-            debugcontents[i] = debugcontents[i+tmpi];
+    if(initialized){
+        /*delete some chunks of debug buffer*/
+        while((strlen(str) + debugi) >= debugs){
+            int tmpi = 0;
+            while(debugcontents[tmpi] != '\n')
+                tmpi++;
+            debugi -= tmpi;
+            for(int i = 0; i < debugi; i++)
+                debugcontents[i] = debugcontents[i+tmpi];
+        }
+
+        strcpy(debugcontents+debugi, str);
+        debugi += strlen(str);
+        free(str);
+
+        wclear(wdebug);
+        wprintw(wdebug, debugcontents);
+        wrefresh(wdebug);
     }
-
-    strcpy(debugcontents+debugi, str);
-    free(str);
-
-    wclear(wdebug);
-    wprintw(wdebug, debugcontents);
-    wrefresh(wdebug);
 }
 
 void closeTui(){
-    delwin(wmain);
-    if(wdebug != NULL){
-        CLEAR_BORDER(wdebug);
-        delwin(wdebug);
-    }
+    if(initialized){
+        delwin(wmain);
+        if(wdebug != NULL){
+            CLEAR_BORDER(wdebug);
+            delwin(wdebug);
+        }
 
-    endwin();
+        endwin();
+    }
 }
 
 int waitForInput(){
-    return getch();
+    if(initialized){
+        return getch();
+    }
 }
 
 void waitForDialogOk(){
+    if(initialized){
 
+    }
 }

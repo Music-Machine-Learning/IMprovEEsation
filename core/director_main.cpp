@@ -183,7 +183,8 @@ int main(int argc, char **argv)
 	struct subscription_s *new_musician, *tmp_musician;
 	in_port_t port = DIR_DEFAULT_PORT;
 
-    initTui(true);
+    /* NOTE: un/comment this to en/diable tui */
+    //initTui(true);
 
 	for (;;) {
 		int option_index = 0;
