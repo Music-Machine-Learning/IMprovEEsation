@@ -179,7 +179,7 @@ void init_score_defs(uint8_t key=-1, uint8_t tUpper=4, uint8_t tLower=4, uint8_t
      *  tempo
      * 	bpm
      * */
-    tonality = (key==-1 ? rand() % 12 : key);
+    tonality = ((key < 0 || key >= 12) ? rand() % 12 : key);
     tempo.upper = tUpper;
     tempo.lower = tLower;
     bpm = beats;
@@ -282,7 +282,7 @@ chord_s *getTritone(int step){
     printf("tritone:\n");
 
     for(i = 0; i < tempo.upper; i++) {
-        chords[i].note = tonality + (step+6)%12;
+        chords[i].note = (tonality + (step+6))%12;
         chords[i].mode = CHORD_MAJOR | CHORD_SEVENTH;
     }
     return chords;
@@ -298,11 +298,11 @@ chord_s *getCadenza(int step){
      * relatives to original chord
      * */
     for(i = 0; i < (tempo.upper >> 1); i++){
-        chords[i].note = tonality + (step+2)%12;
+        chords[i].note = (tonality + (step+2))%12;
         chords[i].mode = CHORD_MINOR | CHORD_SEVENTH;
     }
     for(; i < tempo.upper; i++){
-        chords[i].note = tonality + (step+7)%12;
+        chords[i].note = (tonality + (step+7))%12;
         chords[i].mode = CHORD_MAJOR | CHORD_SEVENTH;
     }
     return chords;
@@ -315,12 +315,12 @@ chord_s *getTonalZoneChord(int step){
 
     if(rand() % 1){
         for(i = 0; i < tempo.upper; i++){
-            chords[i].note = tonality + (step+9)%12;
+            chords[i].note = (tonality + (step+9))%12;
             chords[i].mode = CHORD_MINOR | CHORD_SEVENTH;
         }
     } else {
         for(i = 0; i < tempo.upper; i++){
-            chords[i].note = tonality + (step+4)%12;
+            chords[i].note = (tonality + (step+4))%12;
             chords[i].mode = CHORD_MINOR; //NOTE: should be diminished
         }
     }
