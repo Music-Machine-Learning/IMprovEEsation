@@ -342,8 +342,7 @@ int main(int argc, char **argv)
 			pm.musician_id = myid;
 			print_measure(&pm);
 
-			/* XXX this value is only for test */
-			pm.bpm = random() % 200;
+			pm.bpm = nm.bpm;
 			printf("bpm: %d\n", pm.bpm);
 
 			if (genetic) {
@@ -387,6 +386,7 @@ int main(int argc, char **argv)
 				node = compose_measure_genetic(&pm, &nm, node);
 				pm.id = i;
 				pm.musician_id = myid;
+				pm.bpm = nm.bpm;
 				print_measure(&pm);
 				
 				if (node == NULL) {
