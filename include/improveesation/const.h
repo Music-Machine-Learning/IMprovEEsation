@@ -40,12 +40,6 @@
 #define MAX_CHORD_SIZE 8
 #define MIN_CHORD_SIZE 2
 #define SQS_IN_Q 4 /* number of semiquavers in one quarter */
-#define NOTE_CONTINUOUS_ID 255
-
-#define N_TAGS 3
-
-#define TRUE 1
-#define FALSE 0
 
 enum {
 	RYTHMIC,
@@ -64,6 +58,13 @@ enum {
 	QUARTER_ARG_SOLO,
 	QUARTER_ARG_LAST
 };
+
+#define NOTE_CONTINUOUS_ID 255
+
+#define N_TAGS 3
+
+#define TRUE 1
+#define FALSE 0
 
 #define QUARTER_ARG_FIRST QUARTER_ARG_POS
 #define QUARTER_QUERY_ARGS (QUARTER_ARG_LAST - QUARTER_ARG_FIRST)

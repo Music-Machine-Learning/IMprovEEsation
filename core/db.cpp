@@ -32,6 +32,7 @@
 #include <improveesation/structs.h>
 #include <improveesation/db.h>
 #include <improveesation/const.h>
+#include <improveesation/utils.h>
 
 
 void *sql_array_unload(const char *instr, const char *del, int outtype, 
@@ -307,6 +308,9 @@ int get_quarters(PGconn *dbh, char **args, int *args_prios, int nargs_ignore,
 	}
 
 	strncat(query, group_by, strlen(group_by));
+
+	print_debug("nignore: %d, query args: ", nargs_ignore);
+	print_debug_array(args, QUARTER_QUERY_ARGS);
 
 	res = PQexecParams(dbh, query, QUARTER_QUERY_ARGS - nargs_ignore, 
 				NULL, fargs, NULL, NULL, 0);

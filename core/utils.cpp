@@ -56,6 +56,34 @@ int print_debug_note(struct notes_s *nt)
 	
 	return 0;
 }
+
+int print_debug_array(int *arr, int size) 
+{
+	int i;
+	printf("[");
+	for (i = 0; i < size; i++) {
+		printf("%d", arr[i]);
+		if (i != size - 1)
+			printf(", ");
+	}
+	printf("]\n");
+
+	return 0;
+}
+
+int print_debug_array(char **arr, int size) 
+{
+	int i;
+	printf("[");
+	for (i = 0; i < size; i++) {
+		printf("%s", arr[i]);
+		if (i != size - 1)
+			printf(", ");
+	}
+	printf("]\n");
+
+	return 0;
+}
 #endif
 
 struct play_measure_s glob_ideal[MAX_SAMPLE_ROW];

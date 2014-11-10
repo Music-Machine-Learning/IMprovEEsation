@@ -82,16 +82,8 @@ int musician_init(PGconn **dbh, int coupling, int instrument, int soloist,
 	}
 
 	int i = 0;
-	print_debug("prioargs [%d %d %d %d %d %d %d %d %d]\n", 
-		    mfields.prioargs[i++],
-		    mfields.prioargs[i++],
-		    mfields.prioargs[i++],
-	 	    mfields.prioargs[i++],
-		    mfields.prioargs[i++],
-		    mfields.prioargs[i++],
-		    mfields.prioargs[i++],
-		    mfields.prioargs[i++],
-		    mfields.prioargs[i++]);
+	print_debug("prioargs ");
+	print_debug_array(mfields.prioargs, QUARTER_QUERY_ARGS);
 
 	mfields.instrument = instrument;
 	mfields.prev_octave = -1;
@@ -297,8 +289,8 @@ int fill_quarter_args(char **args, struct measure_s *minfo, int myid,
 	asprintf(&args[1], "%d", myid & 0xff); //instrument class
 	asprintf(&args[2], "%d", minfo->chords[q_idx].note); //chord_note
 	asprintf(&args[3], "%d", minfo->chords[q_idx].mode); //chord_mode mask
-	asprintf(&args[4], "%s", qtags[0]); //tag_dynamic
-	asprintf(&args[5], "%s", qtags[1]); //tag_genre
+	asprintf(&args[4], "%s", qtags[1]); //tag_genre
+	asprintf(&args[5], "%s", qtags[0]); //tag_dynamic
 	asprintf(&args[6], "%s", qtags[2]); //tag_mood
 	asprintf(&args[7], "%d", minfo->tonal_zones[q_idx].scale); //scale mask
 	
@@ -348,16 +340,22 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 
 		/* Get the musician prioargs if there is any, 
 		   otherwise get the director decided prioargs */
-		if (mfields.custom_prioargs == 1)
+		if (mfields.custom_prioargs == 1) {
 			prioargs = mfields.prioargs;
-		else
+			print_debug("Custom prioargs: ");
+		} else {
 			prioargs = minfo->prioargs;
+			print_debug("Director prioargs: ");
+		}
 
-		while (q_size == 0 && i < QUARTER_QUERY_ARGS)
+		print_debug_array(prioargs, QUARTER_QUERY_ARGS);
+
+		q_size = 0;
+		while (q_size == 0 && i <= QUARTER_QUERY_ARGS)
 			q_size = get_quarters(dbh, qargs, prioargs, i++, &qids);
 
 		if (q_size <= 0){
-			fprintf(stderr, "No quarters found\n");
+			fprintf(stderr, "Quarter query error\n");
 			return -1;
 		}
 
