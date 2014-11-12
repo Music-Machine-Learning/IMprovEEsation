@@ -28,6 +28,7 @@
 #include <string.h>
 #include <time.h>
 #include <improveesation/configuration.h>
+#include <improveesation/tui.h>
 #include <stdio.h>
 
 #define SET_INT_FIELD(r,f,v) ({\
@@ -135,7 +136,7 @@ void load_genre_info(char* gen, char* sub){
     get_pattern(database, gen, sub, &current_pattern);
 
     if(current_pattern==NULL){
-        printf("ERROR: missing genre+subgenre: %s, %s!!!\n", gen, sub);
+        debugPrint("ERROR: missing genre+subgenre: %s, %s!!!\n", gen, sub);
         return;
     }
 
@@ -279,7 +280,7 @@ int checkCadenza(measure_pattern_s *measure){
 chord_s *getTritone(int step){
     int i;
     chord_s *chords = (chord_s*) calloc(tempo.upper, sizeof(chord_s));
-    printf("tritone:\n");
+    debugPrint("tritone:\n");
 
     for(i = 0; i < tempo.upper; i++) {
         chords[i].note = (tonality + (step+6))%12;
@@ -291,7 +292,7 @@ chord_s *getTritone(int step){
 chord_s *getCadenza(int step){
     int i;
     chord_s *chords = (chord_s*) calloc(tempo.upper,sizeof(chord_s));
-    printf("cadenza:\n");
+    debugPrint("cadenza:\n");
 
     /*
      * [II m7, V 7]
@@ -311,7 +312,7 @@ chord_s *getCadenza(int step){
 chord_s *getTonalZoneChord(int step){
     int i;
     chord_s *chords = (chord_s*) calloc(tempo.upper,sizeof(chord_s));
-    printf("tonal zone changes:\n");
+    debugPrint("tonal zone changes:\n");
 
     if(rand() % 1){
         for(i = 0; i < tempo.upper; i++){
@@ -351,7 +352,7 @@ chord_s *getRandomChord(){
     chord_s *chords;
     i = 0;
     chords = (chord_s*) calloc(tempo.upper, sizeof(chord_s));
-    printf("random pick:\n");
+    debugPrint("random pick:\n");
 
     randomChordIsRandom(&note, &mode);
 
@@ -372,7 +373,7 @@ void decideChord(measure_s *measure, int current_measure_id){
     if(current_pattern->measures[current_measure_id].stepnumber == 1 || (step = checkCadenza(&(current_pattern->measures[current_measure_id]))) >= 0){
         if(rand() % 100 < (current_measure_id == 0 ? *(conf.dir_change_chord_on_one) : *(conf.dir_change_chord_on_any)))
         {	// go to an unexpected chord
-            printf("\tgo to unexpected chord, use ");
+            debugPrint("\tgo to unexpected chord, use ");
             if(step < 0)
                 step = current_pattern->measures[current_measure_id].steps[0];
             trand = rand() % 100;
@@ -388,7 +389,7 @@ void decideChord(measure_s *measure, int current_measure_id){
             return;
         }
     }
-    printf("\tmeasure chords: (standard)\n");
+    debugPrint("\tmeasure chords: (standard)\n");
     measure->chords = (chord_s*) calloc(tempo.upper, sizeof(chord_s));
     range = tempo.upper / current_pattern->measures[current_measure_id].stepnumber +
             (tempo.upper % current_pattern->measures[current_measure_id].stepnumber > 0 ? 1 : 0);
@@ -402,7 +403,7 @@ void setupTags(measure_s *measure, int current_measure_id){
     char *mood, *dyn;
     int genLen, moodLen, dynLen, i;
     if(rand() % 100 < (current_measure_id == 0 ? *(conf.dir_change_mood_on_one) : *(conf.dir_change_mood_on_any))){
-        printf("\tchange mood\n");
+        debugPrint("\tchange mood\n");
         prev_mood = rand() % moods_num;
     }
     mood = current_pattern->moods[prev_mood];
@@ -485,7 +486,7 @@ void decideImproScale(measure_s *measure, int current_measure_id){
         for(i = 0; i < tempo.upper; i++){
             measure->tonal_zones[i].note = note;
             measure->tonal_zones[i].scale = scale;
-            printf("\t\tN: %d\tS: %d\ttempo: %d\n", note, scale, tempo.upper);
+            debugPrint("\t\tN: %d\tS: %d\ttempo: %d\n", note, scale, tempo.upper);
         }
     } else {    //otherways select one scale for each chord
         for(i = 0; i < tempo.upper; i++){
@@ -493,7 +494,7 @@ void decideImproScale(measure_s *measure, int current_measure_id){
             j = getMatchingScales(&list, measure->chords[i].note, measure->chords[i].mode, note);
             //NOTE: this is a bit rough as well...
             measure->tonal_zones[i].scale = list[rand() % j];
-            printf("\t\tN: %d\tS: %d\ttempo: %d\n", note, scale, tempo.upper);
+            debugPrint("\t\tN: %d\tS: %d\ttempo: %d\n", note, scale, tempo.upper);
         }
     }
 
@@ -523,7 +524,7 @@ void decidePriorities(measure_s *measure){
     }
 
 	if (i != QUARTER_QUERY_ARGS)
-		printf("too many or not enough arguments checked\n");
+        debugPrint("too many or not enough arguments checked\n");
 }
 
 void pickSubgenre(){
@@ -571,7 +572,7 @@ void setupSoloers(uint32_t solocount, uint32_t *sololist, int measures_count){
 
     if(solocount){
         leader = sololist[rand() % solocount];
-        printf("band leader: %d\n", leader);
+        debugPrint("band leader: %d\n", leader);
 
         solo_slot = measures_count / (solocount+2); // leader instrument will improvise twice the time as the other instuments and one soloer slot is taken for non-improvised measures;
 
@@ -698,13 +699,13 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
     int i;
 
     if(rand() % 100 < (current_measure_id == 0 ? *(conf.dir_change_genre_on_one) : *(conf.dir_change_genre_on_any))){
-        printf("\tchanged ");
+        debugPrint("\tchanged ");
         if(rand() % 100 < *(conf.dir_change_subgenre)){
             pickSubgenre();
-            printf("subgenre: %s\n", subgenre);
+            debugPrint("subgenre: %s\n", subgenre);
         } else {
             pickGenre();
-            printf("genre; %s\n", genre);
+            debugPrint("genre; %s\n", genre);
         }
         load_genre_info(genre, subgenre);
     }
@@ -712,35 +713,35 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
     decideChord(measure, current_measure_id);
 
     for(i = 0; i < tempo.upper; i++){   //NOTE: useless debug
-        printf("\t\tN: %d\tM: %d\n", measure->chords[i].note, measure->chords[i].mode);
+        debugPrint("\t\tN: %d\tM: %d\n", measure->chords[i].note, measure->chords[i].mode);
     }
 
     measure->bpm = bpm;
-    printf("\ttime: %dbpm\n", bpm);
+    debugPrint("\ttime: %dbpm\n", bpm);
 
     //NOTE: if we want to have variable tempo do it here
     measure->tempo.upper = tempo.upper;
     measure->tempo.lower = tempo.lower;
-    printf("\ttempo: %d/%d\n", tempo.upper, tempo.lower);
+    debugPrint("\ttempo: %d/%d\n", tempo.upper, tempo.lower);
 
-    printf("\ttonal zones:\n");
+    debugPrint("\ttonal zones:\n");
     decideImproScale(measure, current_measure_id);
 
     setupTags(measure, current_measure_id);
-    printf("\ttags: %s\n", measure->tags.payload);
+    debugPrint("\ttags: %s\n", measure->tags.payload);
 
     decidePriorities(measure);
     /* Debug print */
-    printf("\tprioargs: {");
+    debugPrint("\tprioargs: {");
     for (i = QUARTER_ARG_FIRST; i < QUARTER_QUERY_ARGS; i++)
-	    printf("%d ", measure->prioargs[i]);
-    printf("\t}\n");
+        debugPrint("%d ", measure->prioargs[i]);
+    debugPrint("\t}\n");
 
     if(soloers[soloer].measures_to_go <= 0)
         soloer ++;
     measure->soloist_id = soloers[soloer].id;
     soloers[soloer].measures_to_go --;
-    printf("\tsoloer: %d\n", measure->soloist_id);
+    debugPrint("\tsoloer: %d\n", measure->soloist_id);
 
     //if it is last measure and it's already time to stop, put an end to the improvisation
     if(0 && current_measure_id == (current_pattern->measures_count-1))

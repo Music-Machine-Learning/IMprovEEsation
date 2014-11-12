@@ -282,8 +282,6 @@ int main(int argc, char **argv)
 
     fullscreenMessage("Musicians ready, press any key to begin improvvisation!");
 
-    waitForInput();
-
     makeProgressBar();
 
 	for (i = 0; i < measures_count; i++) {
