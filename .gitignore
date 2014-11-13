@@ -22,6 +22,7 @@
 *.x86_64
 *.hex
 
+
 #Vim swap files
 *.swp
 *.swo
@@ -37,3 +38,9 @@ tags
 
 # generated midi files
 *.mid
+
+#Tex compile files
+Report/*.log
+Report/*.fdb_latexmk
+Report/*.aux
+Report/*.out
