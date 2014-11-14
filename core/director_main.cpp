@@ -335,7 +335,6 @@ int main(int argc, char **argv)
 	}
 
     fullscreenMessage("All done, hope you enjoyed");
-    waitForInput();advanceProgressBar((i*100)/(measures_count*(genetic_process ? 2 : 1)));
 
     debugPrint("we have come to an end\n");
     closeTui();

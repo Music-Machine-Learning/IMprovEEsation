@@ -43,10 +43,10 @@ WINDOW *wdebugbord;
 
 WINDOW *pbar;
 
-static bool colors, initialized = false;
-static int mainh, mainw, debw, debh, deblines;
+bool colors, initialized = false;
+int mainh, mainw, debw, debh, deblines;
 
-static char* debugcontents;
+char* debugcontents;
 
 void initTui(bool debug){
     initscr();
@@ -69,9 +69,10 @@ void initTui(bool debug){
         debw = (COLS/3)-2;
         debh = mainh-2;
         deblines = 0;
-        wdebug= newwin(deblines, debw, 1, mainw+1);
+        wdebug= newwin(debh, debw, 1, mainw+1);
         /* FIXME: buffer should be more flexible */
-        debugcontents = (char *) calloc(deblines*debw, sizeof(char));
+        debugcontents = (char *) malloc(debh*debw*sizeof(char));
+        debugcontents[0] = '\0';
         wdebugbord = newwin(mainh, debw+2, 0, mainw);
         box(wdebugbord, 0, 0);
     } else {
@@ -112,8 +113,6 @@ void printDebugLine(char *msg){
     int i, t, j, lines = 1, bsize;
     char *tmp;
 
-    wclear(wdebug);
-
     for(i = 0, t = 0; i < strlen(msg); i++, t++){
         if(t >= debw){
             lines++;
@@ -143,11 +142,16 @@ void printDebugLine(char *msg){
         deblines--;
     }
 
-    strcat(debugcontents, tmp);
+    bsize = strlen(debugcontents);
+    t = strlen(tmp);
+    for(i = 0; i <= t; i++){
+        debugcontents[i+bsize] = tmp[i];
+    }
     deblines += lines;
 
     free(tmp);
 
+    wclear(wdebug);
     mvwprintw(wdebug, 0, 0, "%s", debugcontents);
     wrefresh(wdebug);
 }
@@ -166,7 +170,7 @@ void debugPrint(const char *f, ...){
     if(initialized){
         slen = strlen(str);
         if(slen){
-            tmp = (char *) calloc (slen, sizeof(char));
+            tmp = (char *) calloc (slen+2, sizeof(char));
             for(i = 0, j = 0; i < slen; i++, j++){
                 tmp[j] = str[i];
                 if(tmp[j] == '\n'){
@@ -187,12 +191,17 @@ void debugPrint(const char *f, ...){
 
 void closeTui(){
     if(initialized){
-        if(wmain != NULL)
-            delwin(wmain);
+//        if(wmain != NULL)
+//            delwin(wmain);
         if(wdebug != NULL){
-            CLEAR_BORDER(wdebugbord);
-            delwin(wdebugbord);
+            wclear(wdebug);
             delwin(wdebug);
+            if(debugcontents)
+                free(debugcontents);
+        }
+        if(wdebugbord != NULL){
+            CLEAR_BORDER(wdebugbord);
+//            delwin(wdebugbord);
         }
 
         endwin();
