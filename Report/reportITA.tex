@@ -15,96 +15,32 @@
 
 \maketitle
 
-\begin{abstract}
+\input{core/abstract.tex}
 
-\end{abstract}
+\input{core/intro.tex}
 
-\section{Introduzione}
-% XXX ALLA FINE XXX %
+\input{core/art.tex}
 
-\section{Stato dell'Arte}
-% XXX FEDE XXX %
+\input{core/model.tex}
 
-\section{Modello del Dominio}
-% XXX FEDE XXX %
-%TODO i componenti alla larga (overview)
-\begin{figure}[H]
-\centering
-\includegraphics[scale=0.30]{model.png}
-\caption{Schema dello scenario di progetto}
-\end{figure}
+\input{core/overview.tex}
 
-https://www.lucidchart.com/documents/edit/67c03865-48ea-4f6a-b052-e9f9c4cd8196?
+\input{core/communication.tex}
 
-\section{Overview dei Componenti}
-% XXX BERA XXX %
+\input{core/components.tex}
 
-\section{Interazione e Comunicazione}
-% XXX BERA XXX %
+\input{core/representation.tex}
 
-\section{Componenti del Sistema}
-% XXX BERA XXX %
-\subsection{Direttore}
-% XXX MELLO XXX %
+\input{core/thinking.tex}
 
-\subsection{Musicista}
-% XXX MATTE XXX %
-Come il direttore, il musicista nel nostro software è essenzialmente un processo. Il suo scopo principale è quello di creare in tempo reale della musica. Della buona musica? Ci prova; infatti il processo musicista trascorre la sua esistenza suonando delle note che possano "andar bene" assieme alle note suonate dagli altri musicisti. Questi ultimi non vengono lasciati soli nelle decisioni prese durante un'improvvisazione ma il direttore li aiuta a prendere delle scelte che possano aver senso fra di loro e li aiuta a coordinarsi. Il direttore quindi, tramite un certo protocollo di comunicazione, invia determinati parametri globali a tutti i musicisti che a loro volta scandiscono il database per cercare delle note che possano avere senso nel loro attuale contesto. Ad ogni insieme di note che i musicisti ottengono ad ogni passo dell'esecuzione è correlato un set di probabilità, il quale viene utilizzato per filtrare le note scelte da utilizzare e ad introdurre il comportamento di improvvisazione.
+\input{core/learning.tex}
 
-\subsection{Player}
-% XXX FEDE XXX %
+\input{core/experimental.tex}
 
+\input{core/conclusions.tex}
 
-\section{Rappresentazione della Conoscenza}
-% XXX MATTE XXX %
-Da qui per le prossime 3 sezioni usiamo i titoli che piacciono tanto 
-agli intelligentisti. Pagina 5 del libro di IA. 
-Manca interpretazione del linguaggio naturale perchè non sapevo cosa metterci dentro.
-\subsection{Regole e Pattern}
-% XXX MATTE XXX %
-\subsection{Database Relazionale}
-% XXX MATTE XXX %
+\input{core/future.tex}
 
-\section{Ragionamento Automatico}
-% XXX MELLO XXX %
-\subsection{Mente del Direttore}
-% XXX MELLO XXX %
-Come ragiona il direttore quando decide i pattern?
-\subsection{Mente del Musicista}
-% XXX MELLO XXX %
-Come ragione il musicista quando decide le note?
-
-\section{Apprendimento}
-% XXX FEDE XXX %
-TODO:blabla generico su come potrebbe apprendere unm musicista basandosi sull'algoritmo genetico:
-si fornisce un insieme di samples a cui il musicista cerca di arrivare. 
-Alla fine dovrebbe salvare tutto salvare nel database per in modo da non buttare quello appreso.
-Per adesso c'è solo l'algoritmo genetico ma spieghiamo comunque come salvaremmo la nuova conoscenza nel DB.  
-% TODO accenno a sviluppi futuri (sviluppo della conoscenza) %
-\subsection{Algoritmo Evoluzionistico}
-% XXX FEDE XXX %
-supercazzola genetica e tante stampe.
-
-\section{Risultati Sperimentali}
-% XXX BERA XXX %
-Dopo tanto sbatto funziona tutto random!
-
-\section{Conclusioni}
-% XXX ALLA FINE XXX %
-Ci vuole un DB supermegagigante!!!
-
-\section{Sviluppi Futuri}
-% XXX TUTTI ASSIEME XXX %
-\subsection{Sviluppo della Conoscenza}
-% XXX FEDE XXX %
-Spieghiamo qui o in sviluppi futuri? Comnque potremmo proporre nel futuro di salvare nel db 
-il risultato del genetico "facendo un match" dei quarter che sono usciti dal genetico con quelli che già
-ci sono nel db "aggiustando" le probabilità che già ci sono. Quelle che non ci sono possiamo aggiungerle. 
-
-\begin{thebibliography}{50}
-% XXX TUTTI ASSIEME XXX %
-  \bibitem{Simpson} Homer J. Simpson. \textsl{Mmmmm...donuts}.
-		Evergreen Terrace Printing Co., Springfield, SomewhereUSA, 1998
-\end{thebibliography}
+\input{core/biblio.tex}
 
 \end{document}
