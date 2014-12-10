@@ -2,6 +2,20 @@
 % XXX TUTTI ASSIEME XXX %
 \subsection{Sviluppo della Conoscenza}
 % XXX FEDE XXX %
-Spieghiamo qui o in sviluppi futuri? Comnque potremmo proporre nel futuro di salvare nel db 
-il risultato del genetico "facendo un match" dei quarter che sono usciti dal genetico con quelli che già
-ci sono nel db "aggiustando" le probabilità che già ci sono. Quelle che non ci sono possiamo aggiungerle. 
+% Spieghiamo qui o in sviluppi futuri? Comnque potremmo proporre nel futuro di salvare nel db 
+% il risultato del genetico "facendo un match" dei quarter che sono usciti dal genetico con quelli che già
+% ci sono nel db "aggiustando" le probabilità che già ci sono. Quelle che non ci sono possiamo aggiungerle. 
+Meritano una menzione a parte gli sviluppi futuri dedicati alla parte di machine learning.
+In questo momento, l'algoritmo evoluzionistico fa in modo che un musicista ``impari'' a improvvisare data una sequenza ideale come traccia.
+Come rendere questo apprendimento permanente?\\
+La nostra proposta per un futuro sviluppo è incrociare l'algoritmo evoluzionistico con l'approccio sulle probabilità.
+Idealmente, un utente darebbe in pasto all'algoritmo evoluzionistico il musicista con il brano ideale finchè ciò che viene prodotto non sarà buono.
+Avvenuto questo, il prodotto dell'algoritmo dovrebbe venire trasformato in un set di probabilità (meglio ancora se si considerano più output di tale algoritmo, per facilitare la trasformazione in percentuali) che potrà aggiornare il database dei pattern, ovvero le probabilità già presenti sul database alle quali si fa riferimento durante l'approccio probabilistico.
+\newline
+
+Una seconda miglioria, affine con le tecniche esistenit di machine composition e machine improvisation, sarebbe quella di considerare gli altri musicisti e le loro esecuzioni.
+Ciò che l'algoritmo evoluzionistico potrebbe fare in questo caso è l'alterazione della funzione che computa la similitudine in modo che vengano introdotte grandezze che non confrontano più il pool genetico con il pattern ideale, ma anche con le scelte degli altri strumentisti.
+\newline
+
+Abbiamo notato che l'algoritmo evoluzionistico tende a girare attorno a un punto fisso, dopo un repentino miglioramento iniziale, dipendente dalla lunghezza del brano.
+Una terza miglioria consiste nel migliorarlo per aumentarne le prestazioni, soprattutto su brani di lunghezza consistente, per poter spingere quel punto fisso a percentuali di similitudine più alta.
