@@ -2,7 +2,7 @@
 % XXX BERA XXX %
 Come indicato in precedenza, i principali componenti in stretto contatto
 tra loro sono delle seguenti tre categorie, \'e stata scelta un implementazione
-non a camere stagne tra di essi, in modo da rendere il sistema il pi\'u modulare
+a camere stagne tra di essi, in modo da rendere il sistema il pi\'u modulare
 possibile, potendo separare (anche fisicamente, distribuendoli su varie macchine)
 i vari componenti, utilizzando dei processi singoli per ogni istanza del singolo.\\\
 \\\
@@ -11,13 +11,17 @@ elemento del sistema.
 
 \subsection{Direttore}
 % XXX MELLO XXX %
+Il direttore rappresenta la componente che lega ed indirizza l'intera esecuzione. Basa le proprie scelte su un database di generi e sottogeneri, descritti tramite pattern. 
+Ogni pattern definisce la struttura base di un ``giro'' dello specifico sottogenere, ad esempio la struttura di un classico blues bebop, indicando la sequenza di accordi e di ``intenzioni'' consigliate per ogni battuta del giro. 
+Sfruttando queste informazioni ed essendo a conoscenza di ciò che è già stato suonato, il direttore decide tramite meccanismi probabilistici, battuta in battuta, le caratteristiche della prossima misura di brano da eseguire, elegge un solista per questa sezione e comunica queste informazioni ai musicisti, per poi attendere che tutti abbiano completato la propria esecuzione.
+Ad ogni nuova battuta, utilizzando metodi probabilistici, il direttore decide inoltre se cambiare sottogenere o genere e quale scala di riferimento deve essere usata dal musicista solista, tenendo in considerazione le possibili varianti compatibili dello stesso genere.
 
 \subsection{Musicista}
 % XXX MATTE XXX %
 Come il direttore, il musicista nel nostro software è essenzialmente un processo. 
 Il suo scopo principale è quello di creare in tempo reale della musica. 
 Della buona musica? Ci prova, infatti il processo musicista trascorre la
-sua esistenza ùsuonando delle note che possano ``andar bene'' assieme alle note
+sua esistenza suonando delle note che possano ``andar bene'' assieme alle note
  suonate dagli altri musicisti. Questi ultimi non vengono lasciati soli nelle 
 decisioni prese durante un'improvvisazione ma il direttore li aiuta a prendere 
 delle scelte che possano aver senso fra di loro e li aiuta a coordinarsi. 
@@ -36,7 +40,7 @@ intelligente, ma piuttosto da scheduler, poichè il suo compito è suonare in
 contemporanea le note che i musicisti hanno ``scritto sul loro spartito''.
 Più in particolare, le informazioni che pervengono al player sono, da ogni 
 musicista, un set di note e durate, secondo la struttura descritta nella 
-sezione 6, della durata di una battuta.
+sezione 6, della durata di una battuta. % ci vuole una label-ref %
 Il player resterà bloccato finchè non riceverà questo dato da ognuno dei 
 musicisti (un numero conosciuto a priori), poi inizierà la sua esecuzione.
 Essa si basa sulla scansione dei dati in input secondo una base temporale 
