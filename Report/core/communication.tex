@@ -16,8 +16,8 @@ Inizialmente il direttore riceve una sottoscrizione da parte del player.\\
 Alla sottoscrizione (opportunamente segnalata tramite \emph{ack}), susseguirà un
 pacchetto contenente il numero di musicisti
 \footnote{In modo da specificare solamente al direttore
-	  il numero di istanze di musicisti.}
-A questo punto l'inizializzazione tra i componenti principali
+	  il numero di istanze di musicisti.}.
+A questo punto l'inizializzazione dei componenti principali
 (direttore e player) è completa, e la loro comunicazione, come vedremo
 si limiterà a messaggi di sincronizzazione.
 
@@ -36,18 +36,18 @@ sullo stato dell'improvvisazione, in modo da mantenere una certa coerenza
 tra tutti i musicisti.\\
 \\
 Una volta composto, i musicisti inviano quindi la loro creazione
-\footnote{Si rimanda alle opportune sezioni per come queste decisioni vengano prese.}
-, al
-player il quale si occuper\'a di suonare la composizione nell'ordine corretto;
+\footnote{Si rimanda alle opportune sezioni per approfondire come queste decisioni vengano prese.}
+ al
+player, il quale si occuper\'a di suonare la composizione nell'ordine corretto;
 Mentre il direttore si occuper\'a della sincronizzazione, proseguendo con
 un nuovo passo del ciclo.
 
 \subsection{Libreria di comunicazione}
-L'implementazione della libreria di comunicazione è presente nel file
+L'implementazione della libreria di comunicazione è presente nei file
 \emph{communication.cpp} e \emph{struct.h}, se ne descrivono di seguito
 i dettagli.
 
-Principalmente i pacchetti scambiati tra le varie istanze sono di 3 tipi:
+I principali pacchetti scambiati tra le varie istanze sono di 3 tipi:
 \emph{Sottoscrizioni}, \emph{Misure} e \emph{Play Measures}.
 
 \subsubsection{Sottoscrizioni}
@@ -130,12 +130,12 @@ una scala di priorit\'a con la quale effettuare le scelte di improvvisazione.
 \footnote{Per una spiegazione pi\'u dettagliata si rimanda ai capitoli sul come
 	  operano il  Direttore e il Musicista.}
 \item[Note e scale] \hfill \\
-Sono $tempo.upper$ campi contenti la successione dei centri tonali della misura.
+Sono $tempo.upper$ campi contenti la successione dei centri tonali della misura (rilevanti per il solista).
 \item[Chord e mode] \hfill \\
-Sono $tempo.upper$ campi contenti la successione di accordi della misura.
+Sono $tempo.upper$ campi contenti la successione di accordi della misura (rilevanti per gli accompagnatori).
 \item[Tags] \hfill \\\
 \'E un campo testuale utilizzato per indicare attributi del pezzo da improvvisare
-(ad esempio il genere).
+(è una terna che specifica genere, dinamiche ed intenzione).
 \end{description}
 
 \subsubsection{Play Measures}
@@ -170,7 +170,7 @@ Il numero di note presenti nella misura corrente.
 L'identificativo univoco del musicista che ha generato la misura in questione.
 \item[Unchanged fst] \hfill \\\
 Un booleano indicante il fatto che la prima nota sia cambiata o meno.
-\footnote{Questa feature \'e necessaria nel caso si debba effettuare dei legati
+\footnote{Questa feature \'e necessaria nel per effettuare dei legati
 	  o dei continui dalla misura precedente.}
 \item[Note] \hfill \\
 Sono quindi presenti $size$ strutture contenenti le seguenti informazioni
@@ -197,6 +197,6 @@ Un indicazione sui bpm da utilizzare nella riproduzione dell'improvvisazione.
 L'ultimo compito della libreria di comunicazione è
 provvedere ad alcuni meccanismi per la sincronizzazione dei vari componenti.\\
 Questo obiettivo è raggiunto utilizzando le chiamate di sistema di linux basate
-sugli eventi quali \emph{epoll}, vengono radunati su di una barriera
-(in qualsiasi ordine) i musicisti, prima che venga loro notificato tramite
-\emph{ack} la possibilità di continuare.
+sugli eventi quali \emph{epoll}: vengono radunati su di una barriera
+(in qualsiasi ordine) tutti i musicisti, dopo di ché viene notificata, tramite
+\emph{ack}, la possibilità di continuare.
