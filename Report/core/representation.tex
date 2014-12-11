@@ -63,6 +63,62 @@ Come ciò viene fatto verrà spiegato nella sezione \ref{thinking}.
 % XXX MATTE XXX %
 \begin{figure}[H]
 \centering
+\label{figure-db}
 \includegraphics[scale=0.7]{img/db.png}
 \caption{Schema E-R del DataBase}
 \end{figure}
+La struttura di conoscenza spiegata nel paragrafo precedente è stata implementata
+tramite un DataBase relazionale il cui schema Entitià Relazione è mostrato nella figura
+\ref{figure-db}.\\
+La struttura si può pensare come divisa essenzialmente in due parti principali.\\ 
+La prima si concentra intorno alla tabella $quarter$, attraverso la quale il musicista
+riesce a capire quali $semiquaver$ considerare in base ad un certo contesto definito
+dal direttore come già spiegato nella sezione precedente. È importante notare che 
+nonostante la memoria sia collettiva a tutti gli agenti, tramite le informazioni 
+legate ai quarti un musicista è in grado di filtrare le informazioni che meglio si
+adattano a se stesso. Oltre al contesto definito dal direttore infatti, il musicista
+può anche filtrare le informazioni che riguardano la sua natura, come ad esempio 
+il tipo di strumento da lui suonato o se si sta comportando o meno da solista.\\
+La seconda parte fondamentale del DataBase è concentrata intorno alla tabella $pattern$.
+Dalla figura \ref{figure-db} potrebbe sembrare che l'entità $pattern$ non abbia poi 
+così tante relazioni come l'entità $quarter$ per considerare quest'utlima un parte
+fondamentale del DB. Questo deriva dal fatto che si è deciso di semplificare un po'
+il modello E-R per l'entità $pattern$ utilizzando dei vettori per ogni record di 
+quest'ultima anzichè creare delle nuove entità-relazioni. Questa scelta è giustificata
+dal fatto che viene inizialmente considerato un numero relativamente basso di pattern
+e che il modello è facilemente estendibile in quanto le due parti fondamentali del 
+DataBase hanno due schemi abbastanza indipendenti tra loro.\\
+Nello specifico la tabella $pattern$ è caratterizzata fondamentalmente dai 
+seguenti campi vettoriali
+\begin{itemize}
+\item steps 
+\item modes 
+\item dynamics
+\item moodes
+\end{itemize}
+tramite i quali un direttore riesce a scandire l'andamento dell'improvvisazione 
+misura per misura, definendo a quali accordi riferirsi e suggerendo ai musicisti 
+con quale dinamica e "sentimento" eseguire le loro perfomance. Queste direttive
+possono venire suggerite ai musicisti in modo stretto o lato.\\
+A tal proposito ad ogni pattern viene associato un vettore di priorità dalla tabella 
+prioargs che definisce con quale priorità le direttive del direttore riguardanti quel 
+pattern debbano essere considerate dai musicisti, anche rispetto alle altre 
+informazioni sulla loro stessa natura. È anche possibile che un musicista non consideri
+affatto le priorità legate al pattern ma utilizzi delle priorità ad-hoc, definite 
+rispetto ad altri parametri.\\
+Ad esempio un musicista solista potrebbe considerare un vetttore di priorità 
+ad-hoc che non sia legato a nessun pattern in quanto 
+potrebbe non essere interessato alla successione di accordi tra le misure, 
+informazione molto forte per i pattern, ma solamente alla tonalità corrente, 
+alle dinamiche e ai mood delle misure.\\
+C'è poi il caso particolare del batterista
+che non ha alcun interesse riguardo le informazioni inerenti alla linea melodica 
+e aromica di un improvvisazione, ma è interessato solo alla linea ritmica. Inoltre
+per il batterista viene utilizzato un modello diverso di vettore di probabilità 
+di ogni semiquaver, quindi è fondamentale che la sua priorità più alta sia il tipo 
+di strumento, altrimenti, incorrenendo in vettori di priorità associati a quarti di
+altri strumenti, potrebbe interpretare in maniera completamente errata tali informazioni.\\\\
+Dal lato applicazione le informazioni residenti nel DB vengono recuperate tramite
+una libreria dinamica dedicata. Quest'ultima si occupa di effettuare le apposite
+query per recuperare le informazioni, con i dovuti vincoli, necessarie ai processi 
+musisti e direttori per improvvissare.
