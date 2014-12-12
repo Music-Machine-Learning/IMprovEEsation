@@ -44,3 +44,4 @@ Report/*.log
 Report/*.fdb_latexmk
 Report/*.aux
 Report/*.out
+Report/*.sty

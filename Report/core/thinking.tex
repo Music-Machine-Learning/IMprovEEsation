@@ -1,36 +1,76 @@
 \section{Ragionamento Automatico}
 Quando un musicista o un gruppo di musicisti eseguono un
-improvvisazione, sono molteplici i fattori che incidino nelle loro azioni. 
+improvvisazione, sono molteplici i fattori che incidono sulle loro azioni. 
 Tra questi sicuramente hanno molta influenza le emozioni
 individuali e reciproche dei musicisti, oppure il "feeling" che c'è tra
-loro.\\
-Indubbiamente anche se non è l'unico fattore in gioco, 
-non può mancare un certo tipo di ragionamento
-nella scelte effettuate da ogni musicista, che sa in qualche modo come
-agire per produrre un risultato che sia apprezzabile per se stesso e per gli
-altri. Per un software che genera delle improvvisazioni musicali, il fattore 
-emotivo non può però essere escluso. Anche se le macchine non sono in grado
+di loro.\\
+Per un software che genera delle improvvisazioni musicali, il fattore 
+emotivo non può essere escluso.
+Anche se le macchine non sono in grado
 di provare delle emozioni reali, possono sempre simulare dei
-comportamenti che sembrino essere influenzati da delle emozioni reali, e
-forse possono anche scaturire emozioni a chi interagisce con tali
-macchine. Quest'ultimo è un obbiettivo arduo ma sicuramente interessante
-per software di questo tipo. I puristi della musica e dell'arte
+comportamenti che sembrino, ai sensi di un osservatore esterno, 
+essere influenzati da esse, e forse possono anche scaturire emozioni a chi 
+interagisce con tali
+macchine. Quest'ultimo è un obiettivo arduo ma sicuramente interessante
+per software di questo genere. I puristi della musica e dell'arte
 potrebbero sollevare una critica dicendo che un musicista che non prova
 emozioni non è in grado di sollevare emozioni verso chi li ascolta.
 Lo studio emotivo nell'intelligenza artificiale è un campo aperto e
 osservato con interesse dal mondo scientifico, risulta quindi stimolante
 proporne un applicazione di studio.\\
-In IMprovEEsation il ragionamento dei musicisti è fortemente influenzato
+
+Inoltre, anche se non è l'unico fattore in gioco, 
+non può mancare un certo tipo di ragionamento
+nella scelte effettuate da ogni musicista, che sa in qualche modo come
+agire per produrre un risultato che sia apprezzabile per se stesso e per gli
+altri.\\
+In \emph{IMprovEEsation} il ragionamento dei musicisti è fortemente influenzato
 dal ragionamento del direttore che potrebbe essere visto come una sorta
-di "feeling" o di sintonia tra i vari musicisti improvvisatori, che in
+di sintonia tra i vari musicisti improvvisatori, che in
 un caso reale non avrebbero un coordinatore centrale.\\
-In questa sezione vedremo meglio come ragionano il direttore e il
-musicista durante una sessione di improvvissazione.
+In questa sezione vedremo meglio come ragionano il direttore e i
+musicisti durante una sessione di improvvisazione.
 \label{thinking}
 % XXX MELLO XXX %
 \subsection{Mente del Direttore}
-% XXX MELLO XXX %
 Come ragiona il direttore quando decide i pattern?
 \subsection{Mente del Musicista}
-% XXX MELLO XXX %
-Come ragione il musicista quando decide le note?
+\begin{algorithm}
+\caption{Musician improvisation cycle algorithm}\label{algo-musician}
+\begin{algorithmic}[1]
+\Function{musician\_main}{}
+	\State $id \gets$send\_subscription($director$)
+	\State send\_subscription($player$)
+	
+	\While{\textbf{not} EOI}\Comment{Improvise until a End Of Exception is raised}
+	\State $measure\_info \gets$ recv($director$)
+	\State $measure\_to\_play \gets$ compose\_measure($measure\_info$)
+	\State send($player$, $measure\_to\_play$);
+	\EndWhile
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+% TODO spiegare il primo algoritmo %
+
+\begin{algorithm}
+\caption{Musician improvisation cycle algorithm in genetic mode}\label{algo-musician-get}
+\begin{algorithmic}[1]
+\Function{musician\_genetic\_main}{}
+	\State $id \gets$send\_subscription($director$)
+	\State send\_subscription($player$)
+	
+	\While{$measure\_info_{bpm} \not= BPM\_EOI$}\Comment{Improvise until a BPM EOI is
+received}
+	\State $measure\_info \gets$ recv($director$)
+	\State $measure\_to\_play \gets$ compose\_measure($measure\_info$)
+	\State store\_measure(measure\_info, measure\_to\_play)
+	\State ack($director$)
+	\EndWhile
+	\State genetic\_loop()	
+	\State ack($director$)
+	\State Perform the MUSIC\_MAIN function loop with the new generated measures
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
