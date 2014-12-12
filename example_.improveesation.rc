@@ -12,7 +12,7 @@ db_user read_only
 # Password for the user for the database
 db_passwd testiamo123
 
-# Probability of changing to subgenre instead of changing to another genre (now we only have one genre, so this should be 100)
+# Probability of changing to subgenre instead of changing to another genre (now we only have one genre, so this must be 100, in regular use it should be 75)
 dir_change_subgenre 100
 
 # Probability of changing genre on the first measure of a section
