@@ -81,12 +81,93 @@ Il secondo nodo della decisione è guidato dalla posizione della battuta all'int
 \item se la battuta non è la prima, con bassa probabilità si potrà cambiare l'accordo.
 \end{itemize}
 
+Se, a questo punto, il direttore ha deciso di introdurre una variazione, utilizzerà una scala di probabilità per decidere il criterio secondo cui modificare l'accordo:
+
+\begin{itemize}
+\item 30\% Sostituzone di tritono
+\item 30\% Cadenza relativa all'accordo originale
+\item 30\% Sostituzione per zone tonali\footnote{La sostituzione per zone tonali offre due possibililà: VI grado relativo minore con settima minore, oppure III grado relativo minore (o diminuito). Le due possibilità hanno uguale probabilità di venire scelte.}
+\item 10\% Accordi casuali
+\end{itemize}
+
+\subsubsection{Centri tonali}\label{dir-tonalZones}
+Un altro fattore che influenza sostanzialmente la qualità dell'improvvisazione è la scala di riferimento utilizzata dai musicisti solisti. 
+La teoria musicale propone svariate regole estremamente rigide per quanto riguarda le scale utilizzabili in determinate circostanze, ma queste regole portano molto spesso a risultati banali o prevedibili, che sono desiderabili in alcune circostanze ma alla lunga renderebbero l'improvvisazione noiosa.
+
+Per non limitarsi ad una scelta meccanica della scala di riferimento, viene dunque utilizzato un sistema di selezione non del tutto banale:
+
+\begin{enumerate}
+\item viene stabilito il centro tonale;
+\item vengono controllate le scale disponibili;
+\item viene selezionata la scala definitiva.
+\end{enumerate}
 
 
-\subsubsection{Centri tonali}
+La parte cruciale è la selezione del centro tonale, che viene effettuata attraverso un meccanismo iterativo di valutazione dei centri tonali più plausibili:
+
+\begin{algorithm}
+\caption{}
+\label{algo-director-tzone}
+\begin{algorithmic}[1]
+\Function{decideImproScale}{currentMeasure}
+	\For{$range \gets totalMeasuresCount; range < 0; range --$}
+		\For{$i \gets 0; i < range; i++$}
+			\State $meas \gets pattern[(currentMeasure - (range/2) + i) \% 12]$
+			\If{$meas.chordsNum = 1$ \textbf{or} isCadenza($meas$)}
+				\State $found[meas.chord] ++$
+			\Else
+				\For{$j \gets 0; j < meas.chordsNum; j++$}
+				 	\State $found[meas.chords[j]] ++$
+				\EndFor
+			\EndIf
+		\EndFor
+		
+		\State $max \gets $getMaxIndex($found$)
+		\State $tonalZones[max] ++$
+		
+	\EndFor
+	
+	\State $r \gets $rand()$ \% $sizeOf($tonalZones$)
+	
+	\For{$i \gets 0; i < 12; i ++$}
+		\If{$tonalZones[i] > 0$}
+			\If{$r < tonalZones[i]$}
+				\State $note \gets i$
+				\Break
+			\Else
+				\State $r \get r - tonalZones[i]$
+			\EndIf
+		\EndIf
+	\EndFor
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Il primo blocco del metodo effettua una scansione del pattern attuale per contare il numero di occorrenze dei centri tonali considerati battuta per battuta e salva quello più gettonato, continua successivamente la scansione restringendo il range di ricerca e mantenedolo centrato sulla battuta attuale fino ad avere la sola misura che deve essere suonata.
+
+Con questo sistema è possibile creare un vettore dei centri tonali considerabili validi per la battuta attuale, viene dunque utilizzato questo vettore come partizionamento di probabilità per scegliere il centro tonale definitivo.
+
+Una volta deciso il centro tonale, vengono confrontate tutte le scale disponibili nel database, nella tonalità decisa dal centro tonale, con l'accordo che verrà suonato dall'accompagnamento. Se l'accordo è interamente contenuto nella scala presa in esame, questa viene aggiunta ad una lista di scale accettabili\footnote{La scala blues segue delle regole differenti, poiché si tratta di una scala speciale che non farebbe match con un accordo completo e d'altro canto può essere proficuamente utilizzata in svariate situazioni in cui la sovrapposizione con l'accordo di riferimento è scarsa.} ed ne viene selezionato un elemento casuale.
+
+Se nessuna scala è ritenuta accettabile a questo punto, viene scelta quella che ha il maggior numero di gradi contenuti nell'accordo di riferimento.
+
+Questo sistema è quello implementato nella versione attuale del software, ma è già pronto il supporto per le varianti di sottogenere. Si tratta di un ulteriore variazione alla scelta della scala su cui improvvisare: ogni sottogenere specifica una lista di altri sottogeneri per cui tutto il pattern o alcune sue parti sono plausibili varianti improvvisative.
+
+Le varianti improvvisative sono un'indicazione utile per il solista, poiché gli offrono una maggiore gamma di intenzioni, oltre ad un ovvio incremento della varietà improvvisativa in genere. Nella pratica, un musicista esperto sa che, considerando i centri tonali di un pattern come, ad esempio, il blues di Coltrane, può suonare una assolo decisamente atipico ma estremamente coerente su un accompagnamento che suona un blues basilare.
+
+Il direttore che volesse sfrttare questa occasione potrebbe quindi decidere, prima dell'analisi del pattern corrente alla ricerca del centro tonale, di sostituire parti del pattern con quelle provenienti da sottogeneri compatibili, in modo da ottenere una maggiore varietà di sonorità senza ricadere nella casualità più totale.
 
 \subsubsection{Scelta del solista}
+% FIXME ref a documento soundpainting in biblio %
+La scelta del solista viene effettuata in base ad un principio generale derivato dalla composizione dal vivo\ref{}: la band ha un leader, il quale improvviserà mediamente il doppio degli altri musicisti solisti.
 
+Seguendo questo principio, all'inizio dell'improvvisazione viene eletto un leader, che sarà il primo strumento ad improvvisare. In secondo luogo, tenendo conto del numero totale di solisti e della durata dell'improvvisazione prevista, si stabilisce la durata degli \emph{slot di improvvisazione} disponibili per ogni solista, in modo da lasciare due slot al leader ed uno slot vuoto per eventuali variazioni della dimensione degli altri slot oppure per un giro senza improvvisazione prima del finale.
+
+Prima di cominciare l'improvvisazione viene dunque deciso l'ordine di improvvisazione dei musicisti, se la durata prevista dell'improvvisazione è meno di tre giri completi viene riservato spazio per improvvisare soltanto al leader della band, altrimenti lui avrà il primo e l'ultimo giro dell'improvvisazione, gli altri sono scelti in maniera casuale distribuendo i giri tra i vari strumenti fino a che ognuno non ha esaurito il proprio slot di improvvisazione.
+
+Durante la creazione di una nuova battuta, viene quindi impostato come solista quello che, secondo la procedura effettuate in fase di inizializzazione, ha il diritto di improvvisare durante il giro corrente.
+
+% FIXME mi servirebbe o un sinonimo di "giro" oppure da qualche parte all'inizio definiamo il nostro utilizzo del termine, perchè non è usato in maniera propria %
 
 \subsection{Mente del Musicista}
 % XXX MELLO XXX %

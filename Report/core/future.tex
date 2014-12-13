@@ -1,10 +1,23 @@
 \section{Sviluppi Futuri}
 % XXX TUTTI ASSIEME XXX %
+\subsection{Miglioramenti del Direttore}
+% XXX MELLO XXX %
+Come già dichiarato al paragrafo \ref{dir-tonalZones}, un primo miglioramento che richiederebbe poco sforzo è l'implementazione delle varianti di improvvisazione durante la scelta della scala di riferimento per i solisti. Questa miglioria non è stata ancora completamente implementata perchè richiederebbe un refactoring di parte del codice decisionale del direttore, ma non si tratta di una ristrutturazione eccessivamente onerosa, dato che il resto del sistema prevede già la presenza di questa feature.
+
+Un altro passo avanti potrebbe essere la modifica dinamica dei parametri attualmente statici di ogni battuta generata. Questo è un argomento delicato, poiché la maggior parte di questi parametri hanno carattere estremamente istintivo, non esistono regole che definiscano come modificarli in maniera corretta o sbagliata.
+La maniera più sensata di affrontare un simile problema potrebbe essere quella di implementare un meccanismo di machine learning basato su training manuale che sfrutti l'opinione di un numero sostanzioso di ascoltatori eterogenei e valuti di conseguenza quali modifiche sono più o meno apprezzabili.
+% FIXME trainig manuale non credo sia corretto.. %
+
+Simili meccanismi di machine learning potrebbero portare anche a risultati interessanti per la scelta di tutti gli altri fattori determinati in maniera probabilistica, nonché una possibile evoluzione delle strutture dati contenute nel database, aggiornando i pattern con le modifiche introdotte da scelte pseudocasuali di accordi e le relazioni tra sottogeneri compatibili.
+
 \subsection{Sviluppo della Conoscenza}
 % XXX FEDE XXX %
 % Spieghiamo qui o in sviluppi futuri? Comnque potremmo proporre nel futuro di salvare nel db 
 % il risultato del genetico "facendo un match" dei quarter che sono usciti dal genetico con quelli che già
 % ci sono nel db "aggiustando" le probabilità che già ci sono. Quelle che non ci sono possiamo aggiungerle. 
+
+% FIXME forse andrebbe detto qui dentro che sarebbe il caso di rendere genetico in qualche modo anche il direttore %
+
 Meritano una menzione a parte gli sviluppi futuri dedicati alla parte di machine learning.
 In questo momento, l'algoritmo evoluzionistico fa in modo che un musicista ``impari'' a improvvisare data una sequenza ideale come traccia.
 Come rendere questo apprendimento permanente?\\

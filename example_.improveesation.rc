@@ -43,4 +43,4 @@ dir_chord_tritone 30
 dir_chord_cadenza 60
 
 # Probability range to do a tonal zone-wise change if standard chord is not chosen
-dir_chord_tonal_zone 80
+dir_chord_tonal_zone 90
