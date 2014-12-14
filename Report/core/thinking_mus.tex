@@ -1,4 +1,4 @@
-%	\subsection{Mente del Musicista}
+\subsection{Mente del Musicista}
 %   \begin{algorithm}
 %   \caption{Musician improvisation cycle algorithm}\label{algo-musician}
 %   \begin{algorithmic}[1]
@@ -39,17 +39,24 @@
 %   \end{algorithm}
 %
 
+Come già introdotto nelle sezioni precedenti, il compito principale dei musicista è
+quello di decidere le note da suonare basondosi sulle informazioni
+ricevute dal direttore che le manda in broadcast in rete per ogni misura
+da improvvisare. L'algoritmo \ref{algo-musician-measure} mostra come un
+musicista compone una misura da improvvisare basandosi sulle
+informazioni ricevute dal direttore su di essa, $data_{MSR}$, e sulle
+informazioni inerenti alla sua natura, $data_{MCN}$.  
+
 \begin{algorithm}
 \caption{Musician measure improvisation algorithm}
 \label{algo-musician-measure}
 \begin{algorithmic}[1]
-\Function{composeMeasure}{measureInfo, musicianInfo}
+\Function{composeMeasure}{$data_{MSR}$, $data_{MCN}$}
 \For{$q\gets 0$ \textbf{to} $nq$} \Comment{$nq$, the number of
 quarters in a measure, is time signature dependent}
 	\State $n,i\gets0$
 	\While{$n = 0$}
-		\State $(n,quarters)\gets$ searchQuarters($db$, $measureInfo$,
-$musicianInfo$, $prioargs$, $i$++)
+		\State $(n,quarters)\gets$ searchQuarters($db$, $data_{MSR}$, $data_{MCN}$, $prioargs$, $i$++)
 	\EndWhile
 	\State $quarter\gets$ random($quarters$)
 	\State $(n,sqs)\gets$ getSemiquavers($db$, $quarter$)
@@ -73,6 +80,16 @@ subdivistions}
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
+
+All'inizio Il musicista cerca nel DB dei \emph{quarter} che possano
+avere un riscontro con i due set di informazioni. Se non trova nessun
+quarto che fa "match" con tutte le informazioni ripete la ricerca scartando
+gli argomenti con priorità più bassa, fino a quando non ne trova almeno
+uno. Tra i quarti trovati, se più di 1, ne viene scelto uno random
+\footnote{In una futura estensione, un quatro potrebbe venir scelto con
+una politica migliore, ad esempio facendo un confronto ulteriore tra quelli
+scelti e i precedenti.} di cui il processo ottiene tutte i record
+\emph{semiquaver} associate.
 
 %TODO decide note
 

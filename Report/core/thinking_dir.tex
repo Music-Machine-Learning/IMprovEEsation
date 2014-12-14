@@ -103,9 +103,9 @@ La parte cruciale è la selezione del centro tonale, che viene effettuata attrav
 		\If{$tonalZones[i] > 0$}
 			\If{$r < tonalZones[i]$}
 				\State $note \gets i$
-				\Break
+				\State \textbf{break}
 			\Else
-				\State $r \get r - tonalZones[i]$
+				\State $r \gets r - tonalZones[i]$
 			\EndIf
 		\EndIf
 	\EndFor
@@ -138,7 +138,3 @@ Prima di cominciare l'improvvisazione viene dunque deciso l'ordine di improvvisa
 Durante la creazione di una nuova battuta, viene quindi impostato come solista quello che, secondo la procedura effettuate in fase di inizializzazione, ha il diritto di improvvisare durante il giro corrente.
 
 % FIXME mi servirebbe o un sinonimo di "giro" oppure da qualche parte all'inizio definiamo il nostro utilizzo del termine, perchè non è usato in maniera propria %
-
-\subsection{Mente del Musicista}
-% XXX MELLO XXX %
-Come ragione il musicista quando decide le note?
