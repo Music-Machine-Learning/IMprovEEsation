@@ -38,7 +38,7 @@
 
 #define NO_COUPLING 0
 #define MAX_CHORD_SIZE 8
-#define MIN_CHORD_SIZE 2
+#define MIN_CHORD_SIZE 3
 #define SQS_IN_Q 4 /* number of semiquavers in one quarter */
 
 enum {

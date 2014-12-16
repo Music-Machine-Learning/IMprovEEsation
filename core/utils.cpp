@@ -143,6 +143,22 @@ void shuffle_array(int *array, size_t n)
 	}
 }
 
+/* Arrange the N elements of ARRAY in random order. */
+void shuffle_array(uint8_t *array, size_t n)
+{
+	size_t i;
+	if (n <= 1) {
+		fprintf(stderr, "Warning: array size too small in shuffle_array\n");
+		return;
+	}
+	for (i = 0; i < n - 1; i++) {
+		size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+		uint8_t t = array[j];
+		array[j] = array[i];
+		array[i] = t;
+	}
+}
+
 /* This allocs a list of "ideal" patterns */
 /* the list is extracted from the file given in input selecting the dynamics also given */
 int parse_sample(const char * filename)
