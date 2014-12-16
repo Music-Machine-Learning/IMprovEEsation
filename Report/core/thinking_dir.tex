@@ -15,23 +15,23 @@ Inoltre vengono settati in maniera statica (ma è prevista la possibilità di de
 \item velocità
 \item tempo
 \item dinamiche ed intenzione
-\item priorità degli argomenti delle query per il musicista (vedi \ref{musicista:priorargs}) % FIXME ref %
+\item priorità degli argomenti delle query per il musicista (vedi par. \ref{database})
 \end{itemize}
 
 Questi valori sono letti dal file di configurazione e dal database, nello specifico i pattern dei generi dichiarano dinamiche ed intenzione per ogni battuta ed un set di priorità di argomenti da scartare.
 
 Per lasciare massima libertà di sperimentazione, tutte le soglie variabili degli algoritmi probabilistici sono lette dal file di configurazione durante la fase di inizializzazione del direttore.
-Un file di configurazione di esempio è fornito insieme al programma, i valori qui contenuti sono quelli discussi nei prossimi paragrafi e rappresentano ciò che si è ritenuti più ``sensato'', sfruttando anche la consulenza di musicisti esperti. % FIXME non vorrei averla cagata fuori.. %
+Un file di configurazione di esempio è fornito insieme al programma, i valori qui contenuti sono quelli discussi nei prossimi paragrafi e rappresentano ciò che si è ritenuti più ``sensato'', sfruttando anche la consulenza di musicisti esperti.
 
 \subsubsection{Scelta del genere}
 Per prima cosa è necessario stabilire, per ogni battuta, se è possibile cambiare l'intento globale dell'improvvisazione, la maniera di ottenere questo cambiamento drastico è scegliere un genere o sottogenere differente da quello attualmente in uso.
 
-Il concetto di sottogenere identifica una serie di varianti dello stesso genere musicale, non necessariamente intercambiabili l'una con l'altra, ma ceramente appartenenti alla stessa macrocategoria, per esempio sono stati definiti pattern per blues base, che è il classico blues in dodici battute, il blues bebop ed il blues Coltrane che si basa sulla famosa progressione blues inventata dal noto sassofonista.
+Il concetto di sottogenere identifica una serie di varianti dello stesso genere musicale, non necessariamente intercambiabili l'una con l'altra, ma certamente appartenenti alla stessa macro-categoria, per esempio sono stati definiti pattern per blues base, che è il classico blues in dodici battute, il blues bebop ed il blues Coltrane che si basa sulla famosa progressione blues inventata dal noto sassofonista.
 
 Prima di tutto vanno considerate due situazioni differenti, in base alla battuta che si andrà a creare:
 \begin{enumerate}
-\item la battuta è la prima di un ``giro'';
-\item la battuta è una battuta qualunque all'interno di un ``giro'' (e.g. non la prima).
+\item la battuta è la prima di un giro di accordi;
+\item la battuta è una battuta qualunque all'interno di una progressione di accordi (e.g. non la prima).
 \end{enumerate}
 
 Il comportamento implementato è quello di NON cambiare mai genere se non sulla prima battuta di un giro, in modo da caratterizzare ogni parte dell'improvvisazione in maniera sufficientemente chiara e plausibile. 
@@ -40,23 +40,22 @@ In ultimo viene deciso, attraverso una soglia percentuale, se è il caso di camb
 Poiché il dataset creato non contiene altri generi propriamente implementati all'infuori del blues, questa soglia è fissa sul cambio di sottogenere; in ogni modo un valore plausibile è il 75\% di probabilità di passare ad un sottogenere, invece di cambiare il genere in toto.
 
 \subsubsection{Accordi di riferimento}
-Una volta stabilito il genere è necessario decidere gli accordi cha andranno suonati dai musicisti di accompagnamento.
-Il primo riferimento considerato è quello dichiarato dal pattern del genere: ogni pattern specifica la progressione di accordi tipica di un giro di quello specifico sottogenere (ad esempio il blues base sarà descritto dalla sequenza di accordi maggiori con la settima minore costruiti sui gradi \texttt{I-I-I-I-IV-IV-I-I-V-V-I-I}).
-% FIXME forse qui basta un riferimento alla spiegazione dei pattern %
-Basandosi su questa informazione ed essendo a conoscenza di quale battuta si sta per suonare all'interno della progressione, il direttore stabilisce se è plausibile cambiare l'accordo di riferimento rispetto a quello dichiarato dal pattern: si considerano accordi sostituibili quelli che coprono l'intera battuta oppure sono una cadenza\footnote{La cadenza è la successione all'interno della stessa battuta di un accordo minore di settima minore sul secondo grado e un accordo maggiore di settima minore sul quinto grado; questa circstanza è armonicamente assimilabile ad un accordo sul primo grado}.
+Una volta stabilito il genere è necessario decidere gli accordi che andranno suonati dai musicisti di accompagnamento.
+Il primo riferimento considerato è quello dichiarato dal pattern del genere: ogni pattern specifica la progressione di accordi tipica di quello specifico sottogenere (ad esempio il blues base sarà descritto dalla sequenza di accordi maggiori con la settima minore costruiti sui gradi \texttt{I-I-I-I-IV-IV-I-I-V-V-I-I}, vedi anche par. \ref{sec:pattern}).
+Basandosi su questa informazione ed essendo a conoscenza di quale battuta si sta per suonare all'interno della progressione, il direttore stabilisce se è plausibile cambiare l'accordo di riferimento rispetto a quello dichiarato dal pattern: si considerano accordi sostituibili quelli che coprono l'intera battuta oppure sono una cadenza\footnote{La cadenza è la successione all'interno della stessa battuta di un accordo minore di settima minore sul secondo grado e un accordo maggiore di settima minore sul quinto grado; questa circostanza è armonicamente assimilabile ad un accordo sul primo grado}.
 
-Il secondo nodo della decisione è guidato dalla posizione della battuta all'interno del ``giro'', analogamente a quanto accade per la sostituzione del genere:
+Il secondo nodo della decisione è guidato dalla posizione della battuta all'interno del giro, analogamente a quanto accade per la sostituzione del genere:
 \begin{itemize}
-\item se la battuta è la prima di un giro, l'accoro non dovrebbe essere mai sostituito (tendenzialmente la prima battuta è quella che dichiara la tonalità)
+\item se la battuta è la prima della progressione, l'accoro non dovrebbe essere mai sostituito (tendenzialmente la prima battuta è quella che dichiara la tonalità)
 \item se la battuta non è la prima, con bassa probabilità si potrà cambiare l'accordo.
 \end{itemize}
 
 Se, a questo punto, il direttore ha deciso di introdurre una variazione, utilizzerà una scala di probabilità per decidere il criterio secondo cui modificare l'accordo:
 
 \begin{itemize}
-\item 30\% Sostituzone di tritono
+\item 30\% Sostituzione di tritono
 \item 30\% Cadenza relativa all'accordo originale
-\item 30\% Sostituzione per zone tonali\footnote{La sostituzione per zone tonali offre due possibililà: VI grado relativo minore con settima minore, oppure III grado relativo minore (o diminuito). Le due possibilità hanno uguale probabilità di venire scelte.}
+\item 30\% Sostituzione per zone tonali\footnote{La sostituzione per zone tonali offre due possibilità: VI grado relativo minore con settima minore, oppure III grado relativo minore (o diminuito). Le due possibilità hanno uguale probabilità di venire scelte.}
 \item 10\% Accordi casuali
 \end{itemize}
 
@@ -113,7 +112,7 @@ La parte cruciale è la selezione del centro tonale, che viene effettuata attrav
 \end{algorithmic}
 \end{algorithm}
 
-Il primo blocco del metodo effettua una scansione del pattern attuale per contare il numero di occorrenze dei centri tonali considerati battuta per battuta e salva quello più gettonato, continua successivamente la scansione restringendo il range di ricerca e mantenedolo centrato sulla battuta attuale fino ad avere la sola misura che deve essere suonata.
+Il primo blocco del metodo effettua una scansione del pattern attuale per contare il numero di occorrenze dei centri tonali considerati battuta per battuta e salva quello più gettonato, continua successivamente la scansione restringendo il range di ricerca e mantenendolo centrato sulla battuta attuale fino ad avere la sola misura che deve essere suonata.
 
 Con questo sistema è possibile creare un vettore dei centri tonali considerabili validi per la battuta attuale, viene dunque utilizzato questo vettore come partizionamento di probabilità per scegliere il centro tonale definitivo.
 
@@ -121,20 +120,17 @@ Una volta deciso il centro tonale, vengono confrontate tutte le scale disponibil
 
 Se nessuna scala è ritenuta accettabile a questo punto, viene scelta quella che ha il maggior numero di gradi contenuti nell'accordo di riferimento.
 
-Questo sistema è quello implementato nella versione attuale del software, ma è già pronto il supporto per le varianti di sottogenere. Si tratta di un ulteriore variazione alla scelta della scala su cui improvvisare: ogni sottogenere specifica una lista di altri sottogeneri per cui tutto il pattern o alcune sue parti sono plausibili varianti improvvisative.
+Questo sistema è quello implementato nella versione attuale del software, ma è già pronto il supporto per le varianti di sottogenere. Si tratta di un ulteriore variazione alla scelta della scala su cui improvvisare: ogni sottogenere specifica una lista di altri sottogeneri per cui tutto il pattern o alcune sue parti sono plausibili varianti di improvvisazione.
 
-Le varianti improvvisative sono un'indicazione utile per il solista, poiché gli offrono una maggiore gamma di intenzioni, oltre ad un ovvio incremento della varietà improvvisativa in genere. Nella pratica, un musicista esperto sa che, considerando i centri tonali di un pattern come, ad esempio, il blues di Coltrane, può suonare una assolo decisamente atipico ma estremamente coerente su un accompagnamento che suona un blues basilare.
+Le varianti di improvvisazione sono un'indicazione utile per il solista, poiché gli offrono una maggiore gamma di intenzioni, oltre ad un ovvio incremento della varietà nell'improvvisazione stessa. Nella pratica, un musicista esperto sa che, considerando i centri tonali di un pattern come, ad esempio, il blues di Coltrane, può suonare una assolo decisamente atipico ma estremamente coerente su un accompagnamento che suona un blues basilare.
 
 Il direttore che volesse sfruttare questa occasione potrebbe quindi decidere, prima dell'analisi del pattern corrente alla ricerca del centro tonale, di sostituire parti del pattern con quelle provenienti da sottogeneri compatibili, in modo da ottenere una maggiore varietà di sonorità senza ricadere nella casualità più totale.
 
 \subsubsection{Scelta del solista}
-% FIXME ref a documento soundpainting in biblio %
-La scelta del solista viene effettuata in base ad un principio generale derivato dalla composizione dal vivo\ref{}: la band ha un leader, il quale improvviserà mediamente il doppio degli altri musicisti solisti.
+La scelta del solista viene effettuata in base ad un principio generale derivato dalla composizione dal vivo\cite{soundpainting}: la band ha un leader, il quale improvviserà mediamente il doppio degli altri musicisti solisti.
 
-Seguendo questo principio, all'inizio dell'improvvisazione viene eletto un leader, che sarà il primo strumento ad improvvisare. In secondo luogo, tenendo conto del numero totale di solisti e della durata dell'improvvisazione prevista, si stabilisce la durata degli \emph{slot di improvvisazione} disponibili per ogni solista, in modo da lasciare due slot al leader ed uno slot vuoto per eventuali variazioni della dimensione degli altri slot oppure per un giro senza improvvisazione prima del finale.
+Seguendo questo principio, all'inizio dell'improvvisazione viene eletto un leader, che sarà il primo strumento ad improvvisare. In secondo luogo, tenendo conto del numero totale di solisti e della durata dell'improvvisazione prevista, si stabilisce la durata degli \emph{slot di improvvisazione} disponibili per ogni solista, in modo da lasciare due slot al leader ed uno slot vuoto per eventuali variazioni della dimensione degli altri slot oppure per un giro di accordi intero senza improvvisazione prima del finale.
 
-Prima di cominciare l'improvvisazione viene dunque deciso l'ordine di improvvisazione dei musicisti, se la durata prevista dell'improvvisazione è meno di tre giri completi viene riservato spazio per improvvisare soltanto al leader della band, altrimenti lui avrà il primo e l'ultimo giro dell'improvvisazione, gli altri sono scelti in maniera casuale distribuendo i giri tra i vari strumenti fino a che ognuno non ha esaurito il proprio slot di improvvisazione.
+Prima di cominciare l'improvvisazione viene dunque deciso l'ordine di improvvisazione dei musicisti, se la durata prevista dell'improvvisazione è meno di tre progressioni complete viene riservato spazio per improvvisare soltanto al leader della band, altrimenti lui avrà il primo e l'ultimo giro dell'improvvisazione, gli altri sono scelti in maniera casuale distribuendo il tempo di improvvisazione tra i vari strumenti fino a che ognuno non ha esaurito il proprio slot di improvvisazione.
 
 Durante la creazione di una nuova battuta, viene quindi impostato come solista quello che, secondo la procedura effettuate in fase di inizializzazione, ha il diritto di improvvisare durante il giro corrente.
-
-% FIXME mi servirebbe o un sinonimo di "giro" oppure da qualche parte all'inizio definiamo il nostro utilizzo del termine, perchè non è usato in maniera propria %
