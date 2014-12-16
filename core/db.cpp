@@ -254,6 +254,8 @@ int get_subgenres(PGconn *dbh, char *genre, char ***subgenres)
 	return size;
 }
 
+#define STRFY(n) (#n)
+
 /* Fill the quarters array of IDs with those that in the DB have some 
  * match with the given parameters. The args_prios array and the nargs_ignore
  * are used to ignore some arguments accoring to their priority. */
@@ -268,6 +270,7 @@ int get_quarters(PGconn *dbh, char **args, int *args_prios, int nargs_ignore,
 	char *tmp;
 	const char *query_args[QUARTER_QUERY_ARGS];
 	const char *query_fst, *group_by;
+	const char *exclude_drums;
 
 	query_fst = "SELECT quarter.id, quarter.pos FROM quarter, scale, genre, " 
 		"scale_genre, instrument, instrument_class " 
@@ -280,7 +283,8 @@ int get_quarters(PGconn *dbh, char **args, int *args_prios, int nargs_ignore,
 	group_by = " GROUP BY quarter.id ORDER BY quarter.pos";
 
 	size = arg_idx = 0;
-	query_args[QUARTER_ARG_POS] = "pos = $";
+
+	query_args[QUARTER_ARG_POS] = "pos = $";	
 	query_args[QUARTER_ARG_INSTR] = "instrument.id = $";
 	query_args[QUARTER_ARG_CNOTE] = "chord_note = $";
 	query_args[QUARTER_ARG_CMODE] = "chord_mode = $";
@@ -297,7 +301,15 @@ int get_quarters(PGconn *dbh, char **args, int *args_prios, int nargs_ignore,
 	}
 
 	/* compose query */
-	strncpy(query, query_fst, strlen(query_fst) + 1); 
+
+	/* FIXME magic number for drums */
+
+	strncpy(query, query_fst, strlen(query_fst) + 1);
+
+	if (strcmp(args[QUARTER_ARG_INSTR], STRFY(127))) {
+		exclude_drums = " and instrument.id != 127 ";
+		strncat(query, exclude_drums, strlen(exclude_drums));
+	}
 
 	for (j = 0,i = nargs_ignore; i < QUARTER_QUERY_ARGS; j++,i++) {
 		arg_idx = args_prios[i];
