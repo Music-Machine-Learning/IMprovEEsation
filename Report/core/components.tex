@@ -36,12 +36,12 @@ note scelte da utilizzare e ad introdurre il comportamento di improvvisazione.
 \subsection{Player}
 % XXX FEDE XXX %
 Il player è l'unico componente del progetto che non si comporta da agente 
-intelligente, ma piuttosto da scheduler, poichè il suo compito è suonare in 
+intelligente, ma piuttosto da scheduler, poiché il suo compito è suonare in 
 contemporanea le note che i musicisti hanno ``scritto sul loro spartito''.
 Più in particolare, le informazioni che pervengono al player sono, da ogni 
 musicista, un set di note e durate, secondo la struttura descritta nella 
 sezione 6, della durata di una battuta. % ci vuole una label-ref %
-Il player resterà bloccato finchè non riceverà questo dato da ognuno dei 
+Il player resterà bloccato finché non riceverà questo dato da ognuno dei 
 musicisti (un numero conosciuto a priori), poi inizierà la sua esecuzione.
 Essa si basa sulla scansione dei dati in input secondo una base temporale 
 atomica (che corrisponde alla durata della metà di una semicroma terzinata, 
@@ -49,7 +49,7 @@ ovvero un quarantottesimo di una misura intera) con la quale si possono
 rappresentare in base numerica intera tutte le note utilizzate.
 È da segnalare che non utilizziamo mai note di durata inferiore alla semicroma 
 terzinata (quindi biscroma e semibiscroma, per i più avvezzi alla teoria musicale) 
-per pura semplicità, poichè questo non pregiudica una buona dimostrazione del 
+per pura semplicità, poiché questo non pregiudica una buona dimostrazione del 
 funzionamento del software.
 \newline
 

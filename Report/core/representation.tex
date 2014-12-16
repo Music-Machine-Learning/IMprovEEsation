@@ -57,7 +57,7 @@ Inoltre i valori $p_i$ contenuti nel vettore $pnote$ formano una distribuzione
 Per ogni semicroma è associato anche un valore di probabilità $p_c$
 utilizzato per decidere se quella semicroma e il suo vettore di
 probabilità debba essere considerato ad un certo istante di tempo $t$.
-Nella memoria del musicista sono presenti anche i quarti che raggrupprano 
+Nella memoria del musicista sono presenti anche i quarti che raggruppano 
 fino a 4 semicrome ognuno. Ai quarti sono correlate ulteriori informazioni, utili
 a comprendere il contesto di appartenenza di un certo quarto, come:
 \begin{itemize}
@@ -83,7 +83,7 @@ Come ciò viene fatto verrà spiegato nella sezione \ref{thinking}.
 \label{figure-db}
 \end{figure}
 La struttura di conoscenza spiegata nel paragrafo precedente è stata implementata
-tramite un DataBase relazionale il cui schema Entitià Relazione è mostrato nella figura
+tramite un DataBase relazionale il cui schema Entità Relazione è mostrato nella figura
 \ref{figure-db}.\\
 La struttura si può pensare come divisa essenzialmente in due parti principali.\\ 
 La prima si concentra intorno alla tabella $quarter$, attraverso la quale il musicista
@@ -96,12 +96,12 @@ può anche filtrare le informazioni che riguardano la sua natura, come ad esempi
 il tipo di strumento da lui suonato o se si sta comportando o meno da solista.\\
 La seconda parte fondamentale del DataBase è concentrata intorno alla tabella $pattern$.
 Dalla figura \ref{figure-db} potrebbe sembrare che l'entità $pattern$ non abbia poi 
-così tante relazioni come l'entità $quarter$ per considerare quest'utlima un parte
+così tante relazioni come l'entità $quarter$ per considerare quest'ultima un parte
 fondamentale del DB. Questo deriva dal fatto che si è deciso di semplificare un po'
 il modello E-R per l'entità $pattern$ utilizzando dei vettori per ogni record di 
-quest'ultima anzichè creare delle nuove entità-relazioni. Questa scelta è giustificata
+quest'ultima anziché creare delle nuove entità-relazioni. Questa scelta è giustificata
 dal fatto che viene inizialmente considerato un numero relativamente basso di pattern
-e che il modello è facilemente estendibile in quanto le due parti fondamentali del 
+e che il modello è facilmente estendibile in quanto le due parti fondamentali del 
 DataBase hanno due schemi abbastanza indipendenti tra loro.\\
 Nello specifico la tabella $pattern$ è caratterizzata fondamentalmente dai 
 seguenti campi vettoriali
@@ -121,17 +121,17 @@ pattern debbano essere considerate dai musicisti, anche rispetto alle altre
 informazioni sulla loro stessa natura. È anche possibile che un musicista non consideri
 affatto le priorità legate al pattern ma utilizzi delle priorità ad-hoc, definite 
 rispetto ad altri parametri.\\
-Ad esempio un musicista solista potrebbe considerare un vetttore di priorità 
+Ad esempio un musicista solista potrebbe considerare un vettore di priorità 
 ad-hoc che non sia legato a nessun pattern in quanto 
 potrebbe non essere interessato alla successione di accordi tra le misure, 
 informazione molto forte per i pattern, ma solamente alla tonalità corrente, 
 alle dinamiche e ai mood delle misure.\\
 C'è poi il caso particolare del batterista
 che non ha alcun interesse riguardo le informazioni inerenti alla linea melodica 
-e aromica di un improvvisazione, ma è interessato solo alla linea ritmica. Inoltre
+e armonica di un improvvisazione, ma è interessato solo alla linea ritmica. Inoltre
 per il batterista viene utilizzato un modello diverso di vettore di probabilità 
-di ogni semiquaver, quindi è fondamentale che la sua priorità più alta sia il tipo 
-di strumento, altrimenti, incorrenendo in vettori di priorità associati a quarti di
+di ogni semicroma, quindi è fondamentale che la sua priorità più alta sia il tipo 
+di strumento, altrimenti, incorrendo in vettori di priorità associati a quarti di
 altri strumenti, potrebbe interpretare in maniera completamente errata tali informazioni.\\\\
 Dal lato applicazione le informazioni residenti nel DB vengono recuperate tramite
 una libreria dinamica dedicata. Quest'ultima si occupa di effettuare le apposite

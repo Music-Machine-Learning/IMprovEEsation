@@ -121,12 +121,12 @@ a tutti i musicisti.
 \item[BPM] \hfill \\
 Un indicazione sui bpm dell'improvvisazione corrente.
 \item[Soloist ID] \hfill \\
-L'ID del musicista che improvvisa correntemente in modalit\'a solista.
+L'ID del musicista che improvvisa correntemente in modalità solista.
 \item[Tempo (upper e lower)] \hfill \\\
 Indica la \emph{Time Signature} dell'improvvisazione corrente.
 \item[Prioargs] \hfill \\\
 Sono 9 campi costanti il quale compito \'e specificare
-una scala di priorit\'a con la quale effettuare le scelte di improvvisazione.
+una scala di priorità con la quale effettuare le scelte di improvvisazione.
 \footnote{Per una spiegazione pi\'u dettagliata si rimanda ai capitoli sul come
 	  operano il  Direttore e il Musicista.}
 \item[Note e scale] \hfill \\
@@ -185,7 +185,7 @@ Un indicazione sul fatto che la nota debba essere scandita con tempo terzinato.
 La velocity \emph{MIDI}, \'e un indicazione sul volume della nota in output.
 \item[Chord\_size] \hfill \\\
 Il numero di note presenti (nel caso sia un accordo,
-altrimenti la nota sar\'a singola)
+altrimenti la nota sarà singola)
 \item[Notes] \hfill \\\
 Il vettore di note (in notazione \emph{MIDI}).
 \end{description}
@@ -198,5 +198,5 @@ L'ultimo compito della libreria di comunicazione è
 provvedere ad alcuni meccanismi per la sincronizzazione dei vari componenti.\\
 Questo obiettivo è raggiunto utilizzando le chiamate di sistema di linux basate
 sugli eventi quali \emph{epoll}: vengono radunati su di una barriera
-(in qualsiasi ordine) tutti i musicisti, dopo di ché viene notificata, tramite
+(in qualsiasi ordine) tutti i musicisti, dopo di che viene notificata, tramite
 \emph{ack}, la possibilità di continuare.
