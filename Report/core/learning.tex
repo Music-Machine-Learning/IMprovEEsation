@@ -6,60 +6,61 @@
 % Per adesso c'è solo l'algoritmo genetico ma spieghiamo comunque come salvaremmo la nuova conoscenza nel DB.  
 % TODO accenno a sviluppi futuri (sviluppo della conoscenza) %
 
-In questa sezione si vedrà l'agente musicista agire come un agente in grado di apprendere, che costituisce una base sulla quale esso tenderà sperabilemnte a migliorarsi sempre più.
+In questa sezione si vedrà l'agente musicista agire come un agente in grado di apprendere, che costituisce una base sulla quale esso tenderà sperabilmente a migliorarsi sempre più.
 È noto, come spiegato nelle sezioni precedenti, che il musicista non è un agente basato su un obiettivo, difatti si può dire che un vero obiettivo non esista.
-Vogliamo che esso agisca producendo una ``bella parte musicale'', ma non abbiamo una parte musicale perfetta da assegnare, poichè, essendo un'improvvisazione, si perderebbe il concetto stesso di improvvisazione, inoltre non abbiamo un modo perfetto per assegnare a questa melodia un voto, poichè ci sarebbero da considerare un numero spropositato di variabili che in ogni caso non potrebbero valutare il prodotto in toto perchè questo dovrebbe considerare l'intera esecuzione di tutti gli strumentisti assieme.
-Questo ovviamente non ha senso nel dare un voto al musicista singolo perchè esso non ha coscienza degli altri musicisti e perciò potrebbe produrre un brano che suoni bene con certi musicisti e suoni male con altri.
-Come fare allora per produrre un brano che non sia perfetto (perchè non sarebbe improvvisato), ma che si ispiri a un brano esistente per produrre qualcosa sul genere e che possa migliorare se stesso?
+Vogliamo che esso agisca producendo una ``bella parte musicale'', ma non abbiamo una parte musicale perfetta da assegnare, poiché, essendo un'improvvisazione, si perderebbe il concetto stesso di improvvisazione, inoltre non abbiamo un modo perfetto per assegnare a questa melodia un voto, poiché ci sarebbero da considerare un numero spropositato di variabili che in ogni caso non potrebbero valutare il prodotto in toto perché questo dovrebbe considerare l'intera esecuzione di tutti gli strumentisti assieme.
+Questo ovviamente non ha senso nel dare un voto al musicista singolo perché esso non ha coscienza degli altri musicisti e perciò potrebbe produrre un brano che suoni bene con certi musicisti e suoni male con altri.
+Come fare allora per produrre un brano che non sia perfetto (perché non sarebbe improvvisato), ma che si ispiri a un brano esistente per produrre qualcosa sul genere e che possa migliorare se stesso?
 \newline
 La nostra risposta è stata: con un algoritmo evoluzionistico.
 Esso ha la peculiarità, una volta fornito un ideale e una buona funzione di fitness, di produrre un brano musicale ``vicino'' a quello fornito come ideale senza mai essere identico.
 
 \subsection{Algoritmo Evoluzionistico}
+\label{sec:evol_alg}
 Il nostro algoritmo evoluzionistico può venire applicato, nella pratica, attraverso un flag in input al programma musicista al momento del lancio, questo fa sì che alcuni musicisti possano essere ``genetici'' e altri no.
-Assieme al flag deve essere fornito il path al file che contiene il pattern ideale in formato .gme (caratteristico del progetto e spiegato nella sezione seguente).
-In questo modo, il musicista scriverà contemporanemate due ``spartiti'' (nella pratica, due array di strutture che denotano le note suonate): lo spartito classico, improvvisato con la tecnica descritta nella sezione 8.2 e immagazzinato in una struttura apposita, invece di essere passato al player, e lo spartito ideale, estratto misura per misura dal file .gme utilizzando i parametri forniti dal direttore e immagazzinato in una struttura analoga alla precedente.
-Entrambe queste strutture, che chiameremo rispettivamente ``iniziale'' e ``ideale'', vengono passate all'algoritmo evoluzonistico il quale, prima di processarle, si assicurerà che ambedue constino dello stesso numero di note, allungando per ripetizione la più corta.
+Assieme al flag deve essere fornito il percorso al file che contiene il pattern ideale in formato .gme (caratteristico del progetto e spiegato nella sezione seguente).
+In questo modo, il musicista scriverà contemporaneamente due ``spartiti'' (nella pratica, due vettori di strutture che denotano le note suonate): lo spartito classico, improvvisato con la tecnica descritta nella sezione 8.2 e immagazzinato in una struttura apposita, invece di essere passato al player, e lo spartito ideale, estratto misura per misura dal file .gme utilizzando i parametri forniti dal direttore e immagazzinato in una struttura analoga alla precedente.
+Entrambe queste strutture, che chiameremo rispettivamente ``iniziale'' e ``ideale'', vengono passate all'algoritmo evoluzionistico il quale, prima di processarle, si assicurerà che ambedue constino dello stesso numero di note, allungando per ripetizione la più corta.
 \newline
 
-L'algoritmo evoluzionistico, prima di entrare in loop, si costrucisce un numero fissato (ora 512) copie della struttura iniziale in quello che è il pool genetico.
+L'algoritmo evoluzionistico, prima di entrare in loop, si costruisce un numero fissato (ora 512) copie della struttura iniziale in quello che è il pool genetico.
 Il loop seguente è costituito da un numero prefissato (ora 1500) di iterazioni che constano di quattro passaggi fondamentali\cite{yt:evol}:
 \begin{itemize}
  \item Il primo passaggio è la \textbf{Point Mutation}, che introduce la mutazione nella generazione e agisce separatamente su tutti i membri del pool genetico.
- Nel nostro caso, si limita a variare il pitch e/o la durata di $X$ note random dove $X$ è pari a circa un ventesimo nel numero di note totali.
- Anche la variazione dei valori ha base randomica, chiaramente è molto più facile che il valore sia in qualche modo vicino al valore esistente piuttosto che molto lontano (è difficile che una semicroma diventi una semibreve oppure che una nota molto acuta divenga una nota molto grave).
- \item Il secondo passaggio è il \textbf{Sorting}, che si limita a ordinare i membri del pool genetico in base alla funzione di fitness in modo che siano disposti per similitudine decrecscente con la struttura ideale.
+ Nel nostro caso, si limita a variare l'intonazione e/o la durata di $X$ note random dove $X$ è pari a circa un ventesimo nel numero di note totali.
+ Anche la variazione dei valori ha base casuale, chiaramente è molto più facile che il valore sia in qualche modo vicino al valore esistente piuttosto che molto lontano (è difficile che una semicroma diventi una semibreve oppure che una nota molto acuta divenga una nota molto grave).
+ \item Il secondo passaggio è il \textbf{Sorting}, che si limita a ordinare i membri del pool genetico in base alla funzione di fitness in modo che siano disposti per similitudine decrescente con la struttura ideale.
  La funzione di fitness verrà spiegata in una sezione separata in seguito.
- Per l'ordinamento è stato scelto l'algoritmo mergesort, che ha complessità uniforme in casi ottimi e pessimi.
- L'algoritmo quicksort è stato scartato perchè è facile che, a ogni iterazione, il pool genetico sia vicino all'ordinamento, caso che rende il quicksort vicino al suo caso pessimo.
+ Per l'ordinamento è stato scelto l'algoritmo \emph{mergesort}, che ha complessità uniforme in casi ottimi e pessimi.
+ L'algoritmo \emph{quicksort} è stato scartato perché è facile che, a ogni iterazione, il pool genetico sia vicino all'ordinamento, caso che rende il \emph{quicksort} vicino al suo caso pessimo.
  \item Il terzo passaggio è la \textit{Recombination}, che, come in molti algoritmi evoluzionistici esistenti, opera su coppie di membri del pool genetico.
  Nel nostro caso, esso opera su coppie adiacenti nell'ordinamento, solo nel top 25\% del pool genetico.
- Esso sceglie, per ogni coppia, una posizione random sulla struttura, detta crossover, che taglia entrambi i membri della coppia in due parti, poi scambia le due seconde parti all'interno della coppia.
- Questo set risultante di un quarto del pool genetico (nel nostro caso 128 elementi) viene sostituito al 25\% inferiore nell'ordinamento, in modo che il top 24\% non venga toccato, ma soltanto copiato e siagisca per ricombinazione sulla copia.
+ Esso sceglie, per ogni coppia, una posizione random sulla struttura, detta \emph{crossover}, che taglia entrambi i membri della coppia in due parti, poi scambia le due seconde parti all'interno della coppia.
+ Questo set risultante di un quarto del pool genetico (nel nostro caso 128 elementi) viene sostituito al 25\% inferiore nell'ordinamento, in modo che il top 24\% non venga toccato, ma soltanto copiato e si agisca per ricombinazione sulla copia.
  \item Il quarto passaggio, proprio solo di alcuni algoritmi evoluzionistici, è la \textbf{Transposon Propagation}.
  Questa tecnica opera singolarmente solo sui membri del pool genetico che hanno subito la Recombination.
- Essa sfrutta il fatto che nella musica siano frequenti le ripetizioni: determina due punti di crossover all'interno della struttura in modo che essi denotino un frammento di quest'utlima.
+ Essa sfrutta il fatto che nella musica siano frequenti le ripetizioni: determina due punti di crossover all'interno della struttura in modo che essi denotino un frammento di quest'ultima.
  Tale frammento viene copiato e sovrascritto su un'altra sezione della struttura in una posizione anch'essa casuale. 
  \end{itemize}
 
  \subsubsection{La Funzione di Fitness}
- L'ordinamento viene eseguito utlizzando una funzione di fitness apposita che determina la similitudine della struttura con la struttura ideale di partenza.
- Tale similirudine è una combinazione lineare di una serie di grandezze di seguito elencate in realzione a dei pesi predeterminati:
+ L'ordinamento viene eseguito utilizzando una funzione di fitness apposita che determina la similitudine della struttura con la struttura ideale di partenza.
+ Tale similitudine è una combinazione lineare di una serie di grandezze di seguito elencate in realizzazione a dei pesi predeterminati:
  \begin{itemize}
-  \item La similitudine punto a punto, che sarà più alta qualora in una stessa posizione sarà presente lo stesso pitch e/o la stessa durata della nota.
+  \item La similitudine punto a punto, che sarà più alta qualora in una stessa posizione sarà presente la stessa intonazione e/o la stessa durata della nota.
   \item La Unigram Pitch Similarity è calcolata come segue:
   $${\sum_{i=0}^{U}{1 \over \sqrt{1 + (train(i)-test(i))^{2}}} \over U}$$, dove $U$ è il numero di Pitch Unigrams, ovvero di note singole distinte presenti nella struttura in esame e le funzioni $train(i)$ e $test(i)$ restituiscono il numero di occorrenze della nota di indice $i$ all'interno dei Pitch Unigrams in esame in input rispettivamente all'interno della struttura ideale e del membro del genetic pool in esame.
-  Questa similitudine restituisce un numero tra 0 e 1 e denota la similitudine dei pitch ovvero quanto il membro del pool genetico corrente utilizza note utilizzate anche dalla struttura ideale.
-  \item La Unigram Tempo Similarity è calcolata esattamante come la precedente, con la differenza che fa riferimento alle durate invece che ai pitch delle note.
+  Questa similitudine restituisce un numero tra 0 e 1 e denota la similitudine delle intonazione ovvero quanto il membro del pool genetico corrente utilizza note utilizzate anche dalla struttura ideale.
+  \item La Unigram Tempo Similarity è calcolata esattamente come la precedente, con la differenza che fa riferimento alle durate invece che alle intonazioni delle note.
   \item La Bigram Pitch Similarity è calcolata come segue:
    $${\sum_{i=0}^{B}{1 \over \sqrt{1 + (train(i)-test(i))^{2}}} \over B}$$, dove $B$ è il numero di Pitch Bigrams, ovvero di coppie ordinate distinte di note presenti nella struttura in esame e le funzioni $train(i)$ e $test(i)$ restituiscono il numero di occorrenze del Bigram di indice $i$ all'interno dei Pitch Bigrams in esame in input rispettivamente all'interno della struttura ideale e del membro del genetic pool in esame.
-   Questa similitudine è analoga alla Unigram Pitch Similarity, ma è più forte in quanto analizza la co-occorrenza di coppie ordinate di note, e perciò avrà unpeso maggiore.
-   \item La Bigram Tempo Similarity è calcolata esattamante come la precedente, con la differenza che fa riferimento alle durate invece che ai pitch delle note.
+   Questa similitudine è analoga alla Unigram Pitch Similarity, ma è più forte in quanto analizza la co-occorrenza di coppie ordinate di note, e perciò avrà un peso maggiore.
+   \item La Bigram Tempo Similarity è calcolata esattamente come la precedente, con la differenza che fa riferimento alle durate invece che alle intonazioni delle note.
  \end{itemize}
-Queste similitudini sono tratte dalla categorizzazione Bayesiana di testi in un tipico algoritmo di machine learning all'interno dell'NLP.
+Queste similitudini sono tratte dalla categorizzazione bayesiana di testi in un tipico algoritmo di machine learning all'interno dell'NLP.
 
 \subsection{Il Pattern Ideale}
 I file di pattern ideale ospitano una serie di pattern codificati in CSV e sono semplicemente elencati come righe all'interno dei file .gme.
-Le caratteristiche listate in un pattern sono: dyna (come ad esempio il groove o il fill), Unchanged fst (che determina se la prima nota è un continuo di una precedente), una serie di triple $\langle$pitch, tempo, triplet$\rangle$, dove triplet indica con un numero booleano, se la presente nota fa parte di una terzina o meno.
+Le caratteristiche listate in un pattern sono: dyna (come ad esempio il groove o il fill), Unchanged fst (che determina se la prima nota è un continuo di una precedente), una serie di triple $\langle$intonazioni, tempo, triplet$\rangle$, dove triplet indica con un numero booleano, se la presente nota fa parte di una terzina o meno.
 Queste caratteristiche consentono al musicista di estrarre il corretto pattern conforme alle regole imposte dal direttore misura per misura.
 Possono essere ovviamente presenti più pattern con le stese caratteristiche, in tal caso ne verrà scelto uno a caso, in tal modo si introdurrà un fattore casuale anche nella formazione del brano ideale.

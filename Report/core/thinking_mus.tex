@@ -39,9 +39,9 @@
 %   \end{algorithmic}
 %   \end{algorithm}
 %
-
+\label{sec:musician_think}
 Come già introdotto nelle sezioni precedenti, il compito principale dei musicista è
-quello di decidere le note da suonare basondosi sulle informazioni
+quello di decidere le note da suonare basandosi sulle informazioni
 ricevute dal direttore che le manda in broadcast in rete per ogni misura
 da improvvisare. L'algoritmo \ref{algo-musician-measure} mostra come un
 musicista compone una misura da improvvisare basandosi sulle
@@ -86,7 +86,7 @@ informazioni inerenti alla sua natura, $data_{MCN}$.
 Inizialmente il musicista cerca nel DB, quei \emph{quarter} (da adesso
 $qt$) che possano
 avere un riscontro con i due set di informazioni presi in input dalla
-funzione. Complessivamenti gli argomenti che influiscono nella ricerca
+funzione. Complessivamente gli argomenti che influiscono nella ricerca
 sono:
 \begin{enumerate}
 \item Posizione del quarto nella misura
@@ -122,7 +122,7 @@ stesso se per qualche motivo\footnote{Ad esempio nel caso di un
 musicista batterista o solista già esposti nel paragrafo \ref{database}.} 
 non vuole seguire le priorità legate al pattern.\\
 Tra i quarti trovati, se più di 1, ne viene scelto uno random
-\footnote{In una futura estensione, un quatro potrebbe venir scelto con
+\footnote{In una futura estensione, un quarto potrebbe venir scelto con
 una politica migliore, ad esempio facendo un confronto ulteriore tra quelli
 scelti e i precedenti.} di cui il processo scarica dal DataBase tutti i record
 \emph{semiquaver} (da adesso $sq$) associati.\\
@@ -147,7 +147,7 @@ generato random\footnote{Tutti i valori generati random sono presi con
 distribuzione di probabilità uniforme, se non diversamente specificato}. 
 Se la condizione non viene verificata allora viene
 estesa la durata della nota precedente ma viene anche incrementato il
-contatore $s$ inquanto la $sq$ corrente è stata considerata e scartata.
+contatore $s$ in quanto la $sq$ corrente è stata considerata e scartata.
 Se invece la $pc$ supera la barriera del random, si procede con la
 funzione di decisione di quale nota scegliere per la semicroma corrente,
 meccanismo esposto nell'algoritmo \ref{algo-musician-note}.
@@ -176,7 +176,7 @@ target previous value}
 La funzione \emph{decideNote} prende in input il vettore di probabilità
 $pnotes$ definito come nell'equazione \ref{eq-pnotes} da cui costruisce
 un vettore di somme prefisse $pref$. Viene infine lanciato un numero
-random $r$ e si cicla in $pref$ finchè $r$ non è minore o uguale al
+random $r$ e si rimane nel ciclo in $pref$ finché $r$ non è minore o uguale al
 valore corrente di $pref$, la cui posizione in tal caso, indica la nota
 da scegliere.\\
 Questo metodo fornisce una soluzione in grado di selezionare più
@@ -210,7 +210,7 @@ valori random arbitrari la cui media è però significativa in quanto
 tende a $0.5$ come per una successione di valori random nell'implementazione 
 reale in quanto la distribuzione di probabilità che genera i numeri
 random è uniforme. Anche se l'esempio è restrittivo, si può notare che
-per $pnotes_1$ e $pnotes_2$, gli indici scelti maggioranmente sono  quelli 
+per $pnotes_1$ e $pnotes_2$, gli indici scelti maggiormente sono quelli 
 con probabilità di scelta più alta e viceversa, mentre per $pnotes_3$, si 
 può notare che vengono scelti circa lo stesso numero di volte 
 tutti gli indici con probabilità non zero in quanto tra loro
@@ -222,7 +222,7 @@ questione tramite il parametro $chord\_mode$. In tal caso il musicista
 terrà in considerazione solamente le probabilità di cambio $pc$ di un
 record \emph{semiquaver} e deciderà quali note far suonare al player
 basandosi sulle note contenute nell'accordo di rifermento che il direttore
-gli ha comunicato. Di queste note creerà in maniera randomica una
+gli ha comunicato. Di queste note creerà in maniera casuale una
 qualche permutazione generando così dei rivolti e variazioni sulla
 stessa struttura dell'accordo.\\
 In linea generale in questa sezione sono state descritte le
