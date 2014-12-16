@@ -117,7 +117,7 @@ Il primo blocco del metodo effettua una scansione del pattern attuale per contar
 
 Con questo sistema è possibile creare un vettore dei centri tonali considerabili validi per la battuta attuale, viene dunque utilizzato questo vettore come partizionamento di probabilità per scegliere il centro tonale definitivo.
 
-Una volta deciso il centro tonale, vengono confrontate tutte le scale disponibili nel database, nella tonalità decisa dal centro tonale, con l'accordo che verrà suonato dall'accompagnamento. Se l'accordo è interamente contenuto nella scala presa in esame, questa viene aggiunta ad una lista di scale accettabili\footnote{La scala blues segue delle regole differenti, poiché si tratta di una scala speciale che non farebbe match con un accordo completo e d'altro canto può essere proficuamente utilizzata in svariate situazioni in cui la sovrapposizione con l'accordo di riferimento è scarsa.} ed ne viene selezionato un elemento casuale.
+Una volta deciso il centro tonale, vengono confrontate tutte le scale disponibili nel database, nella tonalità decisa dal centro tonale, con l'accordo che verrà suonato dall'accompagnamento. Se l'accordo è interamente contenuto nella scala presa in esame, questa viene aggiunta ad una lista di scale accettabili\footnote{La scala blues segue delle regole differenti, poiché si tratta di una scala speciale che non farebbe match con un accordo completo e d'altro canto può essere proficuamente utilizzata in svariate situazioni in cui la sovrapposizione con l'accordo di riferimento è scarsa.} e ne viene selezionato un elemento casuale.
 
 Se nessuna scala è ritenuta accettabile a questo punto, viene scelta quella che ha il maggior numero di gradi contenuti nell'accordo di riferimento.
 
@@ -125,7 +125,7 @@ Questo sistema è quello implementato nella versione attuale del software, ma è
 
 Le varianti improvvisative sono un'indicazione utile per il solista, poiché gli offrono una maggiore gamma di intenzioni, oltre ad un ovvio incremento della varietà improvvisativa in genere. Nella pratica, un musicista esperto sa che, considerando i centri tonali di un pattern come, ad esempio, il blues di Coltrane, può suonare una assolo decisamente atipico ma estremamente coerente su un accompagnamento che suona un blues basilare.
 
-Il direttore che volesse sfrttare questa occasione potrebbe quindi decidere, prima dell'analisi del pattern corrente alla ricerca del centro tonale, di sostituire parti del pattern con quelle provenienti da sottogeneri compatibili, in modo da ottenere una maggiore varietà di sonorità senza ricadere nella casualità più totale.
+Il direttore che volesse sfruttare questa occasione potrebbe quindi decidere, prima dell'analisi del pattern corrente alla ricerca del centro tonale, di sostituire parti del pattern con quelle provenienti da sottogeneri compatibili, in modo da ottenere una maggiore varietà di sonorità senza ricadere nella casualità più totale.
 
 \subsubsection{Scelta del solista}
 % FIXME ref a documento soundpainting in biblio %
