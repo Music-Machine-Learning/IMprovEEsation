@@ -183,14 +183,17 @@ int continue_last_note(struct play_measure_s *pm,
  * the database. The number of notes inside the quarter is returned. */
 int compose_quarter(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 		struct measure_s *minfo, int q_idx, struct semiquaver_s **sqs, 
-		int sq_size, int ntcount)
+		int sq_size, int ntcount, int soloist, int myid)
 {
 	float rnd;
 	int idx, i, s, ret, key_note;
 	struct notes_s new_notes;
-
-	key_note = minfo->tonal_zones[q_idx].note;
 	
+	if (soloist == 1 && myid == minfo->soloist_id)
+		key_note = minfo->tonal_zones[q_idx].note;
+	else 
+		key_note = minfo->chords[q_idx].note;
+
 	printf("composing quarter. (ntcount: %d)\n", ntcount);
 	/*for (s = 0; s < sq_size; s++)
 		print_semiquaver(sqs[s]);*/
@@ -373,7 +376,7 @@ int compose_measure(struct play_measure_s *pm, struct play_measure_s *prev_pm,
 
 		/* Be creative with the current quarter */
 		ntcount = compose_quarter(pm, prev_pm, minfo, q, sqs, 
-				sq_size, ntcount);
+				sq_size, ntcount, soloist, myid);
 		if (ntcount == -1) {
 			fprintf(stderr, "Error in quarter composition\n");
 			return -1;

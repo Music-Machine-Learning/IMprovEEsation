@@ -87,7 +87,7 @@ int decide_octave(int octave_min, int octave_max)
 /* Decide a chord reading the chord information from the director. */
 int decide_chord(struct notes_s *chord, struct measure_s *minfo, int q_idx)
 {
-	int chord_note, chord_mode, key_note, i, max, n_done, 
+	int chord_note, chord_mode, key_note, i, max, min, n_done, 
 	    octave, nidx, chord_width;
 	int chord_mode_arr[NSEMITONES], tmp_notes[MAX_CHORD_SIZE];
 
@@ -107,34 +107,35 @@ int decide_chord(struct notes_s *chord, struct measure_s *minfo, int q_idx)
 	}
 	chord_mode_arr[n_done] = -1;
 	
-	shuffle_array(chord_mode_arr, (size_t)n_done);
+	octave = decide_octave(mfields.octave_min, mfields.octave_max);
+
+
+	chord->notes[0] = chord_mode_arr[0] + chord_note + MIDI_FIRST_NOTE 
+			+ (octave * NSEMITONES);
+
+
+	/* From the set of the given chords note decide the note to put in the chord */
+	for (i = 1; i < n_done; i++) {
+		/* chord->notes[0] is the first grade note */
+		chord->notes[i] = chord->notes[0] + chord_mode_arr[i];
+	}
+	
+
+	/* TODO: provide a configuration parameter for shuffling */
+	//shuffle_array(chord->notes, (size_t)n_done);
 
 	/* Randomly decide the size of the chord, but it shouln't be bigger than
 	   the given chord mask or a pre-choosen max size */
 	max = MAX_CHORD_SIZE;
+	min = MIN_CHORD_SIZE;
+	if (n_done < MIN_CHORD_SIZE)
+		min = n_done;
 	
 	if (n_done < MAX_CHORD_SIZE)
 		max = n_done;
 
-	chord->chord_size = (rand() % (max - MIN_CHORD_SIZE)) + MIN_CHORD_SIZE;
+	chord->chord_size = (rand() % (max - min + 1)) + min;
 
-	octave = decide_octave(mfields.octave_min, mfields.octave_max);
-	
-
-	/* From the set of the given chords note decide the note to put in the chord */
-	for (i = 0; i < chord->chord_size; i++) {
-		chord->notes[i] = 0;
-		tmp_notes[i] = chord_mode_arr[i];
-		if (i > 0) {
-			if (tmp_notes[i] < tmp_notes[i - 1]) 
-				chord->notes[i] = (NSEMITONES - tmp_notes[i - 1]);
-			chord->notes[i] += chord->notes[i - 1] + tmp_notes[i];
-		} else { 
-			chord->notes[i] = tmp_notes[i];
-			chord->notes[i] += key_note + chord_note + MIDI_FIRST_NOTE 
-				+ (octave * NSEMITONES);
-		}
-	}
 	
 	int max_dist = 0;
 	int move_direction = 0;
