@@ -25,6 +25,7 @@ regione di memoria dove salvate le informazioni necessarie per comporre
 in tempo reale delle note che siano coerenti in qualche modo con le
 informazioni fornite dal direttore.
 \subsection{Pattern e Regole}
+\label{patterneregole}
 % XXX MATTE XXX %
 Definiamo i pattern come sequenze di misure di accordi. 
 Il direttore ha la conoscenza di una collezione di diversi pattern che
@@ -35,11 +36,24 @@ informazioni riguardo note singole.
 Si è scelto di rappresentare una singola nota come una semicroma essendo 
 1/16 la suddivisione temporale più piccola che prendiamo in considerazione.
 Inoltre ad ogni semicroma non è associato un solo valore tonale, ma un
-vettore di probabilità di dimensione $n$ pari a 13. L'indice i-esimo
-di ogni elemento corrisponde alla distanza tonale dalla tonalità decisa
-dal direttore, oppure una pausa. Ogni elemento i-esimo del vettore 
-corrisponde al valore di probabilità $p_i$ che la nota di distanza 
-$i$ dalla tonalità corrente venga selezionata ad un certo istante di tempo $t$. 
+vettore di probabilità ($pnotes$) di dimensione $n$ pari a 13. L'indice i-esimo
+di ogni elemento corrisponde alla distanza tonale dalla tonalità, 
+Key Signature $KS$, decisa dal direttore, oppure una pausa (indice 0). 
+Ogni elemento i-esimo del vettore 
+corrisponde al valore di probabilità $p_i$ che la nota $nt_i$ di distanza 
+$i$ dalla $KS$, venga selezionata rispetto alle altre.
+\[nt_i = i + KS \]
+\[p_i = \text{probability to choose  } nt_i \]
+\begin{equation}
+\label{eq-pnotes}
+pnotes = (p_0, p_1,  \ldots , p_i, \ldots, p_n)
+\end{equation}
+Inoltre i valori $p_i$ contenuti nel vettore $pnote$ formano una distribuzione 
+(arbitraria) di probabilità in quanto vale:
+\begin{equation}
+\sum_{i=0}^{n} p_i = 1 \;\;\;\; p_i \in [0, 1]
+\end{equation}
+
 Per ogni semicroma è associato anche un valore di probabilità $p_c$
 utilizzato per decidere se quella semicroma e il suo vettore di
 probabilità debba essere considerato ad un certo istante di tempo $t$.
@@ -60,6 +74,7 @@ direttore durante un improvvisazione, un musicista cerca di
 scegliere delle note che siano il più possibile inerenti al contesto.
 Come ciò viene fatto verrà spiegato nella sezione \ref{thinking}.
 \subsection{Database Relazionale}
+\label{database}
 % XXX MATTE XXX %
 \begin{figure}[H]
 \centering

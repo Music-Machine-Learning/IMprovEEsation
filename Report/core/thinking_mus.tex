@@ -1,4 +1,6 @@
 \subsection{Mente del Musicista}
+%   XXX: DO NOT DELETE THE COMMENTED ALGORITHMS, MAY BE USEFUL FOR
+%   FUTURE DOCUMENTATION!!
 %   \begin{algorithm}
 %   \caption{Musician improvisation cycle algorithm}\label{algo-musician}
 %   \begin{algorithmic}[1]
@@ -15,12 +17,11 @@
 %   \end{algorithmic}
 %   \end{algorithm}
 %
-%   % TODO spiegare il primo algoritmo %
 %
 %   \begin{algorithm}
 %   \caption{Musician improvisation cycle algorithm in genetic mode}\label{algo-musician-get}
 %   \begin{algorithmic}[1]
-%   \Function{musician\_genetic\_mainz}{}
+%   \Function{musician\_genetic\_main}{}
 %   	\State $id \gets$send\_subscription($director$)
 %   	\State send\_subscription($player$)
 %   	
@@ -45,51 +46,188 @@ ricevute dal direttore che le manda in broadcast in rete per ogni misura
 da improvvisare. L'algoritmo \ref{algo-musician-measure} mostra come un
 musicista compone una misura da improvvisare basandosi sulle
 informazioni ricevute dal direttore su di essa, $data_{MSR}$, e sulle
-informazioni inerenti alla sua natura, $data_{MCN}$.  
+informazioni inerenti alla sua natura, $data_{MCN}$. 
 
-\begin{algorithm}
+\begin{algorithm}[H]
 \caption{Musician measure improvisation algorithm}
 \label{algo-musician-measure}
 \begin{algorithmic}[1]
-\Function{composeMeasure}{$data_{MSR}$, $data_{MCN}$}
-\For{$q\gets 0$ \textbf{to} $nq$} \Comment{$nq$, the number of
-quarters in a measure, is time signature dependent}
-	\State $n,i\gets0$
-	\While{$n = 0$}
-		\State $(n,quarters)\gets$ searchQuarters($db$, $data_{MSR}$, $data_{MCN}$, $prioargs$, $i$++)
-	\EndWhile
-	\State $quarter\gets$ random($quarters$)
-	\State $(n,sqs)\gets$ getSemiquavers($db$, $quarter$)
-	\State $s\gets0$
-	\For{$i\gets 0$ \textbf{to} 4} \Comment{For the all quarter
-subdivistions}
-		\State $sq\gets sqs[s]$
-		\If {$s=n$ \textbf{or} $sq_{pos} \neq i$}
-			\State extendPrevNote()
-			\State \textbf{continue}
-		\EndIf
-		\If {$sq_{pc}<rand()$}\Comment{Probabilty of note change}
-			\State extendPrevNote()
-		\Else
-			\State decideNote($sq_{pnote}$)
-		\EndIf
-		\State $s$++
-		
+\Function{improviseMeasure}{$data_{MSR}$, $data_{MCN}$}
+	\For{$q\gets 0$ \textbf{to} $nq$} \Comment{$nq$, the number of
+	quarters in a measure, is time signature dependent}
+		\State $n,i\gets0$
+		\While{$n = 0$}
+			\State $(n,qts)\gets$ searchQuarters($db$, $data_{MSR}$, $data_{MCN}$, $prioargs$, $i$++)
+		\EndWhile
+		\State $qt\gets$ random($qts$)
+		\State $(n,sqs)\gets$ getSemiquavers($db$, $qt$)
+		\State $s\gets0$
+		\For{$i\gets 0$ \textbf{to} 4} \Comment{For the all quarter
+	subdivistions}
+			\State $sq\gets sqs[s]$
+			\If {$sq_{pos} \neq i$}
+				\State extendPrevNote()
+				\State \textbf{continue}
+			\EndIf
+			\If {$sq_{pc}<rand()$}\Comment{Probabilty of note change}
+				\State extendPrevNote()
+			\Else
+				\State $note \gets$decideNote($sq_{pnotes}$)
+				\State storeNote(midiTransform($note$))
+			\EndIf
+			\State $s$++
+			
+		\EndFor
 	\EndFor
-\EndFor
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
 
-All'inizio Il musicista cerca nel DB dei \emph{quarter} che possano
-avere un riscontro con i due set di informazioni. Se non trova nessun
-quarto che fa "match" con tutte le informazioni ripete la ricerca scartando
+Inizialmente il musicista cerca nel DB, quei \emph{quarter} (da adesso
+$qt$) che possano
+avere un riscontro con i due set di informazioni presi in input dalla
+funzione. Complessivamenti gli argomenti che influiscono nella ricerca
+sono:
+\begin{enumerate}
+\item Posizione del quarto nella misura
+\item Fondamentale dell'accordo
+\item Modo dell'accordo
+\item Genere
+\item Dinamica
+\item Mood
+\item Scala
+\item Famiglia dello strumento\footnote{Uno tra i 16 raggruppamenti
+di strumenti come definito dal General
+Midi} %TODO biblio ref http://www.midi.org/techspecs/gm1sound.php#instrument
+\item Modalità solista. Viene abilitata da un musicista se si propone come
+possibile solista. Se ci sono più solisti nella band, il musicista deve
+controllare se è il suo turno da solista prima di poter abilitare questa
+modalità.
+\end{enumerate}
+Nello specifico il primo argomento viene semplicemente calcolato tramite un
+contatore progressivo; gli argomenti dal secondo al settimo vengono
+specificati dal direttore; l'ottavo fa parte della natura del musicista
+e viene selezionato al suo avvio; infine il nono è dipendente sia dalla
+natura del musicista sia dalle informazioni ricevute dal direttore.\\
+Se il musicista non trova nessun quarto che fa "match" con tutte le
+informazioni, ripete la ricerca scartando
 gli argomenti con priorità più bassa, fino a quando non ne trova almeno
-uno. Tra i quarti trovati, se più di 1, ne viene scelto uno random
+uno. Le priorità sono definite come valori all'interno di un vettore
+$prioargs$ di dimensione 9. Per ogni elemento del vettore corrisponde un valore di priorità
+associato ad uno degli argomenti sopra elencati.\\
+Come già accennato nel paragrafo \ref{database}, il vettore prioargs può
+essere inviato dal direttore in quanto associato al pattern da lui
+scelto, oppure può venire richiesto dal musicista
+stesso se per qualche motivo\footnote{Ad esempio nel caso di un
+musicista batterista o solista già esposti nel paragrafo \ref{database}.} 
+non vuole seguire le priorità legate al pattern.\\
+Tra i quarti trovati, se più di 1, ne viene scelto uno random
 \footnote{In una futura estensione, un quatro potrebbe venir scelto con
 una politica migliore, ad esempio facendo un confronto ulteriore tra quelli
-scelti e i precedenti.} di cui il processo ottiene tutte i record
-\emph{semiquaver} associate.
+scelti e i precedenti.} di cui il processo scarica dal DataBase tutti i record
+\emph{semiquaver} (da adesso $sq$) associati.\\
+È importante precisare che ad ogni $qt$ possono essere
+associate un numero minore o uguale di 4 $sq$. In questo modo si
+riescono a rappresentare delle note di durata superiore ad $1\over{16}$ 
+semplicemente estendendo la durata di una nota se nei suoi sedicesimi successivi 
+non sono presenti record $sq$ associati al quarto
+corrispondente.\\
+Di fatti nell'algoritmo preso in analisi, subito dopo l'ottenimento
+delle $sq$ associate al $qt$ corrente si controllano tutte le
+suddivisioni di quest'ultimo. 
+Se la posizione nel quarto della $sq$ 
+di indice $s$ non corrisponde all'indice $i$, vuol dire che per quella
+suddivisione $i$ non è associata alcuna $sq$ e pertanto
+viene estesa quella precedente senza effettuare ulteriori controlli.
+In caso contrario si procede a verificare se la probabilità di cambio
+nota $pc$ 
+\footnote{Tutti i valori di probabilità sono normalizzati
+nell'intervallo [0,1]} relativo alla semicroma $s$ è più alto di valore 
+generato random\footnote{Tutti i valori generati random sono presi con
+distribuzione di probabilità uniforme, se non diversamente specificato}. 
+Se la condizione non viene verificata allora viene
+estesa la durata della nota precedente ma viene anche incrementato il
+contatore $s$ inquanto la $sq$ corrente è stata considerata e scartata.
+Se invece la $pc$ supera la barriera del random, si procede con la
+funzione di decisione di quale nota scegliere per la semicroma corrente,
+meccanismo esposto nell'algoritmo \ref{algo-musician-note}.
 
-%TODO decide note
+\begin{algorithm}[H]
+\caption{Musician note decision algorithm}
+\label{algo-musician-note}
+\begin{algorithmic}[1]
+\Function{decideNote}{$pnotes$}
+	\State \textbf{let} $pref$ an array of [0,1] normalized values
+	\State $pref[0]\gets pnotes[0]$
+	\For {$i \gets 1$ \textbf{to} $13$} \Comment{12 Notes plus the rest}
+		\State $pref[i] \gets pref[i - 1] + pnotes[i]$
+	\EndFor
+	\State $r \gets random()$
+	\State $i \gets 0 $
+	\While{$r > pref[i]$}
+		\State $i$++	
+	\EndWhile
+	\State \textbf{return} $i$+1 \Comment{$i$ is the index of the
+target previous value}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
 
+La funzione \emph{decideNote} prende in input il vettore di probabilità
+$pnotes$ definito come nell'equazione \ref{eq-pnotes} da cui costruisce
+un vettore di somme prefisse $pref$. Viene infine lanciato un numero
+random $r$ e si cicla in $pref$ finchè $r$ non è minore o uguale al
+valore corrente di $pref$, la cui posizione in tal caso, indica la nota
+da scegliere.\\
+Questo metodo fornisce una soluzione in grado di selezionare più
+preferibilmente le note con maggiore probabilità di essere scelte
+rispetto le altre. L'esempio seguente può essere d'aiuto per comprendere
+meglio l'applicazione dell'algoritmo, per semplicità si assume che la
+lunghezza dei vettori sia pari a 7.
+\begin{align*}
+pnotes_1 = [0.00,\underline{0.50},0.00,0.05,0.25,0.20,0.00]\\
+pref_1   = [0.00,0.50,0.50,0.55,0.80,1.00,1.00]\\\\
+pnotes_2 = [0.00,0.05,0.10,0.00,0.10,0.00,\underline{0.75}]\\
+pref_2   = [0.00,0.05,0.15,0.15,0.25,0.25,1.00]\\\\
+pnotes_3 = [0.25,0.00,0.00,0.25,0.25,0.00,0.25]\\
+pref_3   = [0.25,0.25,0.25,0.50,0.75,0.75,1.00]\\\\
+\end{align*}
+\begin{center}
+  \begin{tabular}{ | c | c | c | c | c | c | }
+	\hline
+             & $r1 = 0.15$  & $r2 = 0.33$ & $r3 = 0.50$ & $r4 = 0.68$ &
+$r5 = 0.88$ \\ \hline
+    $pnotes1$  & 1 & 1 & 1 & 4 & 5 \\ \hline
+    $pnotes2$  & 2 & 6 & 6 & 6 & 6 \\ \hline
+    $pnotes3$  & 0 & 3 & 3 & 4 & 5 \\
+	\hline
+  \end{tabular}
+\end{center}
+
+Nella tabella dell'esempio ad ogni $pnotes$ ed $r$ corrisponde un indice
+dei vettori di probabilità rispettivi. Nell'esempio vengono mostrati dei
+valori random arbitrari la cui media è però significativa in quanto
+tende a $0.5$ come per una successione di valori random nell'implementazione 
+reale in quanto la distribuzione di probabilità che genera i numeri
+random è uniforme. Anche se l'esempio è restrittivo, si può notare che
+per $pnotes_1$ e $pnotes_2$, gli indici scelti maggioranmente sono  quelli 
+con probabilità di scelta più alta e viceversa, mentre per $pnotes_3$, si 
+può notare che vengono scelti circa lo stesso numero di volte 
+tutti gli indici con probabilità non zero in quanto tra loro
+equiprobabili.\\\\
+Oltre alla funzione di decisione di nota singola, il musicista
+predispone anche della funzione di decisione di un accordo. Quest'ultimo
+metodo viene utilizzato solo se indicato nella natura del musicista in
+questione tramite il parametro $chord\_mode$. In tal caso il musicista
+terrà in considerazione solamente le probabilità di cambio $pc$ di un
+record \emph{semiquaver} e deciderà quali note far suonare al player
+basandosi sulle note contenute nell'accordo di rifermento che il direttore
+gli ha comunicato. Di queste note creerà in maniera randomica una
+qualche permutazione generando così dei rivolti e variazioni sulla
+stessa struttura dell'accordo.\\
+In linea generale in questa sezione sono state descritte le
+caratteristiche principali del ragionamento di un musicista, fatta
+eccezione per la modalità genetica, in cui le note non vengono
+interamente improvvisate in tempo reale, ma subiscono un processo di 
+mutazione genetica al fine di introdurre un metodo di apprendimento nel
+modello. 
