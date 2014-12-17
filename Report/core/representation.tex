@@ -31,7 +31,7 @@ I pattern rappresentano la struttura delle progressioni di accordi caratteristic
 Il direttore ha la conoscenza di una collezione di diversi pattern che
 a loro volta possono ammettere delle varianti di dinamica e stile.
 
-Un pattern, dunque, dichiara quale sia la sequenza di accordi che compone un giro e per ogni accordo propone un'intenzione con cui quell'accordo dovrebbe essere suonato\footnote{Il concetto di intenzione è in realtà diviso in due sotto-concetti: \emph{mood} e \emph{dinamiche}, dove il primo indica l'intensità ed assume valori come ``slow'' o ``pushed''; il secondo invece indica il genere di dinamiche da tenere, come ``groove'' (ad indicare una battuta generica) o ``fill'' (che invece indica una battuta di passaggio, per esempio a fine giro).}. \`E dato come assunto che tutti i pattern siano in tonalità di Do, tutti gli accordi verranno poi traslati a tempo di esecuzione in modo da risultare relativi alla tonalità effettiva.
+Un pattern, dunque, dichiara quale sia la sequenza di accordi che compone un giro e per ogni accordo propone un'intenzione con cui quell'accordo dovrebbe essere suonato\footnote{Il concetto di intenzione è in realtà diviso in due sotto-concetti: \emph{mood} e \emph{dinamiche}, dove il primo indica l'intensità ed assume valori come ``slow'' o ``pushed''; il secondo invece indica il genere di dinamiche da tenere, come ``groove'' (ad indicare una battuta generica) o ``fill'' (che invece indica una battuta di passaggio, per esempio a fine giro).}. \`E dato come assunto che tutti i pattern siano in tonalità di Do, gli accordi verranno poi traslati a tempo di esecuzione in modo da risultare relativi alla tonalità effettiva.
 
 Questa struttura dati contiene inoltre due tipi di informazione più sofisticati: il \emph{vettore di priorità} e le \emph{varianti di improvvisazione}. Il primo viene comunicato in maniera trasparente dal direttore ai musicisti, che lo sfrutteranno come descritto nella sezione \ref{database}; le varianti, invece, indicano al direttore che altri pattern possono essere utilizzati come indicazione valida (in toto o solo in alcune parti) per stabilire la scala di improvvisazione.
 
@@ -59,7 +59,7 @@ $i$ dalla $KS$, venga selezionata rispetto alle altre.
 pnotes = (p_0, p_1,  \ldots , p_i, \ldots, p_n)
 \end{equation}
 Inoltre i valori $p_i$ contenuti nel vettore $pnote$ formano una distribuzione 
-(arbitraria) di probabilità in quanto vale:
+(arbitraria) di probabilità per cui vale:
 \begin{equation}
 \sum_{i=0}^{n} p_i = 1 \;\;\;\; p_i \in [0, 1]
 \end{equation}
