@@ -14,8 +14,8 @@ il database è decisamente scarno per utilizzi più avanzati di un semplice
 \\
 \begin{figure}[H]
 \centering
-\caption{Improvvisazione con organo solista e pianoforte ad accordi.}
 \includegraphics[width=\textwidth]{img/organmatch.png}
+\caption{Improvvisazione con organo solista e pianoforte ad accordi.}
 \end{figure}
 questo si può notare immediatamente con un riscontro uditivo,
 gli strumenti che possiedono un database di pattern ristretto tenderanno
@@ -27,8 +27,8 @@ di pattern tenderà a suonare "peggio"\footnote{Associabile alla scarsa esperien
 \\
 \begin{figure}[H]
 \centering
-\caption{Improvvisazione con linea di basso e pianoforte ad accordi.}
 \includegraphics[width=\textwidth]{img/bassmatch.png}
+\caption{Improvvisazione con linea di basso e pianoforte ad accordi.}
 \end{figure}
 In questa figura possiamo notare come strumenti con un numero maggiore di pattern siano
 più "musicali" e meno "casuali" all'orecchio di un ascoltatore.\\
@@ -38,47 +38,50 @@ di coesione tra i vari musicisti siano state ben implementate.
 \subsection{Algoritmo a selezione naturale (genetico / evoluzionistico)}
 
 L'algoritmo evoluzionistico segue invece scelte legate all'esperienza,
-facendo apprendere all'algoritmo
+facendo apprendere al programma
 \footnote{Uno dei possibili sviluppi futuri, se non il più stimolante da un
 punto di vista informatico/tecnico è la possibilità di salvare l'apprendimento
 di un singolo musicista nel database, in modo da creare apprendimenti misti,
 o un apprendimento decisamente più profondo di un determinato genere.}
-una determinata canzone. \footnote{come indicato nella sezione \ref{sec:evol_alg}}
+un determinato brano. \footnote{come indicato nella sezione \ref{sec:evol_alg}}
 \\
-Il problema della valutazione del singolo individuo (o run) è risultato da un
-punto teorico decisamente complesso, da un punto di vista pratico/sperimentale
+Il problema della valutazione del singolo individuo (o run) è risultato, da un
+punto di vista teorico, decisamente complesso.
+Da un osservazione pratica/sperimentale,
 questa tesi è stata confermata, i parametri di controllo della mutazione e
-i parametri base di valutazione della SOM
-\footnote{Self organizing map, la funzione di valutazione,
+i parametri di valutazione dell'algoritmo genetico
+\footnote{La funzione di valutazione,
 senza avere input umani a runtime, usa meccanismi basati sulla norma 2
 o distanza euclidea.}
 sono risultati decisamente delicati, producendo risultati diversi ad una minima
 variazione "dell'ago della bilancia".
 
-\todo{qua ci va la canzone pura}
-\todo{qua l'immagine di confronto con l'output dell'algoritmo genetico}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{img/genmatch.png}
+\caption{Improvvisazione basata sull'algoritmo genetico, goal in alto.}
+\label{fig:genetic_organ}
+\end{figure}
 
-Notiamo ad esempio come il risultato in questo caso sia molto più coerente al
-concetto di composizione musicale.
-è importante specificare che questo concetto è abbastanza soggettivo,
-decisamente legato alla provenienza geografica e alla storia di ogni persona
-come musicista o semplice ascoltatore, si potrebbe dire che, in un certo senso,
-l'output ricorda la composizione di partenza.
+Anche intuitivamente dalla figura \ref{fig:genetic_organ} si può notare,
+come le durate e, più di rado, le intonazioni delle singole note siano all'incirca
+coerenti tra le tracce, questo è dovuto al processo evolutivo implementato
+nella modalità genetica del singolo musicista.
 
 \begin{figure}[H]
 \centering
-\caption{Curva logaritmica relativa al fitness dell'algoritmo genetico.}
 \includegraphics[width=\textwidth]{img/logcurve.png}
+\caption{Curva logaritmica relativa al fitness dell'algoritmo genetico.}
 \end{figure}
 Dalle varie esecuzioni si può notare come la curva logaritmica dell'algoritmo
 evolutivo sia limitata ad un punto\footnote{circa il 63\% per un'improvvisazione
 di 12 misure con 1500 generazioni e 512 individui per generazione},
 questo è un comportamento voluto
 per essere in modo esplicito distanti dal concetto di riproduzione fedele di una
-determinata composizione, rendendo quindi il tutto solamente, in un certo modo,
-simile alla composizione in input.
+determinata composizione, rendendo quindi il tutto, in un certo modo,
+simile alla composizione iniziale.
 
-Concludendo, i risultati sono stati decisamente positivi, la piattaforma, una volta
-sviluppate le parti mancanti e perfezionandola potrebbe essere decisamente utile
-come strumento di studio per la branca della musica computazionale, oppure
+Concludendo, i risultati sono stati rientrano nelle aspettative e la piattaforma,
+una volta sviluppate le parti mancanti e perfezionandola potrebbe essere decisamente utile
+come strumento di studio per la branca dell'Evolutionary Music, oppure
 essere usata come strumento didattico per l'improvvisazione.
