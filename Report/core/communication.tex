@@ -13,18 +13,18 @@ Il protocollo è strutturato principalmente in tre fasi distinte.
 
 \subsection{Inizializzazione}
 Inizialmente il direttore riceve una sottoscrizione da parte del player.\\
-Alla sottoscrizione (opportunamente segnalata tramite \emph{ack}), susseguirà un
+Alla sottoscrizione (opportunamente segnalata tramite \emph{ack}), seguirà un
 pacchetto contenente il numero di musicisti
-\footnote{In modo da specificare solamente al direttore
+\footnote{In modo da specificare solamente al player
 	  il numero di istanze di musicisti.}.
 A questo punto l'inizializzazione dei componenti principali
-(direttore e player) è completa, e la loro comunicazione, come vedremo
+(direttore e player) è completa, e la loro comunicazione, come vedremo,
 si limiterà a messaggi di sincronizzazione.
 
 \subsection{Ciclo di Sottoscrizione}
 A questo punto, ogni musicista si preoccuperà di inviare la sua sottoscrizione
 all'improvvisazione sia al direttore che al player, in questo modo le due
-componenti principali avranno una chiara visione dell'improvvisazione, pur
+componenti principali avranno una chiara visione della band, pur
 rimanendo completamente indipendenti.
 
 \subsection{Ciclo principale}
@@ -38,8 +38,8 @@ tra tutti i musicisti.\\
 Una volta composto, i musicisti inviano quindi la loro creazione
 \footnote{Si rimanda alle opportune sezioni per approfondire come queste decisioni vengano prese.}
  al
-player, il quale si occuper\'a di suonare la composizione nell'ordine corretto;
-Mentre il direttore si occuper\'a della sincronizzazione, proseguendo con
+player, il quale si occuper\'a di suonare la composizione nell'ordine corretto,
+mentre il direttore si occuper\'a della sincronizzazione, proseguendo con
 un nuovo passo del ciclo.
 
 \subsection{Libreria di comunicazione}
@@ -84,7 +84,7 @@ Da qui in poi sono riservati per utilizzi futuri.
 La risposta a questi pacchetti non si limita al semplice ack, bensì ad
 un pacchetto contenente l'id (univoco per la sessione) del musicista.\\
 
-\'E necessario indicare che la registrazione del player presso il direttore
+\`E necessario indicare che la registrazione del player presso il direttore
 avviene inviando questo pacchetto con un coupling pari ad un valore costante
 (-1).
 
@@ -125,7 +125,7 @@ L'ID del musicista che improvvisa correntemente in modalità solista.
 \item[Tempo (upper e lower)] \hfill \\\
 Indica la \emph{Time Signature} dell'improvvisazione corrente.
 \item[Prioargs] \hfill \\\
-Sono 9 campi costanti il quale compito \'e specificare
+Sono 9 campi costanti il quale compito \`e specificare
 una scala di priorità con la quale effettuare le scelte di improvvisazione.
 \footnote{Per una spiegazione pi\'u dettagliata si rimanda ai capitoli sul come
 	  operano il  Direttore e il Musicista.}
@@ -134,11 +134,11 @@ Sono $tempo.upper$ campi contenti la successione dei centri tonali della misura 
 \item[Chord e mode] \hfill \\
 Sono $tempo.upper$ campi contenti la successione di accordi della misura (rilevanti per gli accompagnatori).
 \item[Tags] \hfill \\\
-\'E un campo testuale utilizzato per indicare attributi del pezzo da improvvisare
+\`E un campo testuale utilizzato per indicare attributi del pezzo da improvvisare
 (è una terna che specifica genere, dinamiche ed intenzione).
 \end{description}
 
-\subsubsection{Play Measures}
+\subsubsection{Play Measures}\label{sec:play_measure}
 Sono i pacchetti contenenti l'informazione dettagliata sulle note suonate
 e la composizione che, in output dal musicista, viene passata al player
 pronta per essere allineata con le altre battute ed essere suonata.
@@ -170,7 +170,7 @@ Il numero di note presenti nella misura corrente.
 L'identificativo univoco del musicista che ha generato la misura in questione.
 \item[Unchanged fst] \hfill \\\
 Un booleano indicante il fatto che la prima nota sia cambiata o meno.
-\footnote{Questa feature \'e necessaria nel per effettuare dei legati
+\footnote{Questa feature \`e necessaria nel per effettuare dei legati
 	  o dei continui dalla misura precedente.}
 \item[Note] \hfill \\
 Sono quindi presenti $size$ strutture contenenti le seguenti informazioni
@@ -182,7 +182,7 @@ Un numero progressivo (per misura) indicante la posizione nella misura.
 \item[Triplets] \hfill \\\
 Un indicazione sul fatto che la nota debba essere scandita con tempo terzinato.
 \item[Velocity] \hfill \\\
-La velocity \emph{MIDI}, \'e un indicazione sul volume della nota in output.
+La velocity \emph{MIDI}, \`e un indicazione sul volume della nota in output.
 \item[Chord\_size] \hfill \\\
 Il numero di note presenti (nel caso sia un accordo,
 altrimenti la nota sarà singola)
@@ -197,6 +197,6 @@ Un indicazione sui bpm da utilizzare nella riproduzione dell'improvvisazione.
 L'ultimo compito della libreria di comunicazione è
 provvedere ad alcuni meccanismi per la sincronizzazione dei vari componenti.\\
 Questo obiettivo è raggiunto utilizzando le chiamate di sistema di linux basate
-sugli eventi quali \emph{epoll}: vengono radunati su di una barriera
+sugli eventi quali \emph{epoll} e le chiamate bloccanti sui socket: vengono radunati su di una barriera
 (in qualsiasi ordine) tutti i musicisti, dopo di che viene notificata, tramite
 \emph{ack}, la possibilità di continuare.

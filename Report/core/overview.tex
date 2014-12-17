@@ -1,22 +1,23 @@
 \section{Overview dei Componenti}
-Il progetto \`e composto principalmente di tre parti principali:\\
-Un \textbf{direttore}, il quale svolge il compito di centralizzare l'improvvisazione,
+Il progetto \`e composto da tre parti principali:\\
+\begin{itemize}
+\item Un \textbf{direttore}, il quale svolge il compito di centralizzare l'improvvisazione,
 dettando regole e decidendo i parametri generali per ogni punto dell'improvvisazione;
 potrebbe in un certo senso essere visto come una sorta di \emph{coscienza comune},
-la quale amministrerebbe silente i vari musicisti, vedremo pi\'u avanti come
+la quale amministra silenziosamente i vari musicisti. Vedremo pi\'u avanti come
 la natura centralizzata del direttore inoltre aiuti, ad esempio, a sincronizzare
 i vari musicisti.\\
-Un \textbf{player}, il quale assieme al direttore compone l'architettura centralizzata
-del progetto; il compito del player \'e di ricostruire e di assemblare le varie
+\item Un \textbf{player}, il quale assieme al direttore compone la parte centralizzata
+del progetto; il compito del player \`e di ricostruire e di assemblare le varie
 improvvisazioni provenienti dai vari musicisti, ha inoltre un interfaccia
-modulare per salvare o riprodurre l'improvvisazione, per analogia con il direttore,
-il quale \'e il punto d'ingresso del progetto, il player \'e il punto dove viene
-formato l'output utile del progetto.\\
-Vari \textbf{musicisti}, i quali prendono decisioni in base alla loro configurazione
+modulare per salvare o riprodurre l'improvvisazione. Per analogia con il direttore,
+il quale \`e il punto d'ingresso del progetto, il player \`e il punto dove viene
+formato l'output.\\
+\item Vari \textbf{musicisti}, i quali prendono decisioni in base alla loro configurazione
 e all'output del direttore, processandole secondo vari meccanismi euristici
-(vedremo ad esempio implementazioni di meccanismi casuali o basati su algoritmi evolutivi).\\
-\\
-Al fianco di questi componenti fondamentali \'e presente un ambiente di supporto
-per facilitare l'operazione, quali ad esempio il \textbf{database} dell'applicazione,
+(vedremo ad esempio implementazioni di meccanismi probabilistici o basati su algoritmi evolutivi).\\
+\end{itemize}
+Al fianco di questi componenti fondamentali sono presenti componenti supporto
+per facilitare l'operazione, come il \textbf{database} dell'applicazione,
 responsabile dell'immagazzinamento della conoscenza dei vari componenti, ad
-esempio la rappresentazione dei vari generi e dei loro pattern collegati.
+esempio la rappresentazione dei vari generi e dei relativi pattern collegati.

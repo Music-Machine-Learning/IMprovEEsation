@@ -14,23 +14,33 @@ pattern musicali e le relative note associate ad essi. Inoltre nella memoria
 degli agenti sono presenti informazioni aggiuntive, come ad esempio
 scale, modo degli accordi, etc. Queste ultime vengono messe in relazione
 con i pattern e le note formando così la terza componente, ovvero l'insieme 
-di regole teoriche possedute dall'agente.\\ 
+di regole teoriche conosciute dall'agente.\\ 
 Inoltre la conoscenza degli agenti viene rappresentata come se fosse 
-immagazzinata in un unica memoria collettiva, che viene acceduta però in
+immagazzinata in un unica memoria collettiva, che viene però acceduta in
 regioni diverse in base al ruolo dell'agente. Ad esempio il direttore ha
 accesso alla regione della memoria dove sono salvate le informazioni
-riguardo all'andamento complessivo di un improvvisazione che comunicherà
+riguardo all'andamento complessivo di un improvvisazione, che comunicherà
 durante quest'ultima ai musicisti. Un agente musicista ha accesso alla
-regione di memoria dove salvate le informazioni necessarie per comporre
-in tempo reale delle note che siano coerenti in qualche modo con le
+regione di memoria contenente le informazioni necessarie per comporre
+in tempo reale una serie note che siano coerenti in qualche modo con le
 informazioni fornite dal direttore.
 \subsection{Pattern e Regole}
-\label{patterneregole}
-% XXX MATTE XXX %
-Definiamo i pattern come sequenze di misure di accordi. 
+\subsubsection*{Pattern del Direttore}
+\label{sec:pattern}
+I pattern rappresentano la struttura delle progressioni di accordi caratteristiche di un genere.
 Il direttore ha la conoscenza di una collezione di diversi pattern che
 a loro volta possono ammettere delle varianti di dinamica e stile.
-%TODO: spiegare meglio la struttura del pattern %
+
+Un pattern, dunque, dichiara quale sia la sequenza di accordi che compone un giro e per ogni accordo propone un'intenzione con cui quell'accordo dovrebbe essere suonato\footnote{Il concetto di intenzione è in realtà diviso in due sotto-concetti: \emph{mood} e \emph{dinamiche}, dove il primo indica l'intensità ed assume valori come ``slow'' o ``pushed''; il secondo invece indica il genere di dinamiche da tenere, come ``groove'' (ad indicare una battuta generica) o ``fill'' (che invece indica una battuta di passaggio, per esempio a fine giro).}. \`E dato come assunto che tutti i pattern siano in tonalità di Do, tutti gli accordi verranno poi traslati a tempo di esecuzione in modo da risultare relativi alla tonalità effettiva.
+
+Questa struttura dati contiene inoltre due tipi di informazione più sofisticati: il \emph{vettore di priorità} e le \emph{varianti di improvvisazione}. Il primo viene comunicato in maniera trasparente dal direttore ai musicisti, che lo sfrutteranno come descritto nella sezione \ref{database}; le varianti, invece, indicano al direttore che altri pattern possono essere utilizzati come indicazione valida (in toto o solo in alcune parti) per stabilire la scala di improvvisazione.
+
+In pratica, le varianti specificano quali battute di un pattern appartenente allo stesso genere possono essere sostituite a quelle del pattern attuale per valutare i centri tonali utilizzabili per improvvisare, questa feature verrà approfondita nella sezione \ref{dir-tonalZones}.
+
+
+\subsubsection*{Regole del Musicista}
+\label{patterneregole}
+% XXX MATTE XXX %
 Il musicista, nella memoria complessiva, ha accesso alle collezioni di
 informazioni riguardo note singole. 
 Si è scelto di rappresentare una singola nota come una semicroma essendo 

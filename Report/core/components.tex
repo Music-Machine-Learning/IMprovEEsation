@@ -1,25 +1,24 @@
 \section{Componenti del Sistema}
 % XXX BERA XXX %
-Come indicato in precedenza, i principali componenti in stretto contatto
-tra loro sono delle seguenti tre categorie, \'e stata scelta un implementazione
-a camere stagne tra di essi, in modo da rendere il sistema il pi\'u modulare
-possibile, potendo separare (anche fisicamente, distribuendoli su varie macchine)
-i vari componenti, utilizzando dei processi singoli per ogni istanza del singolo.\\\
+Come indicato in precedenza, le principali componenti a stretto contatto
+tra loro sono \emph{direttore}, \emph{musicisti} e \emph{player}; \`e stata scelta un implementazione
+a camere stagne, in modo da rendere il sistema il pi\'u modulare
+possibile, così da separare (anche fisicamente, distribuendoli su varie macchine) i vari componenti ed utilizzare processi singoli per ogni istanza.\\\
 \\\
-Si procede quindi con la descrizione dettagliata del comportamento di ogni
+Si procede quindi con la descrizione del comportamento di ogni
 elemento del sistema.
 
 \subsection{Direttore}
 % XXX MELLO XXX %
-Il direttore rappresenta la componente che lega ed indirizza l'intera esecuzione. Basa le proprie scelte su un database di generi e sottogeneri, descritti tramite pattern. 
-Ogni pattern definisce la struttura base di un ``giro'' dello specifico sottogenere, ad esempio la struttura di un classico blues bebop, indicando la sequenza di accordi e di ``intenzioni'' consigliate per ogni battuta del giro. 
-Sfruttando queste informazioni ed essendo a conoscenza di ciò che è già stato suonato, il direttore decide tramite meccanismi probabilistici, battuta in battuta, le caratteristiche della prossima misura di brano da eseguire, elegge un solista per questa sezione e comunica queste informazioni ai musicisti, per poi attendere che tutti abbiano completato la propria esecuzione.
+Il direttore rappresenta la componente che lega ed indirizza l'intera esecuzione. Basa le proprie scelte su un database di generi e sottogeneri, descritti tramite pattern.
+Ogni pattern definisce la struttura base di un ``giro'' di accordi dello specifico sottogenere, ad esempio la struttura di un classico blues bebop, indicando la sequenza di accordi e di ``intenzioni'' consigliate per ogni battuta del giro. 
+Sfruttando queste informazioni ed essendo a conoscenza di ciò che è già stato suonato, il direttore decide tramite meccanismi probabilistici, battuta in battuta, le caratteristiche della prossima misura di brano da eseguire, elegge un solista per questa sezione e comunica queste informazioni ai musicisti, per poi attendere che tutti abbiano completato la propria esecuzione e ripetere il ciclo.
 Ad ogni nuova battuta, utilizzando metodi probabilistici, il direttore decide inoltre se cambiare sottogenere o genere e quale scala di riferimento deve essere usata dal musicista solista, tenendo in considerazione le possibili varianti compatibili dello stesso genere.
 
 \subsection{Musicista}
 % XXX MATTE XXX %
 Come il direttore, il musicista nel nostro software è un agente. 
-Il suo scopo principale è quello di creare in tempo reale della musica. 
+Il suo scopo principale è quello di creare in tempo reale della musica.
 Della buona musica? Ci prova, infatti il processo musicista trascorre la
 sua esistenza suonando delle note che possano ``andar bene'' assieme alle note
  suonate dagli altri musicisti. Questi ultimi non vengono lasciati soli nelle 
@@ -29,20 +28,19 @@ Il direttore quindi, tramite un certo protocollo di comunicazione,
 invia determinati parametri globali a tutti i musicisti che a loro volta 
 scandiscono il database per cercare delle note che possano avere senso nel loro 
 attuale contesto. 
-Ad ogni insieme di note che i musicisti ottengono ad ogni passo dell'esecuzione
+Ad ogni insieme di note che i musicisti ottengono in ogni passo dell'esecuzione
  è correlato un set di probabilità, il quale viene utilizzato per filtrare le 
-note scelte da utilizzare e ad introdurre il comportamento di improvvisazione.
+note scelte e ad introdurre il comportamento di improvvisazione ponderata.
 
 \subsection{Player}
 % XXX FEDE XXX %
 Il player è l'unico componente del progetto che non si comporta da agente 
-intelligente, ma piuttosto da scheduler, poiché il suo compito è suonare in 
-contemporanea le note che i musicisti hanno ``scritto sul loro spartito''.
-Più in particolare, le informazioni che pervengono al player sono, da ogni 
-musicista, un set di note e durate, secondo la struttura descritta nella 
-sezione 6, della durata di una battuta. % ci vuole una label-ref %
+intelligente, ma piuttosto da interprete, poiché il suo compito è suonare (in linguaggio MIDI) le note che i musicisti hanno ``scritto sui loro spartiti''.
+Nel dettaglio, le informazioni che pervengono al player da ogni 
+musicista sono set di note e durate (secondo la struttura descritta nella 
+sezione \ref{sec:play_measure}) che compongono una battuta.
 Il player resterà bloccato finché non riceverà questo dato da ognuno dei 
-musicisti (un numero conosciuto a priori), poi inizierà la sua esecuzione.
+musicisti (il cui numero è conosciuto a priori), poi inizierà la sua esecuzione.
 Essa si basa sulla scansione dei dati in input secondo una base temporale 
 atomica (che corrisponde alla durata della metà di una semicroma terzinata, 
 ovvero un quarantottesimo di una misura intera) con la quale si possono 
@@ -56,9 +54,7 @@ funzionamento del software.
 Il player nasce come esecutore in tempo reale (o immediatamente successivo) 
 rispetto alla creazione del brano, ma presenta una feature interessante, 
 ovvero la scrittura su file midi del brano in creazione per esecuzioni future 
-o studio dello spartito generato su tools come tuxguitar.
+o studio dello spartito generato su tools come Tuxguitar\footnote{\url{http://www.tuxguitar.com.ar/}}.
 
-Questo componente utilizza una labeling standard degli strumenti musicali, 
-coerente con quella utilizzata da 
-TiMidity++\footnote{\url{http://timidity.sourceforge.net/}}, 
-il tool che abbiamo sfruttato per tradurre il nostro operato in qualcosa di udibile.
+Questo componente utilizza il labeling standard per gli strumenti musicali definito da General Midi\cite{generalmidi}, 
+compatibile con la maggior parte dei sintetizzatori software. Abbiamo quindi scelto TiMidity++\footnote{\url{http://timidity.sourceforge.net/}} come strumento per tradurre il nostro operato in qualcosa di udibile.
