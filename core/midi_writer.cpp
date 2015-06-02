@@ -176,9 +176,20 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
 
         /* Drums are assigned by default to channel 16 and it shouldn't be selected */
         if(cmusician->instrument_class != INSTRUMENT_DRUM){
-            t = chcounter++;
+	    if (chcounter == MIDI_DRUM_CHANNEL - 1) {
+		    /* A non drum can't have this channel.
+		     * It should have been jumped in the previous assignment. */
+		    fprintf(stderr, "Error in midi channel assignment\n");
+		    return FALSE;
+	    } else if (chcounter == MIDI_DRUM_CHANNEL - 2) {
+		    chcounter += 2;
+	    } else { 
+		    chcounter++;
+	    }
+	    t = chcounter; /* XXX: what if it will be bigger than MIDI_CHANNELS? */
+
         } else {
-            t = MIDI_CHANNELS - 1;
+	    t = MIDI_DRUM_CHANNEL - 1;
         }
         (*instruments)[t] = cmusician->instrument_class;
 
@@ -208,7 +219,7 @@ int initFile(char *fname, int **instruments, uint8_t bpm, int *midiDev, struct l
         write(*dev, mdata, 2);
 
 
-        printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, chcounter);
+        printf("Instrument %d binded to channel %d!\n", cmusician->instrument_class, t);
     }
 
     return(midifilename != NULL ? TRUE : FALSE);

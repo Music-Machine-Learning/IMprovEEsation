@@ -31,8 +31,6 @@
 #define KEY_DOWN(c)	(0x90 + c)
 #define KEY_UP(c)	(0x80 + c)
 
-#define MIDI_CHANNELS       16
-
 #include <improveesation/structs.h>
 
 void fill_test_musician(subscription_s *new_musician, int prog);
