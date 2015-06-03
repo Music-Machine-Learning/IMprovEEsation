@@ -7,7 +7,7 @@ fi
 
 TIMIDIS=`ps -A | grep "timidity"`
 if [ -z "$TIMIDIS" ]; then
-  timidity -iA -Os -D 16 —verbose=1 &
+  timidity -iA -Os —verbose=1 &
   sleep 1
 fi
 
