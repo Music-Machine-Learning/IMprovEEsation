@@ -30,6 +30,7 @@
 #include <improveesation/configuration.h>
 #include <improveesation/tui.h>
 #include <stdio.h>
+#include <improveesation/utils.h>
 
 #define SET_INT_FIELD(r,f,v) ({\
     r.f = (int *) malloc(sizeof(int));\
@@ -712,8 +713,12 @@ int decide_next_measure(measure_s *measure, int current_measure_id){
 
     decideChord(measure, current_measure_id);
 
+    char *chordname;
     for(i = 0; i < tempo.upper; i++){   //NOTE: useless debug
-        debugPrint("\t\tN: %d\tM: %d\n", measure->chords[i].note, measure->chords[i].mode);
+	chord_name(measure->chords[i].note, measure->chords[i].mode, &chordname);
+        debugPrint("\t\tN: %d\tM: %d, H: %s\n", 
+		measure->chords[i].note, measure->chords[i].mode, chordname);
+	free(chordname);
     }
 
     measure->bpm = bpm;

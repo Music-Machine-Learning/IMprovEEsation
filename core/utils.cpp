@@ -286,3 +286,71 @@ int get_goal_measures(struct play_measure_s **goal_ms, char *dyna)
 	
 	return cnt;
 }
+
+/* BE VERY CAREFUL WITH THESE ARRAYS */
+int chord_modes[N_CHORDS_MODES] = {137, 145, 1161, 1169, 2193};
+char *chord_sfxs[N_CHORDS_MODES] = {"min", " ", "min7", "7", "maj7"}; 
+
+int chord_name(int chord_key, int chord_mode, char **name)
+{
+	char key[3];
+	key[2] = '\0';
+	char *chord_sfx;
+
+	/* The # chords are at the odd positions at the first half and
+	 * at the even positions at the second half */
+	if ((chord_key % 2 != 0 && chord_key < (NSEMITONES - 1)/2) ||
+	    (chord_key % 2 == 0 && chord_key > (NSEMITONES - 1)/2))
+		key[1] = '#';
+	else
+		key[1] = ' ';
+	
+	switch (chord_key) {
+		case 0:
+		case 1:
+			key[0] = 'C';
+			break;
+		case 2:
+		case 3:
+			key[0] = 'D';
+			break;
+		case 4:
+			key[0] = 'E';
+			break;
+		case 5:
+		case 6:
+			key[0] = 'F';
+			break;
+		case 7:
+		case 8:
+			key[0] = 'G';
+			break;
+		case 9:
+		case 10:
+			key[0] = 'A';
+			break;
+		case 11:
+			key[0] = 'B';
+			break;
+		default:
+			key[0] = '?';
+			key[1] = '?';
+	}
+
+	int i, f = 0;
+	/* Scan the array of chord mode integer values in order to find 
+	 * the corresponding chord mode string values */
+	for (i = 0; i < N_CHORDS_MODES; i++) {
+		if (chord_mode == chord_modes[i]) {
+			asprintf(&chord_sfx, chord_sfxs[i]);
+			f = 1;
+		}
+	}
+	if (f == 0)
+		asprintf(&chord_sfx, "??");
+
+	asprintf(name, "%s%s", key, chord_sfx);
+	free(chord_sfx);
+	return 0;
+
+}
