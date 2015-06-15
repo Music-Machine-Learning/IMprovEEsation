@@ -2,9 +2,7 @@
 
 Intelligent Musical Evolutionary Entertainment
 
-##Live Demo
-
-<p><iframe width="560" height="315" src="https://www.youtube.com/embed/ZJFl7v_VSg4" frameborder="0" allowfullscreen></iframe></p>
+##[Live Demo](https://www.youtube.com/watch?v=ZJFl7v_VSg4)
 
 ## IMprovEEsation patterns 
 
