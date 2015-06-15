@@ -4,7 +4,7 @@ Intelligent Musical Evolutionary Entertainment
 
 ##Live Demo
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/ZJFl7v_VSg4" frameborder="0" allowfullscreen></iframe>
+<p><iframe width="560" height="315" src="https://www.youtube.com/embed/ZJFl7v_VSg4" frameborder="0" allowfullscreen></iframe></p>
 
 ## IMprovEEsation patterns 
 
